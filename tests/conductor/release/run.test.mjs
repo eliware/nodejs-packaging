@@ -141,3 +141,19 @@ test("rejects an image record without a successful publication", async () => {
     await fs.rm(root, { recursive: true, force: true });
   }
 });
+
+test("rejects an image built from a different base digest", async () => {
+  const { options, root } = await createOptions({ buildRpm: false, reason: "base-image-update" });
+  try {
+    const imagePath = path.join(root, "artifacts/images/26.13.1/image.json");
+    const image = JSON.parse(await fs.readFile(imagePath, "utf8"));
+    image.base_image_digest = "sha256:stale-base";
+    await fs.writeFile(imagePath, JSON.stringify(image));
+    await expect(runRelease(options)).rejects.toThrow(
+      "image base digest does not match the current release plan",
+    );
+    expect(options.runNode).not.toHaveBeenCalledWith("bin/publish-image-record.mjs", [imagePath]);
+  } finally {
+    await fs.rm(root, { recursive: true, force: true });
+  }
+});

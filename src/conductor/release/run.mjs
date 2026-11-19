@@ -73,6 +73,8 @@ async function runRelease(options) {
   const image = JSON.parse(await readFile(imageRecordPath, "utf8"));
   if (!image.digest || image.published !== true)
     throw new Error("image build did not record a successful GHCR publication");
+  if (image.base_image_digest !== currentBaseDigest)
+    throw new Error("image base digest does not match the current release plan");
   await checkpoint(
     "Image checkpoint passed",
     "The CentOS Stream 10 image passed its Node.js smoke check and the GHCR push returned a digest.",

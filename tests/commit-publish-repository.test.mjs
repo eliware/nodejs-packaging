@@ -82,6 +82,12 @@ test("commits repository changes and pushes the configured branch", async () => 
   try {
     await main();
     expect(spawnSync).toHaveBeenNthCalledWith(
+      2,
+      "git",
+      ["add", "--all", "--", ".generations", "el10", "keys", "metadata", "nodejs26.repo"],
+      expect.objectContaining({ cwd: root }),
+    );
+    expect(spawnSync).toHaveBeenNthCalledWith(
       4,
       "git",
       ["push", "backup", "stable:stable"],

@@ -32,7 +32,7 @@ async function main() {
   if (!status.stdout.trim()) {
     console.log("[repo-git] repository is clean. Nothing to commit.");
   } else {
-    runGit(["add", "--all"]);
+    runGit(["add", "--all", "--", ".generations", "el10", "keys", "metadata", "nodejs26.repo"]);
     const commit = spawnSync(
       "git",
       [
