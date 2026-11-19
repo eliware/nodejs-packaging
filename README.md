@@ -22,10 +22,10 @@ Reproducible Node.js package builds, signed repositories, runtime images, and re
 
 ## Features
 
-The conductor checks Node.js 26, npm@latest, and CentOS Stream 10 base-image updates. It packages official Node.js x64 tarballs with npm 12 or later as signed RPMs.
+The conductor checks stable Node.js 26, npm, and the CentOS Stream 10 base image. It packages official Node.js x64 binaries as signed RPMs.
 
-It rebuilds the RPM and image when Node.js or npm changes. It reuses the published RPM when only the CentOS base image changes.
-It does no release work when all three inputs match the published release. It commits release records to `nodejs-repository`.
+It builds an RPM and image when Node.js or npm changes. It reuses the RPM when only the base image changes.
+It skips release work when all checked inputs match the published release.
 
 ## Requirements
 
@@ -33,27 +33,29 @@ Use Node.js 26 or later and npm 12 or later. Install Docker, GnuPG, RPM tools, `
 
 ## Setup
 
-Run `npm ci` from the repository root. Provision the Node.js signing key and private environment file before a wet conductor run.
+Run `npm ci` from the repository root. Provision the signing key and private environment file before a wet conductor run.
 
 ## Usage
 
-Read the [local release guide](docs/README.md) and [release notes](RELEASE_NOTES.md). Read the [specifications index](specs/README.md) before changing release contracts.
+Read the [local release guide](docs/usage.md) for setup, package installation, conductor runs, and configuration.
+Browse the [documentation index](docs/README.md) for maintained guides.
+Read the [release contract](docs/RELEASE-CONTRACT.md) for authoritative release rules.
+Read the [specifications index](specs/README.md) before changing repository contracts.
+Read the [release notes](RELEASE_NOTES.md) for user-visible changes.
 
 ## Development
 
-Read [AGENTS.md](AGENTS.md) before changing files. Keep build inputs, release records, and publication data with their owning repository.
+Read [AGENTS.md](AGENTS.md) before changing files. Keep build inputs and release records with their owning repository.
 
 ## Testing
 
-Run `npm test` to run Jest tests, lint checks, format checks, dependency checks, and Eliware conventions.
-
-Run focused tests with `npm test -- tests/conductor-plan.test.mjs`.
+Run `npm test` for tests, lint checks, format checks, dependency checks, and Eliware conventions.
+Run `npm test -- tests/conductor.test.mjs` to run one focused test file.
 
 ## Troubleshooting
 
-If the upstream index cannot be reached, check network access to `nodejs.org`. If package signing fails, check the GnuPG home and key fingerprint.
-
-If GHCR rejects an image push, refresh the host login and check package write access.
+Check network access to `nodejs.org` when release discovery fails. Check the GnuPG home and key fingerprint when package signing fails.
+Refresh the host login and check package write access when GHCR rejects an image push.
 
 ## Security
 
@@ -61,29 +63,12 @@ Keep signing keys, webhook URLs, and registry credentials outside Git. Keep repo
 
 ## Configuration
 
-Set `NODEJS_REPOSITORY_URL` to the HTTPS website root. It defaults to `https://nodejs.eliware.org`.
-
-Set `NODEJS_REPOSITORY_ROOT` to the repository data path. It defaults to `/eliware/nodejs-repository`.
-Set `NODEJS_SIGNING_KEY` to the release key fingerprint. Wet runs require this value.
-
-Set `NODEJS_GNUPGHOME` to the signing key home. It defaults to `/var/lib/eliware/nodejs-signing/gnupg`.
-Set `NODEJS_SOURCE_DIR` to the archive cache. It defaults to `.state/sources` in this checkout.
-
-Set `NODEJS_CONDUCTOR_STATE_ROOT` to the lock and run-state path. It defaults to `/var/lib/eliware/nodejs-packaging/conductor`.
-Set `CHROME_BIN` to the Chrome executable. It defaults to `/usr/bin/google-chrome`.
-
-Set `CONDUCTOR_DISCORD_WEBHOOK` or `DISCORD_WEBHOOK` to the Discord webhook URL. Wet runs require one of these values.
-Set `NODEJS_REPOSITORY_GIT_REMOTE` to the Git remote. It defaults to `origin`.
-
-Set `NODEJS_REPOSITORY_GIT_BRANCH` to the target branch. It defaults to `main`.
-Set `NODEJS_REPOSITORY_GIT_USER_NAME` and `NODEJS_REPOSITORY_GIT_USER_EMAIL` to the commit identity. They default to `Eliware` and `nodejs-release@eliware.org`.
+Set runtime, signing, and Git values through the environment. Read [configuration details](docs/usage.md#install-and-configure) for names, defaults, and requirements.
 
 ## Operations
 
-Install the systemd files from `systemd/` and enable `nodejs-packaging.timer` for its daily 8:00 AM EST run.
-The timer checks Node.js, npm, and the CentOS base image together.
-Run `npm run conductor -- --dry-run` to check upstream inputs without publishing artifacts. Run `npm run conductor -- --wet-run` to complete a release.
-The conductor sends Discord messages after each passed checkpoint and sends a final report with the release card.
+Install the files in `systemd/` and enable the daily timer. Run `npm run conductor -- --dry-run` to check inputs.
+Run `npm run conductor -- --wet-run` to publish a release when inputs changed. Read the [operations guide](docs/usage.md#run-the-conductor) for details.
 
 ## Support
 
