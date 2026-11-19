@@ -29,8 +29,8 @@ const { main } = publishModule();
 const fingerprint = "A".repeat(40);
 
 async function setup() {
-  const candidate = "/virtual/candidate";
-  const root = "/virtual/repository";
+  const candidate = path.resolve("/virtual/candidate");
+  const root = path.resolve("/virtual/repository");
   const generation = "node-v26.13.1-el10-x86_64-20261119120000";
   await fs.rm(candidate, { recursive: true, force: true });
   await fs.rm(root, { recursive: true, force: true });
@@ -104,7 +104,7 @@ test("publishes a signed generation and updates repository pointers", async () =
         generationId: generation,
         rpmName: "node.rpm",
         keyFingerprint: fingerprint,
-        gpgHome: "/var/lib/eliware/nodejs-signing/gnupg",
+        gpgHome: path.resolve("/var/lib/eliware/nodejs-signing/gnupg"),
       }),
     );
     expect(output).toHaveBeenCalled();

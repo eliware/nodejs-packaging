@@ -1,4 +1,5 @@
 import { EventEmitter } from "node:events";
+import path from "node:path";
 import { expect, jest, test } from "@jest/globals";
 
 const spawn = jest.fn();
@@ -76,7 +77,7 @@ test("runs the child conductor twice and returns a successful status", async () 
     expect(spawn).toHaveBeenNthCalledWith(
       1,
       process.execPath,
-      [expect.stringContaining("bin/conductor.mjs"), "--dry-run"],
+      [path.resolve("src/bin/conductor.mjs"), "--dry-run"],
       expect.objectContaining({ env: process.env, stdio: "inherit" }),
     );
     expect(process.exitCode).toBe(0);

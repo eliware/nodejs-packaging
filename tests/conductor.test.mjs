@@ -1,4 +1,5 @@
 import { expect, jest, test } from "@jest/globals";
+import path from "node:path";
 
 const discoverLatestRelease = jest.fn();
 const discoverLatestNpm = jest.fn();
@@ -109,14 +110,14 @@ test("runs the dry-run plan without requiring a Discord webhook", async () => {
     });
     expect(conductorRuntime).toHaveBeenCalledWith(
       expect.objectContaining({
-        stateRoot: "/tmp/state",
+        stateRoot: path.resolve("/tmp/state"),
         repositoryUrl: "https://repo.example.test",
         baseImage: "quay.io/centos/centos:stream10",
         commands,
       }),
     );
-    expect(runtime.acquireLock).toHaveBeenCalledWith("/tmp/state/lock");
-    expect(runtime.releaseLock).toHaveBeenCalledWith("/tmp/state/lock");
+    expect(runtime.acquireLock).toHaveBeenCalledWith(path.join(path.resolve("/tmp/state"), "lock"));
+    expect(runtime.releaseLock).toHaveBeenCalledWith(path.join(path.resolve("/tmp/state"), "lock"));
     expect(discoverLatestRelease).not.toHaveBeenCalled();
     expect(log).toHaveBeenCalledWith(expect.stringContaining("dry-run passed; no build is needed"));
   } finally {
@@ -136,7 +137,7 @@ test("uses defaults for a dry run that would build a release", async () => {
     expect(conductorRuntime).toHaveBeenCalledWith(
       expect.objectContaining({
         repositoryUrl: "https://nodejs.eliware.org",
-        stateRoot: "/var/lib/eliware/nodejs-packaging/conductor",
+        stateRoot: path.resolve("/var/lib/eliware/nodejs-packaging/conductor"),
       }),
     );
     expect(runtime.releaseLock).toHaveBeenCalled();
@@ -184,7 +185,7 @@ test("runs the release workflow when updates exist", async () => {
         release: releasePlan.release,
         npmRelease: releasePlan.npmRelease,
         currentBaseDigest: "sha256:base",
-        repositoryRoot: "/eliware/nodejs-repository",
+        repositoryRoot: path.resolve("/eliware/nodejs-repository"),
         root: expect.any(String),
         runNode: runtime.runNode,
         runNodeCapture: runtime.runNodeCapture,

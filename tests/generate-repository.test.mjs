@@ -80,7 +80,7 @@ test("generates a signed repository candidate layout and metadata", async () => 
     expect(await fs.readFile(path.join(output, "nodejs26.repo"), "utf8")).toContain("[nodejs26]");
     expect(spawnSync).toHaveBeenCalledWith(
       "createrepo_c",
-      ["--checksum", "sha256", expect.stringContaining("/stable")],
+      ["--checksum", "sha256", expect.stringMatching(/[\\/]stable$/)],
       expect.any(Object),
     );
     expect(write).toHaveBeenCalled();

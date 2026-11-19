@@ -1,4 +1,5 @@
 import { expect, jest, test } from "@jest/globals";
+import path from "node:path";
 import memoryFilesystemFixture from "../test-fixtures/memory-fs.mjs";
 
 const { createMemoryFs } = memoryFilesystemFixture();
@@ -11,7 +12,7 @@ const { repositoryGitSettings, main } = repositoryModule();
 
 test("uses default and configured Git settings", () => {
   expect(repositoryGitSettings()).toEqual({
-    repositoryRoot: "/eliware/nodejs-repository",
+    repositoryRoot: path.resolve("/eliware/nodejs-repository"),
     remote: "origin",
     branch: "main",
     userName: "Eliware",
@@ -19,14 +20,14 @@ test("uses default and configured Git settings", () => {
   });
   expect(
     repositoryGitSettings({
-      NODEJS_REPOSITORY_ROOT: "/tmp/repository",
+      NODEJS_REPOSITORY_ROOT: path.resolve("/tmp/repository"),
       NODEJS_REPOSITORY_GIT_REMOTE: "backup",
       NODEJS_REPOSITORY_GIT_BRANCH: "release",
       NODEJS_REPOSITORY_GIT_USER_NAME: "Build Bot",
       NODEJS_REPOSITORY_GIT_USER_EMAIL: "build@example.test",
     }),
   ).toEqual({
-    repositoryRoot: "/tmp/repository",
+    repositoryRoot: path.resolve("/tmp/repository"),
     remote: "backup",
     branch: "release",
     userName: "Build Bot",
@@ -36,7 +37,7 @@ test("uses default and configured Git settings", () => {
 
 async function setupRepository() {
   spawnSync.mockClear();
-  const root = "/virtual/nodejs-repository";
+  const root = path.resolve("/virtual/nodejs-repository");
   await fs.mkdir(`${root}/metadata`, { recursive: true });
   await fs.writeFile(
     `${root}/metadata/active-generation.json`,
