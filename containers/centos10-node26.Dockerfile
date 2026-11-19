@@ -15,7 +15,7 @@ LABEL org.eliware.nodejs.repository-generation="${REPOSITORY_GENERATION}"
 
 RUN test -n "$NODEJS_REPOSITORY_URL" \
     && printf '[nodejs26]\nname=Eliware Node.js 26\nbaseurl=%s/el10/x86_64/stable/\nenabled=1\ngpgcheck=1\nrepo_gpgcheck=1\ngpgkey=%s/keys/RPM-GPG-KEY-ELIWARE-NODEJS\n' "$NODEJS_REPOSITORY_URL" "$NODEJS_REPOSITORY_URL" > /etc/yum.repos.d/nodejs26.repo \
-    && dnf install -y eliware-nodejs26 \
+    && dnf install -y eliware-node26 \
     && dnf clean all \
     && useradd --uid 10001 --create-home node
 

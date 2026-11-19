@@ -12,15 +12,18 @@ Repackage the official binaries. Do not compile Node.js from source.
 
 ## RPM target
 
-Build only x86_64 RPMs for CentOS Stream 10 EPEL. Name the RPM `eliware-nodejs26`.
+Build only x86_64 RPMs for CentOS Stream 10 EPEL. Name the RPM `eliware-node26`.
 
 Install the versioned archive under `/opt/nodejs/26/<version>/`. Link `/opt/nodejs/26/current` to that version directory.
-Provide `node26`, `npm26`, and `npx26` commands under `/usr/bin`.
+Provide `node`, `npm`, and `npx` commands under `/usr/bin`.
+Obsolete the conflicting CentOS AppStream `nodejs26` package during installation.
+Obsolete the previous `eliware-nodejs26` package during upgrade.
+
 Include npm 12 or later in the same RPM as the initial npm command.
 Keep npm updates and global package data under `/var/lib/eliware/nodejs26/global`.
 
 Set the RPM version to the upstream Node.js version. Set its release to the Eliware package revision.
-Use the package name `eliware-nodejs26` to distinguish it from the CentOS AppStream package.
+Use the package name `eliware-node26` so DNF can distinguish it from CentOS AppStream `nodejs26`.
 Include the bundled npm version in the RPM release so DNF detects npm-only updates.
 
 Use the upstream Linux x64 archive as `Source0`. Do not run `configure`, `make`, or a compiler during RPM construction.

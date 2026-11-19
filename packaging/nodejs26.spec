@@ -1,4 +1,4 @@
-Name:           eliware-nodejs26
+Name:           eliware-node26
 Version:        %{node_version}
 Release:        %{npm_release}%{?dist}
 Summary:        Eliware Node.js 26 JavaScript runtime
@@ -7,6 +7,9 @@ URL:            https://nodejs.org/
 Source0:        node-v%{version}-linux-x64.tar.xz
 Source1:        npm-%{npm_version}.tgz
 BuildArch:      x86_64
+Obsoletes:      nodejs26
+Obsoletes:      nodejs26-npm
+Obsoletes:      eliware-nodejs26
 %global debug_package %{nil}
 %global __os_install_post %{nil}
 
@@ -26,8 +29,9 @@ install -d "%{buildroot}/opt/nodejs/26/%{version}"
 cp -a . "%{buildroot}/opt/nodejs/26/%{version}/"
 ln -s "%{version}" "%{buildroot}/opt/nodejs/26/current"
 install -d "%{buildroot}%{_bindir}"
-ln -s /opt/nodejs/26/current/bin/node "%{buildroot}%{_bindir}/node26"
-cat > "%{buildroot}%{_bindir}/npm26" <<'EOF'
+ln -s /opt/nodejs/26/current/bin/node "%{buildroot}%{_bindir}/node"
+ln -s /usr/bin/node "%{buildroot}%{_bindir}/node26"
+cat > "%{buildroot}%{_bindir}/npm" <<'EOF'
 #!/bin/sh
 prefix=/var/lib/eliware/nodejs26/global
 npm_cli="$prefix/lib/node_modules/npm/bin/npm-cli.js"
@@ -37,7 +41,7 @@ fi
 NPM_CONFIG_PREFIX="$prefix" PATH="$prefix/bin:/opt/nodejs/26/current/bin:$PATH" \
   exec /opt/nodejs/26/current/bin/node "$npm_cli" "$@"
 EOF
-cat > "%{buildroot}%{_bindir}/npx26" <<'EOF'
+cat > "%{buildroot}%{_bindir}/npx" <<'EOF'
 #!/bin/sh
 prefix=/var/lib/eliware/nodejs26/global
 npx_cli="$prefix/lib/node_modules/npm/bin/npx-cli.js"
@@ -47,7 +51,9 @@ fi
 NPM_CONFIG_PREFIX="$prefix" PATH="$prefix/bin:/opt/nodejs/26/current/bin:$PATH" \
   exec /opt/nodejs/26/current/bin/node "$npx_cli" "$@"
 EOF
-chmod 0755 "%{buildroot}%{_bindir}/npm26" "%{buildroot}%{_bindir}/npx26"
+chmod 0755 "%{buildroot}%{_bindir}/npm" "%{buildroot}%{_bindir}/npx"
+ln -s /usr/bin/npm "%{buildroot}%{_bindir}/npm26"
+ln -s /usr/bin/npx "%{buildroot}%{_bindir}/npx26"
 install -d "%{buildroot}/etc/profile.d"
 cat > "%{buildroot}/etc/profile.d/eliware-nodejs26.sh" <<'EOF'
 export PATH="/var/lib/eliware/nodejs26/global/bin:$PATH"
@@ -63,6 +69,9 @@ test "$(./bin/node ./lib/node_modules/npm/bin/npm-cli.js --version)" = "%{npm_ve
 /opt/nodejs/26/current
 /opt/nodejs/26/%{version}
 %config(noreplace) /etc/profile.d/eliware-nodejs26.sh
+%{_bindir}/node
+%{_bindir}/npm
+%{_bindir}/npx
 %{_bindir}/node26
 %{_bindir}/npm26
 %{_bindir}/npx26

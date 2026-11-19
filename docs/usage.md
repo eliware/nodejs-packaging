@@ -53,7 +53,7 @@ The prepare command verifies the signature and archive digest.
 npm run release:prepare
 ```
 
-Build the `eliware-nodejs26` RPM from the verified Node.js archive and npm package:
+Build the `eliware-node26` RPM from the verified Node.js archive and npm package:
 
 ```sh
 npm run release:rpm -- --version 26.13.1
@@ -82,15 +82,17 @@ Keep the private signing key outside Git.
 Install the Eliware package from the signed repository:
 
 ```sh
-sudo dnf install eliware-nodejs26
+sudo yum -y install eliware-node26
 sudo yum -y update
 ```
 
-The RPM installs the Node.js runtime and npm 12 or later. It keeps npm updates, global packages, and linked repositories under `/var/lib/eliware/nodejs26/global`.
+The RPM provides the standard `node`, `npm`, and `npx` commands. It includes npm 12 or later and replaces CentOS AppStream `nodejs26` during installation.
+It keeps npm updates, global packages, and linked repositories under `/var/lib/eliware/nodejs26/global`.
 The RPM adds that directory's `bin` folder and npm prefix through `/etc/profile.d/eliware-nodejs26.sh`.
 The RPM release includes the bundled npm version so `yum check-update` detects npm-only updates.
-Run `npm26 -g install npm@latest` to update npm without changing RPM-owned files.
-Run `npm26 link` from a local package repository to add its commands to the global prefix.
+
+Run `npm -g install npm@latest` to update npm without changing RPM-owned files.
+Run `npm link` from a local package repository to add its commands to the global prefix.
 
 ## Build the image
 

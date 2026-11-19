@@ -46,9 +46,9 @@ if (
 const publishedRelease = catalog.stable?.latest;
 if (
   publishedRelease?.node_version !== version ||
-  publishedRelease.package?.name !== "eliware-nodejs26"
+  publishedRelease.package?.name !== "eliware-node26"
 )
-  throw new Error(`production repository does not publish eliware-nodejs26 ${version}`);
+  throw new Error(`production repository does not publish eliware-node26 ${version}`);
 if (!/^[a-f\d]{64}$/.test(publishedRelease.package.sha256 || ""))
   throw new Error("production catalog does not provide a valid RPM checksum");
 
@@ -106,6 +106,18 @@ try {
   if (smoke.error) throw smoke.error;
   if (smoke.status !== 0 || smoke.stdout.trim() !== `v${version}`)
     throw new Error(`image runtime check failed: ${smoke.stderr || smoke.stdout}`);
+  for (const command of ["npm", "npx"]) {
+    const check = spawnSync(
+      "docker",
+      ["run", "--rm", "--entrypoint", command, image, "--version"],
+      {
+        encoding: "utf8",
+      },
+    );
+    if (check.error) throw check.error;
+    if (check.status !== 0 || check.stdout.trim() !== publishedRelease.npm.version)
+      throw new Error(`${command} runtime check failed: ${check.stderr || check.stdout}`);
+  }
 
   let registryDigest = null;
   if (pushImage) {

@@ -31,7 +31,7 @@ const sourceInput = JSON.parse(
   await readFile(path.join(root, ".state/sources", version, "release-input.json"), "utf8"),
 );
 const rpmPath = path.join(packageDir, rpmRecord.path);
-if (rpmRecord.name !== "eliware-nodejs26" || rpmRecord.version !== version)
+if (rpmRecord.name !== "eliware-node26" || rpmRecord.version !== version)
   throw new Error("RPM record does not match the requested Node.js version");
 
 const now = new Date();

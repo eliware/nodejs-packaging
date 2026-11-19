@@ -7,7 +7,8 @@ directives:
       - Verify the signed upstream checksum before RPM construction.
       - Build RPMs only for CentOS Stream 10 EPEL on x86_64.
       - Build the RPM from the precompiled Node.js archive and npm 12 or later.
-      - Name the RPM eliware-nodejs26 to distinguish it from the CentOS AppStream package.
+      - Name the RPM eliware-node26 and replace the conflicting CentOS AppStream nodejs26 package.
+      - Provide node, npm, and npx commands without manual symlinks or path changes.
     donts:
       - Do not compile Node.js from source.
       - Do not build packages for other operating systems or architectures.

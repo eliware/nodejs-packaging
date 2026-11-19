@@ -4,8 +4,8 @@
   "repository": "epel",
   "architecture": "x86_64",
   "format": "rpm",
-  "package_name": "nodejs26",
+  "package_name": "eliware-node26",
   "install_root": "/opt/nodejs/26",
-  "commands": ["node26", "npm26", "npx26"],
+  "commands": ["node", "npm", "npx"],
   "image": "ghcr.io/eliware/centos10-node26"
 }

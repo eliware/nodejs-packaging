@@ -90,7 +90,7 @@ try {
     .trim()
     .split("\n");
   if (
-    packageInfo[0] !== "eliware-nodejs26" ||
+    packageInfo[0] !== "eliware-node26" ||
     packageInfo[2] !== version ||
     packageInfo[4] !== "x86_64"
   )

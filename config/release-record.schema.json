@@ -86,7 +86,7 @@
         "npm_version"
       ],
       "properties": {
-        "name": { "const": "eliware-nodejs26" },
+        "name": { "const": "eliware-node26" },
         "epoch": { "type": ["integer", "null"], "minimum": 0 },
         "version": { "type": "string", "pattern": "^26\\.[0-9]+\\.[0-9]+$" },
         "release": { "type": "string", "minLength": 1 },
