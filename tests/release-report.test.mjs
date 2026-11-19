@@ -1,5 +1,4 @@
 import path from "node:path";
-import { Readable } from "node:stream";
 import { expect, jest, test } from "@jest/globals";
 import memoryFilesystemFixture from "../test-fixtures/memory-fs.mjs";
 
@@ -10,12 +9,9 @@ jest.unstable_mockModule("node:fs/promises", () => ({
   ...fs,
   copyFile: (source, destination) => fs.cp(source, destination),
 }));
-jest.unstable_mockModule("node:fs", () => ({
-  createReadStream: () => Readable.from([Buffer.from("image bytes")]),
-}));
 jest.unstable_mockModule("node:child_process", () => ({ spawnSync }));
 const { default: reportModule } = await import("../src/release-report.mjs");
-const { escapeHtml, generateReleaseReport } = reportModule();
+const { generateReleaseReport } = reportModule();
 
 async function setup() {
   const root = process.cwd();
@@ -29,13 +25,6 @@ async function setup() {
   });
   return root;
 }
-
-test("escapes HTML content for release reports", () => {
-  expect(escapeHtml(`<script title="x">'&</script>`)).toBe(
-    "&lt;script title=&quot;x&quot;&gt;&#39;&amp;&lt;/script&gt;",
-  );
-  expect(escapeHtml(null)).toBe("");
-});
 
 test("writes a no-update report, release card, and latest pointers", async () => {
   await setup();

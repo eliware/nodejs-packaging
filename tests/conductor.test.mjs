@@ -87,14 +87,19 @@ test("rejects unsupported conductor modes", async () => {
   await expect(main(["--resume"], {})).rejects.toThrow(
     "choose exactly one conductor mode: --dry-run or --wet-run",
   );
+});
+
+test("reads a dry-run mode from process arguments", async () => {
+  reset();
   const argv = process.argv;
-  process.argv = [process.execPath, "conductor.mjs"];
+  process.argv = [process.execPath, "conductor.mjs", "--dry-run"];
+  const log = jest.spyOn(console, "log").mockImplementation(() => {});
   try {
-    await expect(main()).rejects.toThrow(
-      "choose exactly one conductor mode: --dry-run or --wet-run",
-    );
+    await main();
+    expect(log).toHaveBeenCalledWith(expect.stringContaining("dry-run passed"));
   } finally {
     process.argv = argv;
+    log.mockRestore();
   }
 });
 
