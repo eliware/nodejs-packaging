@@ -1,4 +1,4 @@
-import { mkdir, readFile } from "node:fs/promises";
+import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import discoverReleaseModule from "./discover/release.mjs";
@@ -10,9 +10,11 @@ const { resolveReleaseVersion, verifySignature, checksumForFile } = releaseSourc
 import downloadModule from "./prepare/download.mjs";
 import hashModule from "./prepare/hash.mjs";
 import prepareRecordModule from "./prepare/record.mjs";
+import prepareDirectoriesModule from "./prepare/directories.mjs";
 const { download } = downloadModule();
 const { hashFile } = hashModule();
 const { writeReleaseRecord } = prepareRecordModule();
+const { prepareReleaseDirectories } = prepareDirectoriesModule();
 
 async function main(argv = process.argv.slice(2), dependencies = {}) {
   const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
@@ -43,16 +45,18 @@ async function main(argv = process.argv.slice(2), dependencies = {}) {
     args.get("allow-older") === "true",
     discoverRelease,
   );
-  const outputDir = path.join(outputRoot, version);
-  await mkdir(outputDir, { recursive: true, mode: 0o700 });
-
-  const archivePath = path.join(outputDir, release.source.file);
-  const checksumsPath = path.join(outputDir, release.source.checksums_file);
-  const signaturePath = path.join(outputDir, release.source.signature_file);
   const npmRelease = await (dependencies.discoverLatestNpm || discoverLatestNpm)(
     args.get("npm-version") || "latest",
   );
-  const npmArchivePath = path.join(outputDir, npmRelease.file);
+  const {
+    outputDir,
+    archivePath,
+    checksumsPath,
+    signaturePath,
+    npmArchivePath,
+    keyringDir,
+    keyringPath,
+  } = await prepareReleaseDirectories(outputRoot, version, release, npmRelease);
   await download(release.source.url, archivePath, ["nodejs.org", "raw.githubusercontent.com"]);
   await download(release.source.checksums_url, checksumsPath, [
     "nodejs.org",
@@ -64,11 +68,9 @@ async function main(argv = process.argv.slice(2), dependencies = {}) {
   ]);
   await download(npmRelease.url, npmArchivePath, ["registry.npmjs.org"]);
 
-  const keyringDir = path.join(outputDir, "keyring");
-  await mkdir(keyringDir, { recursive: true, mode: 0o700 });
   await download(
     "https://raw.githubusercontent.com/nodejs/release-keys/main/gpg-only-active-keys/pubring.kbx",
-    path.join(keyringDir, "pubring.kbx"),
+    keyringPath,
     ["nodejs.org", "raw.githubusercontent.com"],
   );
   const fingerprint = await verifySignature(keyringDir, signaturePath, checksumsPath);

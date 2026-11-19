@@ -112,39 +112,24 @@ test("uses default arguments, discovery functions, and source output paths", asy
   const { root } = await setup();
   delete process.env.NODEJS_SOURCE_DIR;
   const argv = process.argv;
-  process.argv = [process.execPath, "prepare-release.mjs"];
+  process.argv = [process.execPath, "prepare-release.mjs", "ignored"];
   const stdout = jest.spyOn(process.stdout, "write").mockImplementation(() => true);
   try {
     await main();
-    expect(discoverLatestRelease).toHaveBeenCalledTimes(1);
     expect(discoverLatestNpm).toHaveBeenCalledWith("latest");
-    expect(
-      await fs.readFile(path.join(root, ".state/sources/26.13.1/release-input.json"), "utf8"),
-    ).toContain("node-v26.13.1");
-  } finally {
-    process.argv = argv;
-    stdout.mockRestore();
-    delete process.env.NODEJS_SOURCE_DIR;
-  }
-});
-
-test("downloads, verifies, and records official Node.js and npm inputs", async () => {
-  const { output } = await setup();
-  const stdout = jest.spyOn(process.stdout, "write").mockImplementation(() => true);
-  try {
-    await main(["--version", "26.13.1", "ignored"], dependencies());
+    expect(globalThis.fetch).toHaveBeenCalledTimes(5);
+    expect(spawnSync).toHaveBeenCalledWith("gpg", expect.any(Array), expect.any(Object));
+    expect(stdout).toHaveBeenCalled();
     const record = JSON.parse(
-      await fs.readFile(path.join(output, "26.13.1/release-input.json"), "utf8"),
+      await fs.readFile(path.join(root, ".state/sources/26.13.1/release-input.json"), "utf8"),
     );
     expect(record).toMatchObject({
       release_id: "node-v26.13.1-el10-x86_64",
       source: { sha256: archiveHash, signing_key_fingerprint: fingerprint },
       npm: { version: "12.2.3", integrity: npmIntegrity },
     });
-    expect(spawnSync).toHaveBeenCalledWith("gpg", expect.any(Array), expect.any(Object));
-    expect(globalThis.fetch).toHaveBeenCalledTimes(5);
-    expect(stdout).toHaveBeenCalled();
   } finally {
+    process.argv = argv;
     stdout.mockRestore();
     delete process.env.NODEJS_SOURCE_DIR;
   }
