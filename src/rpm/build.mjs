@@ -1,10 +1,12 @@
-import { createHash } from "node:crypto";
 import { execFileSync, spawnSync } from "node:child_process";
-import { cp, mkdir, mkdtemp, readFile, readdir, rm, stat, writeFile } from "node:fs/promises";
+import { cp, mkdir, mkdtemp, readFile, rm, stat, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import rpmReleaseForNpm from "../rpm-release.mjs";
+import generateFilesModule from "../generate/files.mjs";
+
+const { hashFile, listFiles } = generateFilesModule();
 
 async function main(argv = process.argv.slice(2)) {
   const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
@@ -80,7 +82,9 @@ async function main(argv = process.argv.slice(2)) {
       args.get("output") || path.join(root, "artifacts/rpms", version),
     );
     await mkdir(outputDir, { recursive: true });
-    const rpmFiles = await findFiles(path.join(topdir, "RPMS"), (file) => file.endsWith(".rpm"));
+    const rpmFiles = (await listFiles(path.join(topdir, "RPMS")))
+      .map(({ path: relative }) => path.join(topdir, "RPMS", relative))
+      .filter((file) => file.endsWith(".rpm"));
     if (rpmFiles.length !== 1) throw new Error(`expected one RPM, found ${rpmFiles.length}`);
     const rpmFile = path.join(outputDir, path.basename(rpmFiles[0]));
     await cp(rpmFiles[0], rpmFile);
@@ -114,22 +118,6 @@ async function main(argv = process.argv.slice(2)) {
     process.stdout.write(`${JSON.stringify(record, null, 2)}\n`);
   } finally {
     await rm(temporaryRoot, { recursive: true, force: true });
-  }
-
-  async function hashFile(file, algorithm = "sha256", encoding = "hex") {
-    const hash = createHash(algorithm);
-    hash.update(await readFile(file));
-    return hash.digest(encoding);
-  }
-
-  async function findFiles(directory, predicate) {
-    const files = [];
-    for (const entry of await readdir(directory, { withFileTypes: true })) {
-      const file = path.join(directory, entry.name);
-      if (entry.isDirectory()) files.push(...(await findFiles(file, predicate)));
-      else if (entry.isFile() && predicate(file)) files.push(file);
-    }
-    return files;
   }
 }
 

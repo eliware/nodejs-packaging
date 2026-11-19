@@ -4,7 +4,9 @@ import memoryFilesystemFixture from "../../../test-fixtures/memory-fs.mjs";
 
 const { createMemoryFs } = memoryFilesystemFixture();
 const fs = createMemoryFs();
+const sign = jest.fn(async () => {});
 jest.unstable_mockModule("node:fs/promises", () => fs);
+jest.unstable_mockModule("../../../src/publish/sign.mjs", () => ({ default: () => ({ sign }) }));
 const { default: imageRecordsModule } = await import("../../../src/publish/image/records.mjs");
 const { writeImageRecords } = imageRecordsModule();
 
@@ -17,7 +19,7 @@ test("adds image validation, metadata, and signed provenance records", async () 
     await fs.mkdir(path.dirname(file), { recursive: true });
     await fs.writeFile(file, `${JSON.stringify(value, null, 2)}\n`);
   });
-  const files = { writeJson, sign: jest.fn(async () => {}) };
+  const files = { writeJson };
   const image = {
     repository: "ghcr.io/eliware/centos10-node26",
     tag: "26.13.1",
@@ -73,5 +75,5 @@ test("adds image validation, metadata, and signed provenance records", async () 
   ).toEqual(
     expect.objectContaining({ image: result.imageRecord, source_sha256: image.source_sha256 }),
   );
-  expect(files.sign).toHaveBeenCalledTimes(2);
+  expect(sign).toHaveBeenCalledTimes(2);
 });

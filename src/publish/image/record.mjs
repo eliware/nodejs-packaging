@@ -2,7 +2,9 @@ import { cp, mkdir, readFile, rename, rm } from "node:fs/promises";
 import path from "node:path";
 import publishFilesystemModule from "../filesystem.mjs";
 import imageRecordsModule from "./records.mjs";
+import signModule from "../sign.mjs";
 const files = publishFilesystemModule();
+const { sign } = signModule();
 const { writeImageRecords } = imageRecordsModule();
 
 async function main(argv = process.argv.slice(2)) {
@@ -69,7 +71,7 @@ async function main(argv = process.argv.slice(2)) {
       ]),
     );
     await files.writeJson(manifestPath, manifest);
-    await files.sign(manifestPath, keyFingerprint, gpgHome);
+    await sign(manifestPath, keyFingerprint, gpgHome);
     const indexPath = path.join(stage, "metadata/repository-index.json");
     await files.writeJson(indexPath, {
       metadata_version: "0.1.0",

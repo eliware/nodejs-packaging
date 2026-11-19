@@ -4,11 +4,9 @@ import memoryFilesystemFixture from "../../test-fixtures/memory-fs.mjs";
 
 const { createMemoryFs } = memoryFilesystemFixture();
 const fs = createMemoryFs();
-const defaultSpawn = jest.fn(() => ({ status: 0, stdout: "", stderr: "" }));
 jest.unstable_mockModule("node:fs/promises", () => fs);
-jest.unstable_mockModule("node:child_process", () => ({ spawnSync: defaultSpawn }));
 const { default: publishFilesystemModule } = await import("../../src/publish/filesystem.mjs");
-const { exists, replacePointer, atomicCopy, hashFile, writeJson, sign, listFiles, buildIndex } =
+const { exists, replacePointer, atomicCopy, hashFile, writeJson, listFiles, buildIndex } =
   publishFilesystemModule();
 
 test("checks paths and propagates non-missing filesystem errors", async () => {
@@ -45,27 +43,13 @@ test("replaces repository pointers and copies files atomically", async () => {
   await expect(fs.readFile(destination, "utf8")).resolves.toBe("new");
 });
 
-test("writes JSON, hashes files, and signs with GnuPG", async () => {
+test("writes JSON and hashes files", async () => {
   const root = "/virtual/publish-sign";
   await fs.mkdir(root, { recursive: true });
   const file = path.join(root, "metadata.json");
   await writeJson(file, { version: 1 });
   await expect(fs.readFile(file, "utf8")).resolves.toBe('{\n  "version": 1\n}\n');
   await expect(hashFile(file)).resolves.toMatch(/^[a-f\d]{64}$/);
-  const spawn = jest.fn(() => ({ status: 0, stdout: "", stderr: "" }));
-  await expect(sign(file, "F".repeat(40), root, spawn)).resolves.toBeUndefined();
-  expect(spawn).toHaveBeenCalledWith(
-    "gpg",
-    expect.arrayContaining(["--detach-sign", file]),
-    expect.objectContaining({ env: expect.objectContaining({ GNUPGHOME: root }) }),
-  );
-  const failure = new Error("spawn failed");
-  await expect(sign(file, "F".repeat(40), root, () => ({ error: failure }))).rejects.toBe(failure);
-  await expect(
-    sign(file, "F".repeat(40), root, () => ({ status: 2, stderr: "bad key" })),
-  ).rejects.toThrow("gpg exited with status 2: bad key");
-  await expect(sign(file, "F".repeat(40), root)).resolves.toBeUndefined();
-  expect(defaultSpawn).toHaveBeenCalled();
 });
 
 test("lists repository files and builds an index with exclusions", async () => {

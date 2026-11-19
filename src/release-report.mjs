@@ -1,8 +1,9 @@
-import { createHash } from "node:crypto";
 import { copyFile, mkdir, readFile, writeFile } from "node:fs/promises";
-import { spawnSync } from "node:child_process";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import renderCardModule from "./report/render-card.mjs";
+
+const { renderCard } = renderCardModule();
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const escapeHtml = (value) =>
@@ -56,23 +57,7 @@ async function generateReleaseReport({
   const htmlPath = path.join(directory, "release-card.html");
   const imagePath = path.join(directory, "release-card.png");
   await writeFile(htmlPath, html);
-  const chrome = process.env.CHROME_BIN || "/usr/bin/google-chrome";
-  const render = spawnSync(
-    chrome,
-    [
-      "--headless",
-      "--no-sandbox",
-      "--disable-gpu",
-      "--hide-scrollbars",
-      "--window-size=1200,630",
-      `--screenshot=${imagePath}`,
-      `file://${htmlPath}`,
-    ],
-    { encoding: "utf8", timeout: 60_000 },
-  );
-  if (render.error) throw render.error;
-  if (render.status !== 0) throw new Error(`release-card rendering failed: ${render.stderr}`);
-  const imageSha256 = await hashFile(imagePath);
+  const imageSha256 = await renderCard(htmlPath, imagePath);
   const baseUrl = process.env.NODEJS_REPOSITORY_URL || "https://nodejs.eliware.org";
   const cardUrl = `${baseUrl}/metadata/runs/${runId}/release-card.png`;
   const report = {
@@ -105,13 +90,6 @@ async function generateReleaseReport({
     `${JSON.stringify({ metadata_version: "0.1.0", schema: 1, run_id: runId, report: `${baseUrl}/metadata/runs/${runId}/release-report.json`, card: report.card.latest }, null, 2)}\n`,
   );
   return { cardUrl, reportPath, imagePath, imageSha256 };
-}
-
-async function hashFile(file) {
-  const hash = createHash("sha256");
-  const { createReadStream } = await import("node:fs");
-  for await (const chunk of createReadStream(file)) hash.update(chunk);
-  return hash.digest("hex");
 }
 
 export default function moduleApi() {

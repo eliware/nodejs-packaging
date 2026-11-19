@@ -4,7 +4,9 @@ import memoryFilesystemFixture from "../../test-fixtures/memory-fs.mjs";
 
 const { createMemoryFs } = memoryFilesystemFixture();
 const fs = createMemoryFs();
+const sign = jest.fn(async () => {});
 jest.unstable_mockModule("node:fs/promises", () => fs);
+jest.unstable_mockModule("../../src/publish/sign.mjs", () => ({ default: () => ({ sign }) }));
 const { default: releaseGenerationModule } =
   await import("../../src/publish/release-generation.mjs");
 const { prepareReleaseGeneration } = releaseGenerationModule();
@@ -20,7 +22,6 @@ test("signs RPM and repository metadata and completes release manifests", async 
     writeJson: jest.fn(async (file, value) => {
       await fs.writeFile(file, `${JSON.stringify(value, null, 2)}\n`);
     }),
-    sign: jest.fn(async () => {}),
     listFiles: jest.fn(async () => [{ path: rpmName }]),
     buildIndex: jest.fn(async () => ({ "/": { entries: [] } })),
   };
@@ -55,7 +56,7 @@ test("signs RPM and repository metadata and completes release manifests", async 
   expect(run).toHaveBeenCalledWith("rpmsign", expect.any(Array), expect.any(Object));
   expect(run).toHaveBeenCalledWith("createrepo_c", expect.any(Array));
   expect(run).toHaveBeenCalledWith("gpg", expect.any(Array), expect.any(Object));
-  expect(files.sign).toHaveBeenCalledTimes(3);
+  expect(sign).toHaveBeenCalledTimes(3);
   expect(
     JSON.parse(await fs.readFile(path.join(metadata, "catalog.json"), "utf8")).stable.latest
       .package,

@@ -1,5 +1,8 @@
 import { mkdir, readFile, stat, writeFile, rm } from "node:fs/promises";
 import path from "node:path";
+import signModule from "./sign.mjs";
+
+const { sign } = signModule();
 
 async function prepareReleaseGeneration({
   stagingRoot,
@@ -37,8 +40,8 @@ async function prepareReleaseGeneration({
     capture: true,
   });
   await writeFile(publicKeyPath, publicKey.stdout);
-  await files.sign(path.join(stablePath, "repodata/repomd.xml"), keyFingerprint, gpgHome);
-  await files.sign(provenancePath, keyFingerprint, gpgHome);
+  await sign(path.join(stablePath, "repodata/repomd.xml"), keyFingerprint, gpgHome);
+  await sign(provenancePath, keyFingerprint, gpgHome);
 
   const catalogPath = path.join(stagingRoot, "metadata/catalog.json");
   const catalog = JSON.parse(await readFile(catalogPath, "utf8"));
@@ -75,7 +78,7 @@ async function prepareReleaseGeneration({
     ]),
   );
   await files.writeJson(manifestPath, manifest);
-  await files.sign(manifestPath, keyFingerprint, gpgHome);
+  await sign(manifestPath, keyFingerprint, gpgHome);
   await files.writeJson(path.join(stagingRoot, "metadata/repository-index.json"), {
     metadata_version: "0.1.0",
     schema: 1,

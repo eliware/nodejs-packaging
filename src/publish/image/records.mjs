@@ -1,5 +1,8 @@
 import { mkdir, readFile, rm } from "node:fs/promises";
 import path from "node:path";
+import signModule from "../sign.mjs";
+
+const { sign } = signModule();
 
 async function writeImageRecords({
   stage,
@@ -51,7 +54,7 @@ async function writeImageRecords({
   packageProvenance.generation_id = generationId;
   await files.writeJson(packageProvenancePath, packageProvenance);
   await rm(`${packageProvenancePath}.asc`, { force: true });
-  await files.sign(packageProvenancePath, keyFingerprint, gpgHome);
+  await sign(packageProvenancePath, keyFingerprint, gpgHome);
 
   await files.writeJson(path.join(stage, "metadata/validation/image.json"), {
     metadata_version: "0.1.0",
@@ -82,7 +85,7 @@ async function writeImageRecords({
     validation_path: "metadata/validation/image.json",
     generated,
   });
-  await files.sign(imageProvenancePath, keyFingerprint, gpgHome);
+  await sign(imageProvenancePath, keyFingerprint, gpgHome);
   const active = { metadata_version: "0.1.0", schema: 1, generation: generationId, generated };
   await files.writeJson(path.join(stage, "metadata/active-generation.json"), active);
   await files.writeJson(path.join(stage, "generation.json"), active);

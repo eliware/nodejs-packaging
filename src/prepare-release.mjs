@@ -1,7 +1,4 @@
-import { createHash } from "node:crypto";
-import { createWriteStream } from "node:fs";
-import { mkdir, readFile, rename, rm, writeFile } from "node:fs/promises";
-import { pipeline } from "node:stream/promises";
+import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import discoverReleaseModule from "./discover/release.mjs";
@@ -10,6 +7,10 @@ import discoverNpmModule from "./discover/npm.mjs";
 const { discoverLatestNpm } = discoverNpmModule();
 import releaseSourceModule from "./prepare/release-source.mjs";
 const { resolveReleaseVersion, verifySignature, checksumForFile } = releaseSourceModule();
+import downloadModule from "./prepare/download.mjs";
+import hashModule from "./prepare/hash.mjs";
+const { download } = downloadModule();
+const { hashFile } = hashModule();
 
 async function main(argv = process.argv.slice(2), dependencies = {}) {
   const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
@@ -50,16 +51,23 @@ async function main(argv = process.argv.slice(2), dependencies = {}) {
     args.get("npm-version") || "latest",
   );
   const npmArchivePath = path.join(outputDir, npmRelease.file);
-  await download(release.source.url, archivePath);
-  await download(release.source.checksums_url, checksumsPath);
-  await download(release.source.signature_url, signaturePath);
-  await downloadFrom(npmRelease.url, npmArchivePath, ["registry.npmjs.org"]);
+  await download(release.source.url, archivePath, ["nodejs.org", "raw.githubusercontent.com"]);
+  await download(release.source.checksums_url, checksumsPath, [
+    "nodejs.org",
+    "raw.githubusercontent.com",
+  ]);
+  await download(release.source.signature_url, signaturePath, [
+    "nodejs.org",
+    "raw.githubusercontent.com",
+  ]);
+  await download(npmRelease.url, npmArchivePath, ["registry.npmjs.org"]);
 
   const keyringDir = path.join(outputDir, "keyring");
   await mkdir(keyringDir, { recursive: true, mode: 0o700 });
   await download(
     "https://raw.githubusercontent.com/nodejs/release-keys/main/gpg-only-active-keys/pubring.kbx",
     path.join(keyringDir, "pubring.kbx"),
+    ["nodejs.org", "raw.githubusercontent.com"],
   );
   const fingerprint = await verifySignature(keyringDir, signaturePath, checksumsPath);
   if (!keyConfig.fingerprints.includes(fingerprint))
@@ -109,29 +117,6 @@ async function main(argv = process.argv.slice(2), dependencies = {}) {
     { mode: 0o600 },
   );
   process.stdout.write(`${JSON.stringify(record, null, 2)}\n`);
-
-  async function download(url, destination) {
-    return downloadFrom(url, destination, ["nodejs.org", "raw.githubusercontent.com"]);
-  }
-
-  async function downloadFrom(url, destination, trustedHosts) {
-    const response = await fetch(url, { signal: AbortSignal.timeout(120_000) });
-    const finalUrl = new URL(response.url || url);
-    if (!response.ok) throw new Error(`download failed with HTTP ${response.status}: ${url}`);
-    if (finalUrl.protocol !== "https:" || !trustedHosts.includes(finalUrl.hostname))
-      throw new Error(`download left the trusted HTTPS hosts: ${url}`);
-    const temporaryPath = `${destination}.part`;
-    await rm(temporaryPath, { force: true });
-    await pipeline(response.body, createWriteStream(temporaryPath, { mode: 0o600 }));
-    await rename(temporaryPath, destination);
-  }
-
-  async function hashFile(file, algorithm = "sha256", encoding = "hex") {
-    const hash = createHash(algorithm);
-    const { createReadStream } = await import("node:fs");
-    for await (const chunk of createReadStream(file)) hash.update(chunk);
-    return hash.digest(encoding);
-  }
 }
 
 export default function moduleApi() {

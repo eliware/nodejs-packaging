@@ -12,10 +12,10 @@ async function exists(file, statFile = stat) {
   }
 }
 
-async function hashFile(file) {
-  const hash = createHash("sha256");
+async function hashFile(file, algorithm = "sha256", encoding = "hex") {
+  const hash = createHash(algorithm);
   hash.update(await readFile(file));
-  return hash.digest("hex");
+  return hash.digest(encoding);
 }
 
 async function listFiles(directory, relative = "") {

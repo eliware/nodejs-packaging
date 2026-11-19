@@ -1,5 +1,4 @@
 import { createHash } from "node:crypto";
-import { spawnSync as spawnProcessSync } from "node:child_process";
 import {
   cp,
   lstat as statLink,
@@ -44,17 +43,6 @@ async function hashFile(file) {
 
 async function writeJson(file, value) {
   await writeFile(file, `${JSON.stringify(value, null, 2)}\n`);
-}
-
-async function sign(file, fingerprint, home, spawnSync = spawnProcessSync) {
-  const result = spawnSync(
-    "gpg",
-    ["--batch", "--yes", "--local-user", fingerprint, "--armor", "--detach-sign", file],
-    { encoding: "utf8", env: { ...process.env, GNUPGHOME: home } },
-  );
-  if (result.error) throw result.error;
-  if (result.status !== 0)
-    throw new Error(`gpg exited with status ${result.status}: ${result.stderr}`);
 }
 
 async function listFiles(directory, exclude = new Set(), relative = "") {
@@ -104,5 +92,5 @@ async function buildIndex(directory, relative = "/", excludedPath = "") {
 }
 
 export default function publishFilesystemModule() {
-  return { exists, replacePointer, atomicCopy, hashFile, writeJson, sign, listFiles, buildIndex };
+  return { exists, replacePointer, atomicCopy, hashFile, writeJson, listFiles, buildIndex };
 }
