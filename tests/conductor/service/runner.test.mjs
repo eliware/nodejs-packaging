@@ -21,7 +21,11 @@ test("spawns the conductor with the process environment", async () => {
   expect(spawn).toHaveBeenCalledWith(
     process.execPath,
     ["/workspace/bin/conductor.mjs", "--dry-run"],
-    { cwd: "/workspace", env: process.env, stdio: "inherit" },
+    {
+      cwd: "/workspace",
+      env: { ...process.env, NODEJS_CONDUCTOR_SERVICE: "true" },
+      stdio: "inherit",
+    },
   );
 });
 

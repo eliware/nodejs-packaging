@@ -123,7 +123,7 @@ async function runConductor() {
     });
   } catch (error) {
     console.error(`[conductor] ${stage} failed: ${error.message}`);
-    if (!dryRun)
+    if (!dryRun && process.env.NODEJS_CONDUCTOR_SERVICE !== "true")
       await notifyConductor({
         title: `Node.js conductor ${stage} failed`,
         description:

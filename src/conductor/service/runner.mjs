@@ -4,7 +4,7 @@ function runConductor(mode, { root, conductor, spawn = spawnProcess }) {
   return new Promise((resolve, reject) => {
     const child = spawn(process.execPath, [conductor, mode], {
       cwd: root,
-      env: process.env,
+      env: { ...process.env, NODEJS_CONDUCTOR_SERVICE: "true" },
       stdio: "inherit",
     });
     child.once("error", reject);
