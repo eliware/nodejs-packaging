@@ -1,0 +1,11 @@
+{
+  "distribution": "centos-stream",
+  "version": "10",
+  "repository": "epel",
+  "architecture": "x86_64",
+  "format": "rpm",
+  "package_name": "nodejs26",
+  "install_root": "/opt/nodejs/26",
+  "commands": ["node26", "npm26", "npx26"],
+  "image": "ghcr.io/eliware/centos10-node26"
+}

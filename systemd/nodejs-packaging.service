@@ -1,0 +1,19 @@
+[Unit]
+Description=Node.js packaging conductor
+ConditionPathIsDirectory=/eliware/nodejs-packaging
+After=network-online.target docker.service
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=root
+WorkingDirectory=/eliware/nodejs-packaging
+EnvironmentFile=/etc/gluster-packaging/release.env
+Environment=NODEJS_REPOSITORY_ROOT=/eliware/nodejs-repository
+Environment=NODEJS_REPOSITORY_URL=https://nodejs.eliware.org
+Environment=NODEJS_SIGNING_KEY=211A17FA065DC1658B59F535CD1848CDE8845C0B
+Environment=NODEJS_GNUPGHOME=/var/lib/eliware/nodejs-signing/gnupg
+Environment=NODEJS_CONDUCTOR_STATE_ROOT=/var/lib/eliware/nodejs-packaging/conductor
+Environment=CHROME_BIN=/usr/bin/google-chrome
+ExecStart=/usr/local/bin/node /eliware/nodejs-packaging/scripts/conductor-service.mjs
+TimeoutStartSec=0

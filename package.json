@@ -1,0 +1,22 @@
+{
+  "name": "nodejs-packaging",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Local Node.js 26 update conductor, signed RPM repository, and runtime image release pipeline.",
+  "engines": {
+    "node": ">=26"
+  },
+  "scripts": {
+    "release:discover": "node scripts/discover-release.mjs",
+    "release:prepare": "node scripts/prepare-release.mjs",
+    "release:rpm": "node scripts/build-rpm.mjs",
+    "release:repository": "node scripts/generate-repository.mjs",
+    "release:publish": "node scripts/publish-release.mjs",
+    "release:image": "node scripts/build-image.mjs",
+    "release:record-image": "node scripts/publish-image-record.mjs",
+    "conductor": "node scripts/conductor.mjs",
+    "conductor:service": "node scripts/conductor-service.mjs",
+    "test": "node --test tests/*.test.mjs"
+  }
+}

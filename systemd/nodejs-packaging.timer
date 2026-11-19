@@ -1,0 +1,10 @@
+[Unit]
+Description=Daily Node.js packaging update check at 8 AM EST
+
+[Timer]
+OnCalendar=*-*-* 13:00:00 UTC
+Persistent=true
+Unit=nodejs-packaging.service
+
+[Install]
+WantedBy=timers.target
