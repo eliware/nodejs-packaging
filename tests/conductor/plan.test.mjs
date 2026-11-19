@@ -1,4 +1,4 @@
-import planRelease from "../src/conductor-plan.mjs";
+import planRelease from "../../src/conductor/plan.mjs";
 
 const base =
   "quay.io/centos/centos@sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";

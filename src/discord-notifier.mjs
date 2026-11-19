@@ -2,20 +2,19 @@ import { log } from "@eliware/common";
 import { sendMessage } from "@eliware/discord-webhook";
 
 const colors = { success: 0x2ecc71, failure: 0xe74c3c, warning: 0xf5c451, info: 0x3498db };
-const webhookUrl = process.env.CONDUCTOR_DISCORD_WEBHOOK || process.env.DISCORD_WEBHOOK || "";
 
-export function hasDiscordWebhook() {
-  return Boolean(webhookUrl);
+function getWebhookUrl(env = process.env) {
+  return env.CONDUCTOR_DISCORD_WEBHOOK || env.DISCORD_WEBHOOK || "";
 }
 
-export async function notifyConductor({
-  title,
-  description,
-  status = "info",
-  fields = [],
-  cardUrl = "",
-}) {
-  if (!webhookUrl) return false;
+function hasDiscordWebhook(env = process.env) {
+  return Boolean(getWebhookUrl(env));
+}
+
+function createConductorEmbed(
+  { title, description, status = "info", fields = [], cardUrl = "" },
+  timestamp = new Date().toISOString(),
+) {
   const embed = {
     title: String(title).slice(0, 256),
     description: String(description).slice(0, 4096),
@@ -27,11 +26,18 @@ export async function notifyConductor({
     })),
     author: { name: "Eliware Node.js Release Conductor" },
     footer: { text: "Certified Node.js 26 release · nodejs.eliware.org" },
-    timestamp: new Date().toISOString(),
+    timestamp,
   };
   if (cardUrl) embed.image = { url: cardUrl };
+  return embed;
+}
+
+async function notifyConductor(options, dependencies = {}) {
+  const webhookUrl = getWebhookUrl(dependencies.env);
+  if (!webhookUrl) return false;
+  const embed = createConductorEmbed(options, dependencies.now?.() || new Date().toISOString());
   try {
-    const response = await sendMessage({
+    const response = await (dependencies.sendMessage || sendMessage)({
       url: webhookUrl,
       timeoutMs: 10_000,
       body: { username: "Node.js Conductor", embeds: [embed] },
@@ -39,7 +45,11 @@ export async function notifyConductor({
     if (!response.ok) throw new Error(`Discord returned HTTP ${response.status}`);
     return true;
   } catch (error) {
-    log.warn(`[conductor] Discord notification failed: ${error.message}`);
+    (dependencies.log || log).warn(`[conductor] Discord notification failed: ${error.message}`);
     return false;
   }
+}
+
+export default function moduleApi() {
+  return { getWebhookUrl, hasDiscordWebhook, createConductorEmbed, notifyConductor };
 }

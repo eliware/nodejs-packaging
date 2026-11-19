@@ -18,7 +18,7 @@ const escapeHtml = (value) =>
       })[character],
   );
 
-export async function generateReleaseReport({
+async function generateReleaseReport({
   runId,
   repositoryRoot,
   nodeVersion,
@@ -112,4 +112,8 @@ async function hashFile(file) {
   const { createReadStream } = await import("node:fs");
   for await (const chunk of createReadStream(file)) hash.update(chunk);
   return hash.digest("hex");
+}
+
+export default function moduleApi() {
+  return { escapeHtml, generateReleaseReport };
 }

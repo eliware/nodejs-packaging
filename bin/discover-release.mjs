@@ -1,56 +1,6 @@
-import { pathToFileURL } from "node:url";
+#!/usr/bin/env node
+import sourceModule from "../src/discover/release.mjs";
+const { main } = sourceModule();
 
-const RELEASE_INDEX_URL = "https://nodejs.org/dist/index.json";
-
-function numericVersion(version) {
-  const match = /^v(26)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$/.exec(version);
-  if (!match) return null;
-  return match.slice(1).map(Number);
-}
-
-function compareVersions(left, right) {
-  for (let index = 0; index < left.length; index += 1) {
-    if (left[index] !== right[index]) return left[index] - right[index];
-  }
-  return 0;
-}
-
-export async function discoverLatestRelease(fetchImpl = fetch) {
-  const response = await fetchImpl(RELEASE_INDEX_URL, {
-    headers: { accept: "application/json" },
-    signal: AbortSignal.timeout(30_000),
-  });
-  if (!response.ok) throw new Error(`Node.js release index returned HTTP ${response.status}`);
-
-  const releases = await response.json();
-  if (!Array.isArray(releases)) throw new Error("Node.js release index must contain an array");
-
-  const latest = releases
-    .map((release) => ({ release, version: numericVersion(release?.version) }))
-    .filter(({ release, version }) => version && release.files?.includes("linux-x64"))
-    .sort((left, right) => compareVersions(right.version, left.version))[0];
-
-  if (!latest) throw new Error("Node.js release index has no stable Node.js 26 x64 release");
-
-  const version = latest.release.version.slice(1);
-  const directory = `https://nodejs.org/dist/${latest.release.version}/`;
-  return {
-    metadata_version: "0.1.0",
-    schema: 1,
-    node_version: version,
-    released: latest.release.date,
-    source: {
-      file: `node-v${version}-linux-x64.tar.xz`,
-      url: `${directory}node-v${version}-linux-x64.tar.xz`,
-      checksums_file: "SHASUMS256.txt",
-      checksums_url: `${directory}SHASUMS256.txt`,
-      signature_file: "SHASUMS256.txt.sig",
-      signature_url: `${directory}SHASUMS256.txt.sig`,
-    },
-  };
-}
-
-if (import.meta.url === pathToFileURL(process.argv[1]).href) {
-  const release = await discoverLatestRelease();
-  process.stdout.write(`${JSON.stringify(release, null, 2)}\n`);
-}
+const release = await main();
+process.stdout.write(`${JSON.stringify(release, null, 2)}\n`);

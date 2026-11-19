@@ -1,7 +1,7 @@
 #!/usr/bin/env node
-export async function discoverLatestNpm(requestedVersion = "latest") {
+async function discoverLatestNpm(requestedVersion = "latest", fetchImpl = fetch) {
   const metadataUrl = `https://registry.npmjs.org/npm/${encodeURIComponent(requestedVersion)}`;
-  const response = await fetch(metadataUrl, {
+  const response = await fetchImpl(metadataUrl, {
     signal: AbortSignal.timeout(30_000),
   });
   if (!response.ok) throw new Error(`npm registry returned HTTP ${response.status}`);
@@ -26,4 +26,8 @@ export async function discoverLatestNpm(requestedVersion = "latest") {
     url: tarball.href,
     integrity: metadata.dist.integrity,
   };
+}
+
+export default function moduleApi() {
+  return { discoverLatestNpm };
 }
