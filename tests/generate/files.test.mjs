@@ -7,7 +7,7 @@ const { createMemoryFs } = memoryFilesystemFixture();
 const fs = createMemoryFs();
 jest.unstable_mockModule("node:fs/promises", () => fs);
 const { default: generateFilesModule } = await import("../../src/generate/files.mjs");
-const { exists, hashFile, listFiles, buildIndex } = generateFilesModule();
+const { exists, hashFile, listFiles } = generateFilesModule();
 
 test("lists files with checksums and builds a recursive repository index", async () => {
   const root = "/virtual/generate-files";
@@ -35,27 +35,10 @@ test("lists files with checksums and builds a recursive repository index", async
     size: 7,
   });
   await fs.rm(path.join(root, "link.txt"));
-
-  const index = await buildIndex(root);
-  expect(index["/"].entries).toEqual([
-    expect.objectContaining({ name: "folder", type: "directory", href: "/folder/" }),
-    expect.objectContaining({
-      name: "root.txt",
-      type: "file",
-      href: "/root.txt",
-      sha256: expect.any(String),
-    }),
-  ]);
-  expect(index["/folder/"]).toEqual({
-    path: "/folder/",
-    entries: [expect.objectContaining({ name: "a file.txt", href: "/folder/a%20file.txt" })],
-    total: 1,
-  });
 });
 
-test("returns an empty list and index for an empty directory", async () => {
+test("returns an empty list for an empty directory", async () => {
   const root = "/virtual/generate-files-empty";
   await fs.mkdir(root, { recursive: true });
   await expect(listFiles(root)).resolves.toEqual([]);
-  await expect(buildIndex(root)).resolves.toEqual({ "/": { path: "/", entries: [], total: 0 } });
 });

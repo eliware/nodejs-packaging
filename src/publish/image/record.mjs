@@ -3,8 +3,12 @@ import path from "node:path";
 import publishFilesystemModule from "../filesystem.mjs";
 import imageRecordsModule from "./records.mjs";
 import signModule from "../sign.mjs";
+import generateIndexModule from "../../generate/index.mjs";
+import activateGenerationModule from "../activate-generation.mjs";
 const files = publishFilesystemModule();
 const { sign } = signModule();
+const { buildIndex } = generateIndexModule();
+const { activateGeneration } = activateGenerationModule();
 const { writeImageRecords } = imageRecordsModule();
 
 async function main(argv = process.argv.slice(2)) {
@@ -77,31 +81,11 @@ async function main(argv = process.argv.slice(2)) {
       metadata_version: "0.1.0",
       schema: 1,
       generated,
-      directories: await files.buildIndex(stage, "/", "metadata/repository-index.json"),
+      directories: await buildIndex(stage, "/", "metadata/repository-index.json"),
     });
 
     await rename(stage, finalRoot);
-    await files.replacePointer(
-      path.join(repositoryRoot, "el10/x86_64/stable"),
-      path.join(finalRoot, "el10/x86_64/stable"),
-    );
-    const metadataRoot = path.join(repositoryRoot, "metadata");
-    for (const name of ["provenance", "releases", "validation"])
-      await files.replacePointer(
-        path.join(metadataRoot, name),
-        path.join(finalRoot, "metadata", name),
-      );
-    for (const name of [
-      "catalog.json",
-      "repository-index.json",
-      "release-manifest.json",
-      "release-manifest.json.asc",
-    ])
-      await files.atomicCopy(path.join(finalRoot, "metadata", name), path.join(metadataRoot, name));
-    await files.atomicCopy(
-      path.join(finalRoot, "metadata/active-generation.json"),
-      path.join(metadataRoot, "active-generation.json"),
-    );
+    await activateGeneration({ repositoryRoot, generationRoot: finalRoot, files });
     process.stdout.write(
       `${JSON.stringify({ generation: generationId, image: imageRecord }, null, 2)}\n`,
     );

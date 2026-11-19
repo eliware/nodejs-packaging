@@ -1,10 +1,12 @@
 import { spawnSync } from "node:child_process";
-import { cp, lstat, mkdir, readFile, readdir, rename, rm, symlink } from "node:fs/promises";
+import { cp, lstat, mkdir, readFile, readdir, rename, rm } from "node:fs/promises";
 import path from "node:path";
 import publishFilesystemModule from "./filesystem.mjs";
 import releaseGenerationModule from "./release-generation.mjs";
+import activateGenerationModule from "./activate-generation.mjs";
 const files = publishFilesystemModule();
 const { prepareReleaseGeneration } = releaseGenerationModule();
+const { activateGeneration } = activateGenerationModule();
 
 async function main(argv = process.argv.slice(2)) {
   const args = new Map();
@@ -56,51 +58,31 @@ async function main(argv = process.argv.slice(2)) {
 
     await rename(stagingRoot, finalRoot);
     const stablePointer = path.join(repositoryRoot, "el10/x86_64/stable");
-    await mkdir(path.dirname(stablePointer), { recursive: true });
     if (await files.exists(stablePointer)) {
       const info = await lstat(stablePointer);
       if (info.isDirectory() && (await readdir(stablePointer)).length)
         throw new Error("stable repository path is not empty");
-      await rm(stablePointer, { recursive: true, force: true });
     }
-    await symlink(
-      path.relative(path.dirname(stablePointer), path.join(finalRoot, "el10/x86_64/stable")),
-      stablePointer,
-    );
-    await mkdir(path.join(repositoryRoot, "keys"), { recursive: true });
-    await cp(
-      path.join(finalRoot, "keys/RPM-GPG-KEY-ELIWARE-NODEJS"),
-      path.join(repositoryRoot, "keys/RPM-GPG-KEY-ELIWARE-NODEJS"),
-    );
-    await cp(path.join(finalRoot, "nodejs26.repo"), path.join(repositoryRoot, "nodejs26.repo"));
-    const publicMetadataRoot = path.join(repositoryRoot, "metadata");
     for (const name of ["provenance", "releases", "validation"]) {
-      const publicPath = path.join(publicMetadataRoot, name);
+      const publicPath = path.join(repositoryRoot, "metadata", name);
       if (await files.exists(publicPath)) {
         const info = await lstat(publicPath);
         if (info.isDirectory() && (await readdir(publicPath)).length)
           throw new Error(`metadata path is not empty: ${publicPath}`);
-        await rm(publicPath, { recursive: true, force: true });
       }
-      await symlink(
-        path.relative(publicMetadataRoot, path.join(finalRoot, "metadata", name)),
-        publicPath,
-      );
     }
-    for (const name of ["catalog.json", "repository-index.json", "release-manifest.json"]) {
-      await files.atomicCopy(
-        path.join(finalRoot, "metadata", name),
-        path.join(repositoryRoot, "metadata", name),
-      );
-    }
-    await files.atomicCopy(
-      path.join(finalRoot, "metadata/release-manifest.json.asc"),
-      path.join(repositoryRoot, "metadata/release-manifest.json.asc"),
-    );
-    await files.atomicCopy(
-      path.join(finalRoot, "metadata/active-generation.json"),
-      path.join(repositoryRoot, "metadata/active-generation.json"),
-    );
+    await activateGeneration({
+      repositoryRoot,
+      generationRoot: finalRoot,
+      files,
+      rootFiles: [
+        {
+          source: "keys/RPM-GPG-KEY-ELIWARE-NODEJS",
+          destination: "keys/RPM-GPG-KEY-ELIWARE-NODEJS",
+        },
+        { source: "nodejs26.repo", destination: "nodejs26.repo" },
+      ],
+    });
     process.stdout.write(
       `${JSON.stringify({ generation: generationId, repository: repositoryRoot, rpm_sha256: rpmSha256, signing_key: keyFingerprint }, null, 2)}\n`,
     );

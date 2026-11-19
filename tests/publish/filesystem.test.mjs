@@ -6,7 +6,7 @@ const { createMemoryFs } = memoryFilesystemFixture();
 const fs = createMemoryFs();
 jest.unstable_mockModule("node:fs/promises", () => fs);
 const { default: publishFilesystemModule } = await import("../../src/publish/filesystem.mjs");
-const { exists, replacePointer, atomicCopy, hashFile, writeJson, listFiles, buildIndex } =
+const { exists, replacePointer, atomicCopy, hashFile, writeJson, listFiles } =
   publishFilesystemModule();
 
 test("checks paths and propagates non-missing filesystem errors", async () => {
@@ -62,16 +62,4 @@ test("lists repository files and builds an index with exclusions", async () => {
   expect(files.map(({ path: name }) => name)).toEqual(["folder/a file.txt", "metadata.json"]);
   await fs.rm(path.join(root, "link.json"));
   await expect(listFiles(root, new Set(["metadata.json"]), "")).resolves.toHaveLength(1);
-  const index = await buildIndex(root, "/", "metadata.json");
-  expect(index["/"].entries).toEqual([
-    expect.objectContaining({ name: "folder", type: "directory" }),
-  ]);
-  expect(index["/folder/"]).toEqual({
-    path: "/folder/",
-    entries: [expect.objectContaining({ name: "a file.txt", href: "/folder/a%20file.txt" })],
-    total: 1,
-  });
-  expect((await buildIndex(root))["/"].entries).toEqual(
-    expect.arrayContaining([expect.objectContaining({ name: "metadata.json", type: "file" })]),
-  );
 });

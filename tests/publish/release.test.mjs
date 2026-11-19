@@ -17,6 +17,11 @@ const files = {
     }
   },
   atomicCopy: (source, destination) => fs.cp(source, destination),
+  replacePointer: async (pointer, target) => {
+    await fs.mkdir(path.dirname(pointer), { recursive: true });
+    await fs.rm(pointer, { recursive: true, force: true });
+    await fs.symlink(path.relative(path.dirname(pointer), target), pointer);
+  },
 };
 jest.unstable_mockModule("node:fs/promises", () => fs);
 jest.unstable_mockModule("node:child_process", () => ({ spawnSync }));

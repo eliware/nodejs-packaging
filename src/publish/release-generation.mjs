@@ -1,8 +1,10 @@
 import { mkdir, readFile, stat, writeFile, rm } from "node:fs/promises";
 import path from "node:path";
 import signModule from "./sign.mjs";
+import generateIndexModule from "../generate/index.mjs";
 
 const { sign } = signModule();
+const { buildIndex } = generateIndexModule();
 
 async function prepareReleaseGeneration({
   stagingRoot,
@@ -83,7 +85,7 @@ async function prepareReleaseGeneration({
     metadata_version: "0.1.0",
     schema: 1,
     generated: active.generated,
-    directories: await files.buildIndex(stagingRoot, "/", "metadata/repository-index.json"),
+    directories: await buildIndex(stagingRoot, "/", "metadata/repository-index.json"),
   });
   return { rpmSha256 };
 }

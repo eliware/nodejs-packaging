@@ -2,8 +2,10 @@ import { spawnSync } from "node:child_process";
 import { cp, mkdir, mkdtemp, readFile, rename, rm, stat, writeFile } from "node:fs/promises";
 import path from "node:path";
 import generateFilesModule from "./generate/files.mjs";
+import generateIndexModule from "./generate/index.mjs";
 import generateRecordsModule from "./generate/records.mjs";
-const { exists, hashFile, listFiles, buildIndex } = generateFilesModule();
+const { exists, hashFile, listFiles } = generateFilesModule();
+const { buildIndex } = generateIndexModule();
 const { writeReleaseRecords } = generateRecordsModule();
 import { fileURLToPath } from "node:url";
 

@@ -5,8 +5,12 @@ import memoryFilesystemFixture from "../../test-fixtures/memory-fs.mjs";
 const { createMemoryFs } = memoryFilesystemFixture();
 const fs = createMemoryFs();
 const sign = jest.fn(async () => {});
+const buildIndex = jest.fn(async () => ({ "/": { entries: [] } }));
 jest.unstable_mockModule("node:fs/promises", () => fs);
 jest.unstable_mockModule("../../src/publish/sign.mjs", () => ({ default: () => ({ sign }) }));
+jest.unstable_mockModule("../../src/generate/index.mjs", () => ({
+  default: () => ({ buildIndex }),
+}));
 const { default: releaseGenerationModule } =
   await import("../../src/publish/release-generation.mjs");
 const { prepareReleaseGeneration } = releaseGenerationModule();
@@ -23,7 +27,6 @@ test("signs RPM and repository metadata and completes release manifests", async 
       await fs.writeFile(file, `${JSON.stringify(value, null, 2)}\n`);
     }),
     listFiles: jest.fn(async () => [{ path: rpmName }]),
-    buildIndex: jest.fn(async () => ({ "/": { entries: [] } })),
   };
   await fs.mkdir(path.join(stablePath, "repodata"), { recursive: true });
   await fs.mkdir(path.join(metadata, "releases"), { recursive: true });

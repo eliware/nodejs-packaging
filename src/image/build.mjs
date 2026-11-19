@@ -4,7 +4,9 @@ import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import buildCatalogModule from "../repository/catalog.mjs";
+import imagePublishModule from "./publish.mjs";
 const { loadPublishedRelease } = buildCatalogModule();
+const { publishImage } = imagePublishModule();
 
 async function main(argv = process.argv.slice(2)) {
   const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
@@ -91,20 +93,7 @@ async function main(argv = process.argv.slice(2)) {
     }
 
     let registryDigest = null;
-    if (pushImage) {
-      const push = spawnSync("docker", ["push", image], {
-        encoding: "utf8",
-        maxBuffer: 10 * 1024 * 1024,
-      });
-      if (push.error) throw push.error;
-      if (push.stdout) process.stdout.write(push.stdout);
-      if (push.stderr) process.stderr.write(push.stderr);
-      if (push.status !== 0) throw new Error(`docker push exited with status ${push.status}`);
-      registryDigest =
-        `${push.stdout}\n${push.stderr}`.match(/digest:\s*(sha256:[a-f0-9]{64})/i)?.[1] || null;
-      if (!registryDigest)
-        throw new Error("docker push completed without reporting an image digest");
-    }
+    if (pushImage) registryDigest = await publishImage(image);
 
     const inspect = JSON.parse(
       spawnSync("docker", ["image", "inspect", image], { encoding: "utf8" }).stdout,

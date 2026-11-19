@@ -32,38 +32,6 @@ async function listFiles(directory, relative = "") {
   return files.sort((left, right) => left.path.localeCompare(right.path));
 }
 
-async function buildIndex(directory, relative = "/") {
-  const directories = {};
-  const entries = await readdir(directory, { withFileTypes: true });
-  const items = [];
-  for (const entry of entries) {
-    const file = path.join(directory, entry.name);
-    const info = await stat(file);
-    const isDirectory = info.isDirectory();
-    const href = `${relative}${encodeURIComponent(entry.name)}${isDirectory ? "/" : ""}`;
-    const item = {
-      name: entry.name,
-      type: isDirectory ? "directory" : "file",
-      size: isDirectory ? null : info.size,
-      modified: info.mtime.toISOString(),
-      href,
-    };
-    if (!isDirectory) item.sha256 = await hashFile(file);
-    items.push(item);
-  }
-  items.sort((left, right) => left.name.localeCompare(right.name));
-  directories[relative] = { path: relative, entries: items, total: items.length };
-  for (const item of items.filter((entry) => entry.type === "directory"))
-    Object.assign(
-      directories,
-      await buildIndex(
-        path.join(directory, item.name),
-        `${relative}${encodeURIComponent(item.name)}/`,
-      ),
-    );
-  return directories;
-}
-
 export default function generateFilesModule() {
-  return { exists, hashFile, listFiles, buildIndex };
+  return { exists, hashFile, listFiles };
 }
