@@ -92,3 +92,25 @@ test("uses injected service dependencies and sets a failed process status", asyn
     process.exitCode = 0;
   }
 });
+
+test("keeps the failed process status when failure notification rejects", async () => {
+  const run = jest.fn().mockRejectedValue(new Error("preflight failed"));
+  const notify = jest.fn().mockRejectedValue(new Error("notification failed"));
+  const info = jest.spyOn(console, "info").mockImplementation(() => {});
+  const error = jest.spyOn(console, "error").mockImplementation(() => {});
+  try {
+    process.exitCode = 0;
+    await expect(
+      runConductorService({ run, notify, log: { info() {}, error() {} } }),
+    ).resolves.toBe(false);
+    await main({ run, notify });
+    expect(process.exitCode).toBe(1);
+    expect(error).toHaveBeenCalledWith(
+      "[conductor-service] failure notification failed: notification failed",
+    );
+  } finally {
+    info.mockRestore();
+    error.mockRestore();
+    process.exitCode = 0;
+  }
+});

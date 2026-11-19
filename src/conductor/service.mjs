@@ -17,18 +17,22 @@ async function runConductorService({ run, notify, log = console }) {
     return true;
   } catch (error) {
     log.error(`[conductor-service] ${phase} failed: ${error.message}`);
-    await notify({
-      title: `Node.js conductor ${phase} failed`,
-      description:
-        phase === "dry-run"
-          ? "The preflight failed. The release run did not start."
-          : "The release run stopped after preflight.",
-      status: "failure",
-      fields: [
-        { name: "Phase", value: phase },
-        { name: "Error", value: error.message },
-      ],
-    });
+    try {
+      await notify({
+        title: `Node.js conductor ${phase} failed`,
+        description:
+          phase === "dry-run"
+            ? "The preflight failed. The release run did not start."
+            : "The release run stopped after preflight.",
+        status: "failure",
+        fields: [
+          { name: "Phase", value: phase },
+          { name: "Error", value: error.message },
+        ],
+      });
+    } catch (notificationError) {
+      log.error(`[conductor-service] failure notification failed: ${notificationError.message}`);
+    }
     return false;
   }
 }
