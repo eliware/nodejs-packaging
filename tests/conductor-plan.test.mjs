@@ -1,45 +1,107 @@
-import test from "node:test";
-import assert from "node:assert/strict";
-import { planRelease } from "../scripts/conductor-plan.mjs";
+import planRelease from "../src/conductor-plan.mjs";
 
-const base = "quay.io/centos/centos@sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
+const base =
+  "quay.io/centos/centos@sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
 
-test("builds the RPM and image when Node.js has a newer stable release", () => {
-  const plan = planRelease({
-    latestNodeVersion: "26.14.0", publishedNodeVersion: "26.13.1",
-    publishedBaseImageDigest: base, currentBaseImageDigest: base, publishedImageDigest: "sha256:image",
+function plan(overrides = {}) {
+  return planRelease({
+    latestNodeVersion: "26.13.1",
+    publishedNodeVersion: "26.13.1",
+    latestNpmVersion: "12.2.3",
+    publishedNpmVersion: "12.2.3",
+    publishedBaseImageDigest: base,
+    currentBaseImageDigest: base,
+    publishedImageDigest: "sha256:image",
+    ...overrides,
   });
-  assert.equal(plan.buildRpm, true);
-  assert.equal(plan.buildImage, true);
-  assert.equal(plan.reason, "nodejs-update");
+}
+
+test("builds the RPM and image when Node.js has a newer release", () => {
+  const result = plan({ latestNodeVersion: "26.14.0" });
+  expect(result.nodeUpdate).toBe(true);
+  expect(result.npmUpdate).toBe(false);
+  expect(result.buildRpm).toBe(true);
+  expect(result.buildImage).toBe(true);
+  expect(result.reason).toBe("nodejs-update");
+});
+
+test("builds the RPM and image when npm has a newer release", () => {
+  const result = plan({ latestNpmVersion: "12.2.4" });
+  expect(result.nodeUpdate).toBe(false);
+  expect(result.npmUpdate).toBe(true);
+  expect(result.buildRpm).toBe(true);
+  expect(result.buildImage).toBe(true);
+  expect(result.reason).toBe("npm-update");
+});
+
+test("builds the RPM and image when Node.js and npm both update", () => {
+  const result = plan({ latestNodeVersion: "26.14.0", latestNpmVersion: "12.3.0" });
+  expect(result.buildRpm).toBe(true);
+  expect(result.buildImage).toBe(true);
+  expect(result.reason).toBe("nodejs-and-npm-update");
 });
 
 test("builds only the image when the CentOS base digest changes", () => {
-  const plan = planRelease({
-    latestNodeVersion: "26.13.1", publishedNodeVersion: "26.13.1",
-    publishedBaseImageDigest: base, currentBaseImageDigest: `${base.slice(0, -1)}b`, publishedImageDigest: "sha256:image",
-  });
-  assert.equal(plan.buildRpm, false);
-  assert.equal(plan.buildImage, true);
-  assert.equal(plan.reason, "base-image-update");
+  const result = plan({ currentBaseImageDigest: `${base.slice(0, -1)}b` });
+  expect(result.buildRpm).toBe(false);
+  expect(result.buildImage).toBe(true);
+  expect(result.baseImageUpdate).toBe(true);
+  expect(result.reason).toBe("base-image-update");
 });
 
-test("does nothing when Node.js and the image base match the published release", () => {
-  const plan = planRelease({
-    latestNodeVersion: "26.13.1", publishedNodeVersion: "26.13.1",
-    publishedBaseImageDigest: base, currentBaseImageDigest: base, publishedImageDigest: "sha256:image",
-  });
-  assert.equal(plan.buildRpm, false);
-  assert.equal(plan.buildImage, false);
-  assert.equal(plan.noOp, true);
+test("does nothing when Node.js, npm, and the base image match", () => {
+  const result = plan();
+  expect(result.buildRpm).toBe(false);
+  expect(result.buildImage).toBe(false);
+  expect(result.noOp).toBe(true);
+  expect(result.reason).toBe("no-updates");
 });
 
-test("creates an image baseline when no image record exists", () => {
-  const plan = planRelease({
-    latestNodeVersion: "26.13.1", publishedNodeVersion: "26.13.1",
-    publishedBaseImageDigest: null, currentBaseImageDigest: base, publishedImageDigest: null,
+test("does nothing when no image record exists and upstream versions match", () => {
+  const result = plan({
+    publishedBaseImageDigest: null,
+    publishedImageDigest: null,
   });
-  assert.equal(plan.buildRpm, false);
-  assert.equal(plan.buildImage, true);
-  assert.equal(plan.reason, "image-baseline");
+  expect(result.buildRpm).toBe(false);
+  expect(result.buildImage).toBe(false);
+  expect(result.noOp).toBe(true);
+  expect(result.reason).toBe("no-updates");
+});
+
+test("builds the RPM when the published release has no npm version", () => {
+  const result = plan({ publishedNpmVersion: null });
+  expect(result.npmUpdate).toBe(true);
+  expect(result.buildRpm).toBe(true);
+  expect(result.buildImage).toBe(true);
+  expect(result.reason).toBe("npm-update");
+});
+
+test("rejects unsupported latest Node.js versions", () => {
+  expect(() => plan({ latestNodeVersion: "27.0.0" })).toThrow(
+    "Node.js versions must use the 26.x.y format",
+  );
+});
+
+test("rejects a malformed published Node.js version", () => {
+  expect(() => plan({ publishedNodeVersion: "latest" })).toThrow(
+    "Node.js versions must use the 26.x.y format",
+  );
+});
+
+test("rejects npm versions older than version 12", () => {
+  expect(() => plan({ latestNpmVersion: "11.9.0" })).toThrow(
+    "npm versions must use the 12.0.0 or later format",
+  );
+});
+
+test("rejects a missing latest npm version", () => {
+  expect(() => plan({ latestNpmVersion: undefined })).toThrow(
+    "npm versions must use the 12.0.0 or later format",
+  );
+});
+
+test("rejects a malformed published npm version", () => {
+  expect(() => plan({ publishedNpmVersion: "latest" })).toThrow(
+    "npm versions must use the 12.0.0 or later format",
+  );
 });

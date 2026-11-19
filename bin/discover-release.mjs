@@ -20,12 +20,10 @@ export async function discoverLatestRelease(fetchImpl = fetch) {
     headers: { accept: "application/json" },
     signal: AbortSignal.timeout(30_000),
   });
-  if (!response.ok)
-    throw new Error(`Node.js release index returned HTTP ${response.status}`);
+  if (!response.ok) throw new Error(`Node.js release index returned HTTP ${response.status}`);
 
   const releases = await response.json();
-  if (!Array.isArray(releases))
-    throw new Error("Node.js release index must contain an array");
+  if (!Array.isArray(releases)) throw new Error("Node.js release index must contain an array");
 
   const latest = releases
     .map((release) => ({ release, version: numericVersion(release?.version) }))

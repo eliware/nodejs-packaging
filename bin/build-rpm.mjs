@@ -5,6 +5,7 @@ import { cp, mkdir, mkdtemp, readFile, readdir, rm, stat, writeFile } from "node
 import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import rpmReleaseForNpm from "../src/rpm-release.mjs";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const args = new Map();
@@ -36,13 +37,20 @@ const archive = path.join(path.dirname(releaseInput), input.source.file);
 const archiveHash = await hashFile(archive);
 if (archiveHash !== input.source.sha256)
   throw new Error(`prepared archive checksum does not match release input: ${archive}`);
+if (!input.npm || !/^(1[2-9]|[2-9][0-9]+)\.\d+\.\d+$/.test(input.npm.version || ""))
+  throw new Error("release input must include a verified npm package archive");
+const npmArchive = path.join(path.dirname(releaseInput), input.npm.file);
+const npmIntegrity = `sha512-${await hashFile(npmArchive, "sha512", "base64")}`;
+if (npmIntegrity !== input.npm.integrity)
+  throw new Error(`prepared npm archive integrity does not match release input: ${npmArchive}`);
 
 const temporaryRoot = await mkdtemp(path.join(os.tmpdir(), "nodejs26-rpmbuild-"));
 const topdir = path.join(temporaryRoot, "rpmbuild");
 for (const directory of ["BUILD", "BUILDROOT", "RPMS", "SOURCES", "SPECS", "SRPMS"])
   await mkdir(path.join(topdir, directory), { recursive: true });
 await cp(archive, path.join(topdir, "SOURCES", input.source.file));
-await cp(path.join(root, "specs/nodejs26.spec"), path.join(topdir, "SPECS/nodejs26.spec"));
+await cp(npmArchive, path.join(topdir, "SOURCES", input.npm.file));
+await cp(path.join(root, "packaging/nodejs26.spec"), path.join(topdir, "SPECS/nodejs26.spec"));
 
 try {
   execFileSync("rpmbuild", ["--version"], { stdio: "ignore" });
@@ -57,6 +65,10 @@ try {
       `_rpmdir ${path.join(topdir, "RPMS")}`,
       "--define",
       `node_version ${version}`,
+      "--define",
+      `npm_version ${input.npm.version}`,
+      "--define",
+      `npm_release ${rpmReleaseForNpm(input.npm.version)}`,
       path.join(topdir, "SPECS/nodejs26.spec"),
     ],
     { encoding: "utf8", stdio: "inherit" },
@@ -74,8 +86,14 @@ try {
     "rpm",
     ["-qp", "--queryformat", "%{NAME}\n%{EPOCH}\n%{VERSION}\n%{RELEASE}\n%{ARCH}\n", rpmFile],
     { encoding: "utf8" },
-  ).trim().split("\n");
-  if (packageInfo[0] !== "nodejs26" || packageInfo[2] !== version || packageInfo[4] !== "x86_64")
+  )
+    .trim()
+    .split("\n");
+  if (
+    packageInfo[0] !== "eliware-nodejs26" ||
+    packageInfo[2] !== version ||
+    packageInfo[4] !== "x86_64"
+  )
     throw new Error(`built RPM metadata does not match target: ${packageInfo.join(" ")}`);
 
   const info = await stat(rpmFile);
@@ -85,6 +103,7 @@ try {
     version: packageInfo[2],
     release: packageInfo[3],
     architecture: packageInfo[4],
+    npm_version: input.npm.version,
     path: path.basename(rpmFile),
     sha256: await hashFile(rpmFile),
     size: info.size,
@@ -95,11 +114,11 @@ try {
   await rm(temporaryRoot, { recursive: true, force: true });
 }
 
-async function hashFile(file) {
-  const hash = createHash("sha256");
+async function hashFile(file, algorithm = "sha256", encoding = "hex") {
+  const hash = createHash(algorithm);
   const { createReadStream } = await import("node:fs");
   for await (const chunk of createReadStream(file)) hash.update(chunk);
-  return hash.digest("hex");
+  return hash.digest(encoding);
 }
 
 async function findFiles(directory, predicate) {

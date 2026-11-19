@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://github.com/eliware/nodejs-packaging/blob/main/specs/release-record.schema.json",
+  "$id": "https://github.com/eliware/nodejs-packaging/blob/main/config/release-record.schema.json",
   "title": "Node.js release record",
   "type": "object",
   "additionalProperties": false,
@@ -12,6 +12,7 @@
     "node_version",
     "target",
     "source",
+    "npm",
     "package",
     "validation",
     "provenance_path",
@@ -39,29 +40,61 @@
     "source": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["url", "file", "sha256", "signature_url", "signing_key_fingerprint", "verified_at"],
+      "required": [
+        "url",
+        "file",
+        "sha256",
+        "signature_url",
+        "signing_key_fingerprint",
+        "verified_at"
+      ],
       "properties": {
         "url": { "type": "string", "format": "uri" },
-        "file": { "type": "string", "pattern": "^node-v26\\.[0-9]+\\.[0-9]+-linux-x64\\.tar\\.xz$" },
+        "file": {
+          "type": "string",
+          "pattern": "^node-v26\\.[0-9]+\\.[0-9]+-linux-x64\\.tar\\.xz$"
+        },
         "sha256": { "$ref": "#/$defs/sha256" },
         "signature_url": { "type": "string", "format": "uri" },
         "signing_key_fingerprint": { "type": "string", "pattern": "^[A-F0-9]{40}$" },
         "verified_at": { "type": "string", "format": "date-time" }
       }
     },
+    "npm": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["version", "file", "url", "integrity"],
+      "properties": {
+        "version": { "type": "string", "pattern": "^(1[2-9]|[2-9][0-9]+)\\.[0-9]+\\.[0-9]+$" },
+        "file": { "type": "string", "pattern": "^npm-[0-9]+\\.[0-9]+\\.[0-9]+\\.tgz$" },
+        "url": { "type": "string", "format": "uri" },
+        "integrity": { "type": "string", "pattern": "^sha512-[A-Za-z0-9+/]+=*$" }
+      }
+    },
     "package": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["name", "epoch", "version", "release", "architecture", "path", "sha256", "size"],
+      "required": [
+        "name",
+        "epoch",
+        "version",
+        "release",
+        "architecture",
+        "path",
+        "sha256",
+        "size",
+        "npm_version"
+      ],
       "properties": {
-        "name": { "const": "nodejs26" },
+        "name": { "const": "eliware-nodejs26" },
         "epoch": { "type": ["integer", "null"], "minimum": 0 },
         "version": { "type": "string", "pattern": "^26\\.[0-9]+\\.[0-9]+$" },
         "release": { "type": "string", "minLength": 1 },
         "architecture": { "const": "x86_64" },
         "path": { "type": "string", "pattern": "\\.rpm$" },
         "sha256": { "$ref": "#/$defs/sha256" },
-        "size": { "type": "integer", "minimum": 1 }
+        "size": { "type": "integer", "minimum": 1 },
+        "npm_version": { "type": "string", "pattern": "^(1[2-9]|[2-9][0-9]+)\\.[0-9]+\\.[0-9]+$" }
       }
     },
     "validation": {
@@ -79,13 +112,25 @@
     "image": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["repository", "tag", "digest", "base_image", "base_image_digest", "rpm_sha256", "validation", "provenance_path"],
+      "required": [
+        "repository",
+        "tag",
+        "digest",
+        "base_image",
+        "base_image_digest",
+        "rpm_sha256",
+        "validation",
+        "provenance_path"
+      ],
       "properties": {
         "repository": { "const": "ghcr.io/eliware/centos10-node26" },
         "tag": { "type": "string", "minLength": 1 },
         "digest": { "type": "string", "pattern": "^sha256:[a-f0-9]{64}$" },
         "base_image": { "const": "quay.io/centos/centos:stream10" },
-        "base_image_digest": { "type": "string", "pattern": "^quay.io/centos/centos@sha256:[a-f0-9]{64}$" },
+        "base_image_digest": {
+          "type": "string",
+          "pattern": "^quay.io/centos/centos@sha256:[a-f0-9]{64}$"
+        },
         "rpm_sha256": { "$ref": "#/$defs/sha256" },
         "validation": { "const": "passed" },
         "provenance_path": { "type": "string", "minLength": 1 }

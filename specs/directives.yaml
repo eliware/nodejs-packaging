@@ -1,0 +1,32 @@
+version: "15.2"
+description: Defines Node.js package and image release requirements.
+directives:
+  - id: E-7101.0
+    dos:
+      - Package the newest stable Node.js 26 release from the official Linux x64 tarball.
+      - Verify the signed upstream checksum before RPM construction.
+      - Build RPMs only for CentOS Stream 10 EPEL on x86_64.
+      - Build the RPM from the precompiled Node.js archive and npm 12 or later.
+      - Name the RPM eliware-nodejs26 to distinguish it from the CentOS AppStream package.
+    donts:
+      - Do not compile Node.js from source.
+      - Do not build packages for other operating systems or architectures.
+  - id: E-7101.1
+    dos:
+      - Check the Node.js index, npm latest version, and CentOS base image digest once each day.
+      - Build an RPM and image when Node.js has a newer stable version.
+      - Build an RPM and image when npm has a newer stable version.
+      - Build only an image when the CentOS base image digest changes.
+      - Skip builds when all three checked inputs match the published release.
+    donts:
+      - Do not use GitHub Actions to build Node.js RPMs.
+      - Do not publish an image before its runtime check passes.
+  - id: E-7101.2
+    dos:
+      - Sign RPMs, repository metadata, release manifests, and provenance records.
+      - Publish complete immutable generations before you set active metadata.
+      - Commit and push the completed repository generation.
+      - Send a Discord message after each passed release checkpoint.
+    donts:
+      - Do not store private signing keys or webhook URLs in Git.
+      - Do not alter GitOps repositories from this pipeline.

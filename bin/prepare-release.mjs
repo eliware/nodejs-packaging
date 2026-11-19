@@ -7,14 +7,13 @@ import { pipeline } from "node:stream/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { discoverLatestRelease } from "./discover-release.mjs";
+import { discoverLatestNpm } from "./discover-npm.mjs";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const keyConfig = JSON.parse(
   await readFile(path.join(root, "build-config/nodejs-release-keys.json"), "utf8"),
 );
-const outputRoot = path.resolve(
-  process.env.NODEJS_SOURCE_DIR || path.join(root, ".state/sources"),
-);
+const outputRoot = path.resolve(process.env.NODEJS_SOURCE_DIR || path.join(root, ".state/sources"));
 const args = new Map();
 for (let index = 2; index < process.argv.length; index += 1) {
   if (process.argv[index].startsWith("--"))
@@ -37,9 +36,12 @@ await mkdir(outputDir, { recursive: true, mode: 0o700 });
 const archivePath = path.join(outputDir, release.source.file);
 const checksumsPath = path.join(outputDir, release.source.checksums_file);
 const signaturePath = path.join(outputDir, release.source.signature_file);
+const npmRelease = await discoverLatestNpm(args.get("npm-version") || "latest");
+const npmArchivePath = path.join(outputDir, npmRelease.file);
 await download(release.source.url, archivePath);
 await download(release.source.checksums_url, checksumsPath);
 await download(release.source.signature_url, signaturePath);
+await downloadFrom(npmRelease.url, npmArchivePath, ["registry.npmjs.org"]);
 
 const keyringDir = path.join(outputDir, "keyring");
 await mkdir(keyringDir, { recursive: true, mode: 0o700 });
@@ -56,6 +58,9 @@ const checksum = checksumForFile(checksums, release.source.file);
 const archiveSha256 = await hashFile(archivePath);
 if (archiveSha256 !== checksum)
   throw new Error(`archive checksum mismatch for ${release.source.file}`);
+const npmArchiveSha512 = await hashFile(npmArchivePath, "sha512", "base64");
+if (`sha512-${npmArchiveSha512}` !== npmRelease.integrity)
+  throw new Error(`npm archive integrity mismatch for ${npmRelease.file}`);
 
 const record = {
   metadata_version: "0.1.0",
@@ -77,6 +82,12 @@ const record = {
     signature_url: release.source.signature_url,
     signing_key_fingerprint: fingerprint,
     verified_at: new Date().toISOString(),
+  },
+  npm: {
+    version: npmRelease.version,
+    file: npmRelease.file,
+    url: npmRelease.url,
+    integrity: npmRelease.integrity,
   },
   prepared_at: new Date().toISOString(),
 };
@@ -108,13 +119,14 @@ async function discoverVersion(requestedVersion) {
 }
 
 async function download(url, destination) {
+  return downloadFrom(url, destination, ["nodejs.org", "raw.githubusercontent.com"]);
+}
+
+async function downloadFrom(url, destination, trustedHosts) {
   const response = await fetch(url, { signal: AbortSignal.timeout(120_000) });
   const finalUrl = new URL(response.url || url);
   if (!response.ok) throw new Error(`download failed with HTTP ${response.status}: ${url}`);
-  if (
-    finalUrl.protocol !== "https:" ||
-    !["nodejs.org", "raw.githubusercontent.com"].includes(finalUrl.hostname)
-  )
+  if (finalUrl.protocol !== "https:" || !trustedHosts.includes(finalUrl.hostname))
     throw new Error(`download left the trusted HTTPS hosts: ${url}`);
   const temporaryPath = `${destination}.part`;
   await rm(temporaryPath, { force: true });
@@ -131,9 +143,7 @@ function verifySignature(keyringDirPath, signature, content) {
   if (result.error) throw result.error;
   if (result.status !== 0)
     throw new Error(`Node.js checksum signature verification failed: ${result.stderr.trim()}`);
-  const status = result.stdout
-    .split("\n")
-    .find((line) => line.startsWith("[GNUPG:] VALIDSIG "));
+  const status = result.stdout.split("\n").find((line) => line.startsWith("[GNUPG:] VALIDSIG "));
   if (!status) throw new Error("GnuPG did not report a valid Node.js checksum signature");
   const fields = status.trim().split(/\s+/);
   return fields[11] || fields[2];
@@ -148,9 +158,9 @@ function checksumForFile(text, fileName) {
   return matches[0][1];
 }
 
-async function hashFile(file) {
-  const hash = createHash("sha256");
+async function hashFile(file, algorithm = "sha256", encoding = "hex") {
+  const hash = createHash(algorithm);
   const { createReadStream } = await import("node:fs");
   for await (const chunk of createReadStream(file)) hash.update(chunk);
-  return hash.digest("hex");
+  return hash.digest(encoding);
 }

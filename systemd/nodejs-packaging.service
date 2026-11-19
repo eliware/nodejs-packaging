@@ -15,5 +15,5 @@ Environment=NODEJS_SIGNING_KEY=211A17FA065DC1658B59F535CD1848CDE8845C0B
 Environment=NODEJS_GNUPGHOME=/var/lib/eliware/nodejs-signing/gnupg
 Environment=NODEJS_CONDUCTOR_STATE_ROOT=/var/lib/eliware/nodejs-packaging/conductor
 Environment=CHROME_BIN=/usr/bin/google-chrome
-ExecStart=/usr/local/bin/node /eliware/nodejs-packaging/scripts/conductor-service.mjs
+ExecStart=/usr/local/bin/node /eliware/nodejs-packaging/bin/conductor-service.mjs
 TimeoutStartSec=0

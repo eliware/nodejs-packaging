@@ -17,9 +17,14 @@ if (!/^26\.(0|[1-9]\d*)\.(0|[1-9]\d*)$/.test(version || ""))
   throw new Error("pass a stable Node.js 26 version with --version");
 
 const repositoryUrl = process.env.NODEJS_REPOSITORY_URL;
-if (!repositoryUrl) throw new Error("set NODEJS_REPOSITORY_URL to the production Node.js HTTP service");
+if (!repositoryUrl)
+  throw new Error("set NODEJS_REPOSITORY_URL to the production Node.js HTTP service");
 const parsedRepositoryUrl = new URL(repositoryUrl);
-if (parsedRepositoryUrl.protocol !== "https:" || parsedRepositoryUrl.username || parsedRepositoryUrl.password)
+if (
+  parsedRepositoryUrl.protocol !== "https:" ||
+  parsedRepositoryUrl.username ||
+  parsedRepositoryUrl.password
+)
   throw new Error("NODEJS_REPOSITORY_URL must use HTTPS and contain no credentials");
 if (parsedRepositoryUrl.pathname !== "/" || parsedRepositoryUrl.search || parsedRepositoryUrl.hash)
   throw new Error("NODEJS_REPOSITORY_URL must name the production service root");
@@ -28,13 +33,22 @@ const catalogResponse = await fetch(`${repositoryBase}/metadata/catalog.json`, {
   signal: AbortSignal.timeout(30_000),
 });
 if (!catalogResponse.ok)
-  throw new Error(`Node.js HTTP service returned HTTP ${catalogResponse.status} for the release catalog`);
+  throw new Error(
+    `Node.js HTTP service returned HTTP ${catalogResponse.status} for the release catalog`,
+  );
 const catalog = await catalogResponse.json();
-if (catalog.metadata_version !== "0.1.0" || catalog.node_major !== 26 || catalog.target?.architecture !== "x86_64")
+if (
+  catalog.metadata_version !== "0.1.0" ||
+  catalog.node_major !== 26 ||
+  catalog.target?.architecture !== "x86_64"
+)
   throw new Error("production catalog does not match the Node.js 26 x86_64 release contract");
 const publishedRelease = catalog.stable?.latest;
-if (publishedRelease?.node_version !== version || publishedRelease.package?.name !== "nodejs26")
-  throw new Error(`production repository does not publish nodejs26 ${version}`);
+if (
+  publishedRelease?.node_version !== version ||
+  publishedRelease.package?.name !== "eliware-nodejs26"
+)
+  throw new Error(`production repository does not publish eliware-nodejs26 ${version}`);
 if (!/^[a-f\d]{64}$/.test(publishedRelease.package.sha256 || ""))
   throw new Error("production catalog does not provide a valid RPM checksum");
 
@@ -50,11 +64,15 @@ if (pull.status !== 0) throw new Error(`docker pull exited with status ${pull.st
 const baseInspect = JSON.parse(
   spawnSync("docker", ["image", "inspect", baseImage], { encoding: "utf8" }).stdout,
 )[0];
-const baseDigest = (baseInspect.RepoDigests || []).find((digest) => digest.startsWith("quay.io/centos/centos@sha256:"));
+const baseDigest = (baseInspect.RepoDigests || []).find((digest) =>
+  digest.startsWith("quay.io/centos/centos@sha256:"),
+);
 if (!baseDigest) throw new Error(`Docker did not report an immutable digest for ${baseImage}`);
 const expectedBaseDigest = args.get("base-digest");
 if (expectedBaseDigest && baseDigest !== expectedBaseDigest)
-  throw new Error(`CentOS base image changed during the conductor run: expected ${expectedBaseDigest}, found ${baseDigest}`);
+  throw new Error(
+    `CentOS base image changed during the conductor run: expected ${expectedBaseDigest}, found ${baseDigest}`,
+  );
 const context = await mkdtemp(path.join(os.tmpdir(), "centos10-node26-image-"));
 try {
   const build = spawnSync(
@@ -82,23 +100,25 @@ try {
   if (build.error) throw build.error;
   if (build.status !== 0) throw new Error(`docker build exited with status ${build.status}`);
 
-  const smoke = spawnSync(
-    "docker",
-    ["run", "--rm", "--entrypoint", "node", image, "--version"],
-    { encoding: "utf8" },
-  );
+  const smoke = spawnSync("docker", ["run", "--rm", "--entrypoint", "node", image, "--version"], {
+    encoding: "utf8",
+  });
   if (smoke.error) throw smoke.error;
   if (smoke.status !== 0 || smoke.stdout.trim() !== `v${version}`)
     throw new Error(`image runtime check failed: ${smoke.stderr || smoke.stdout}`);
 
   let registryDigest = null;
   if (pushImage) {
-    const push = spawnSync("docker", ["push", image], { encoding: "utf8", maxBuffer: 10 * 1024 * 1024 });
+    const push = spawnSync("docker", ["push", image], {
+      encoding: "utf8",
+      maxBuffer: 10 * 1024 * 1024,
+    });
     if (push.error) throw push.error;
     if (push.stdout) process.stdout.write(push.stdout);
     if (push.stderr) process.stderr.write(push.stderr);
     if (push.status !== 0) throw new Error(`docker push exited with status ${push.status}`);
-    registryDigest = `${push.stdout}\n${push.stderr}`.match(/digest:\s*(sha256:[a-f0-9]{64})/i)?.[1] || null;
+    registryDigest =
+      `${push.stdout}\n${push.stderr}`.match(/digest:\s*(sha256:[a-f0-9]{64})/i)?.[1] || null;
     if (!registryDigest) throw new Error("docker push completed without reporting an image digest");
   }
 
@@ -120,7 +140,9 @@ try {
     validation: "passed",
     built_at: new Date().toISOString(),
   };
-  const resultDir = path.resolve(args.get("output") || path.join(root, "artifacts/images", version));
+  const resultDir = path.resolve(
+    args.get("output") || path.join(root, "artifacts/images", version),
+  );
   await mkdir(resultDir, { recursive: true });
   await writeFile(path.join(resultDir, "image.json"), `${JSON.stringify(record, null, 2)}\n`);
   process.stdout.write(`${JSON.stringify(record, null, 2)}\n`);

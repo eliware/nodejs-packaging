@@ -1,22 +1,112 @@
 {
-  "name": "nodejs-packaging",
-  "version": "0.1.0",
-  "private": true,
+  "name": "@eliware/nodejs-packaging",
+  "version": "15.2.0",
   "type": "module",
-  "description": "Local Node.js 26 update conductor, signed RPM repository, and runtime image release pipeline.",
+  "description": "Reproducible Node.js package builds, signed repositories, runtime images, and release provenance.",
+  "keywords": [
+    "nodejs",
+    "rpm",
+    "dnf",
+    "centos",
+    "repository",
+    "packaging",
+    "debian",
+    "ubuntu",
+    "containers",
+    "provenance",
+    "release-automation"
+  ],
+  "private": true,
+  "main": "./bin/conductor.mjs",
+  "bin": {
+    "nodejs-packaging": "bin/conductor.mjs",
+    "nodejs-release-discover": "bin/discover-release.mjs",
+    "nodejs-release-prepare": "bin/prepare-release.mjs",
+    "nodejs-release-rpm": "bin/build-rpm.mjs",
+    "nodejs-release-repository": "bin/generate-repository.mjs",
+    "nodejs-release-publish": "bin/publish-release.mjs",
+    "nodejs-release-image": "bin/build-image.mjs",
+    "nodejs-release-record-image": "bin/publish-image-record.mjs",
+    "nodejs-conductor-service": "bin/conductor-service.mjs",
+    "nodejs-repository-commit": "bin/commit-publish-repository.mjs"
+  },
+  "scripts": {
+    "release:discover": "node bin/discover-release.mjs",
+    "release:prepare": "node bin/prepare-release.mjs",
+    "release:rpm": "node bin/build-rpm.mjs",
+    "release:repository": "node bin/generate-repository.mjs",
+    "release:publish": "node bin/publish-release.mjs",
+    "release:image": "node bin/build-image.mjs",
+    "release:record-image": "node bin/publish-image-record.mjs",
+    "conductor": "node bin/conductor.mjs",
+    "conductor:service": "node bin/conductor-service.mjs",
+    "test": "eliware-test",
+    "lint": "eliware-test --lint",
+    "audit": "eliware-test --audit",
+    "format": "eliware-test --format",
+    "format:check": "eliware-test --format-check"
+  },
   "engines": {
     "node": ">=26"
   },
-  "scripts": {
-    "release:discover": "node scripts/discover-release.mjs",
-    "release:prepare": "node scripts/prepare-release.mjs",
-    "release:rpm": "node scripts/build-rpm.mjs",
-    "release:repository": "node scripts/generate-repository.mjs",
-    "release:publish": "node scripts/publish-release.mjs",
-    "release:image": "node scripts/build-image.mjs",
-    "release:record-image": "node scripts/publish-image-record.mjs",
-    "conductor": "node scripts/conductor.mjs",
-    "conductor:service": "node scripts/conductor-service.mjs",
-    "test": "node --test tests/*.test.mjs"
+  "dependencies": {
+    "@eliware/common": "^15.0.1",
+    "@eliware/discord-webhook": "^15.0.1"
+  },
+  "devDependencies": {
+    "@eliware/test": "^15.2.0"
+  },
+  "jest": {
+    "testEnvironment": "node",
+    "testMatch": [
+      "**/tests/**/*.test.mjs"
+    ],
+    "collectCoverageFrom": [
+      "src/**/*.mjs"
+    ],
+    "coverageReporters": [
+      "text",
+      "json-summary"
+    ],
+    "coverageThreshold": {
+      "global": {
+        "branches": 100,
+        "functions": 100,
+        "lines": 100,
+        "statements": 100
+      }
+    }
+  },
+  "prettier": {
+    "printWidth": 100,
+    "tabWidth": 2,
+    "useTabs": false,
+    "semi": true,
+    "singleQuote": false,
+    "quoteProps": "as-needed",
+    "jsxSingleQuote": false,
+    "trailingComma": "all",
+    "bracketSpacing": true,
+    "bracketSameLine": false,
+    "arrowParens": "always",
+    "proseWrap": "preserve",
+    "endOfLine": "lf"
+  },
+  "author": "Eliware <eliware@eliware.org>",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/eliware/nodejs-packaging.git"
+  },
+  "homepage": "https://github.com/eliware/nodejs-packaging#readme",
+  "bugs": {
+    "url": "https://github.com/eliware/nodejs-packaging/issues"
+  },
+  "eliware": {
+    "id": "E-7101",
+    "apply": [
+      "general",
+      "application"
+    ]
   }
 }
