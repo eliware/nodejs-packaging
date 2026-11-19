@@ -103,3 +103,59 @@ test("propagates invalid lock owner process identifiers", async () => {
   await fs.writeFile(path.join(lockPath, "owner.json"), JSON.stringify({ pid: "invalid" }));
   await expect(state.acquireLock(lockPath)).rejects.toThrow();
 });
+
+test("allows only one process to claim a stale lock", async () => {
+  const stateRoot = "/virtual/conductor-stale-race";
+  const lockPath = path.join(stateRoot, "lock");
+  await fs.mkdir(lockPath, { recursive: true });
+  await fs.writeFile(path.join(lockPath, "owner.json"), JSON.stringify({ pid: 12345 }));
+  const state = conductorState({
+    stateRoot,
+    runId: "run-7",
+    isProcessAlive: async () => false,
+    moveStaleLock: async (source, destination) => {
+      await fs.rename(source, destination);
+      await fs.mkdir(source);
+    },
+  });
+  await expect(state.acquireLock(lockPath)).rejects.toThrow("conductor lock is held");
+
+  const racedState = conductorState({
+    stateRoot,
+    runId: "run-8",
+    isProcessAlive: async () => false,
+    moveStaleLock: async () => {
+      throw Object.assign(new Error("lock already moved"), { code: "ENOENT" });
+    },
+  });
+  await expect(racedState.acquireLock(lockPath)).rejects.toThrow("conductor lock is held");
+});
+
+test("propagates stale-lock recovery errors", async () => {
+  const stateRoot = "/virtual/conductor-stale-errors";
+  const lockPath = path.join(stateRoot, "lock");
+  await fs.mkdir(lockPath, { recursive: true });
+  await fs.writeFile(path.join(lockPath, "owner.json"), JSON.stringify({ pid: 12345 }));
+  const moveErrorState = conductorState({
+    stateRoot,
+    runId: "run-9",
+    isProcessAlive: async () => false,
+    moveStaleLock: async () => {
+      throw Object.assign(new Error("rename denied"), { code: "EACCES" });
+    },
+  });
+  await expect(moveErrorState.acquireLock(lockPath)).rejects.toThrow("rename denied");
+
+  let lockAttempts = 0;
+  const createErrorState = conductorState({
+    stateRoot,
+    runId: "run-10",
+    isProcessAlive: async () => false,
+    createDirectory: async (target, options) => {
+      if (target === lockPath && ++lockAttempts === 2)
+        throw Object.assign(new Error("create denied"), { code: "EACCES" });
+      return fs.mkdir(target, options);
+    },
+  });
+  await expect(createErrorState.acquireLock(lockPath)).rejects.toThrow("create denied");
+});

@@ -7,6 +7,7 @@ function conductorState({
   createDirectory = mkdir,
   readOwner = readFile,
   getInfo = stat,
+  moveStaleLock = rename,
   isProcessAlive = (pid) => {
     try {
       process.kill(pid, 0);
@@ -33,8 +34,22 @@ function conductorState({
         stale = Date.now() - lockInfo.mtimeMs > 5 * 60 * 1000;
       }
       if (!stale) throw new Error(`conductor lock is held: ${lockPath}`, { cause: error });
-      await rm(lockPath, { recursive: true, force: true });
-      await createDirectory(lockPath);
+      const stalePath = `${lockPath}.stale-${runId}`;
+      try {
+        await moveStaleLock(lockPath, stalePath);
+      } catch (moveError) {
+        if (moveError.code === "ENOENT")
+          throw new Error(`conductor lock is held: ${lockPath}`, { cause: moveError });
+        throw moveError;
+      }
+      await rm(stalePath, { recursive: true, force: true });
+      try {
+        await createDirectory(lockPath);
+      } catch (createError) {
+        if (createError.code === "EEXIST")
+          throw new Error(`conductor lock is held: ${lockPath}`, { cause: createError });
+        throw createError;
+      }
     }
     await writeFile(
       path.join(lockPath, "owner.json"),
