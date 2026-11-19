@@ -18,6 +18,8 @@ jest.unstable_mockModule("node:fs", () => ({
 jest.unstable_mockModule("node:child_process", () => ({ spawnSync }));
 const { default: imageModule } = await import("../../../src/publish/image/record.mjs");
 const { main } = imageModule();
+const { default: activationModule } = await import("../../../src/publish/activate-generation.mjs");
+const { activateGeneration } = activationModule();
 const fingerprint = "A".repeat(40);
 const digest = `sha256:${"a".repeat(64)}`;
 
@@ -199,6 +201,48 @@ test("keeps an activated generation when writing the command result fails", asyn
     await expect(
       fs.stat(path.join(root, ".generations", active.generation, "metadata/catalog.json")),
     ).resolves.toBeDefined();
+  } finally {
+    output.mockRestore();
+    delete process.env.NODEJS_REPOSITORY_ROOT;
+    delete process.env.NODEJS_SIGNING_KEY;
+    jest.useRealTimers();
+  }
+});
+
+test("preserves a complete generation when activation fails after switching a pointer", async () => {
+  jest.useFakeTimers();
+  jest.setSystemTime(new Date("2026-11-19T12:00:00.000Z"));
+  const { root, recordPath } = await setup();
+  const output = jest.spyOn(process.stdout, "write").mockImplementation(() => true);
+  const activateWithFailure = async (options) => {
+    const replacePointer = options.files.replacePointer;
+    let calls = 0;
+    options.files.replacePointer = async (...args) => {
+      calls += 1;
+      if (calls === 2) throw new Error("second pointer failed");
+      return replacePointer(...args);
+    };
+    try {
+      await activateGeneration(options);
+    } finally {
+      options.files.replacePointer = replacePointer;
+    }
+  };
+  try {
+    await expect(main([recordPath], { activateGeneration: activateWithFailure })).rejects.toThrow(
+      "second pointer failed",
+    );
+    const stable = path.join(root, "el10/x86_64/stable");
+    expect(await fs.readlink(stable)).toContain(".generations/node-v26.13.1-el10-x86_64-");
+    const generations = await fs.readdir(path.join(root, ".generations"));
+    const generation = generations.find((name) => name.startsWith("node-v26.13.1-el10-x86_64-"));
+    expect(generation).toBeDefined();
+    await expect(
+      fs.readFile(
+        path.join(root, ".generations", generation, "el10/x86_64/stable/repodata/repomd.xml"),
+        "utf8",
+      ),
+    ).resolves.toBe("repodata");
   } finally {
     output.mockRestore();
     delete process.env.NODEJS_REPOSITORY_ROOT;

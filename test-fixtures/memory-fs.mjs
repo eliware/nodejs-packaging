@@ -197,6 +197,13 @@ function createMemoryFs() {
     entries.set(normalize(file), { type: "symlink", target });
   }
 
+  async function readlink(file) {
+    const entry = entries.get(normalize(file));
+    if (!entry || entry.type !== "symlink")
+      throw Object.assign(new Error("path is not a symlink"), { code: "EINVAL" });
+    return entry.target;
+  }
+
   async function mkdtemp(prefix) {
     const directory = `${normalize(prefix)}${sequence++}`;
     await mkdir(directory, { recursive: true });
@@ -226,6 +233,7 @@ function createMemoryFs() {
     cp,
     rename,
     symlink,
+    readlink,
     mkdtemp,
     createReadStream,
   };
