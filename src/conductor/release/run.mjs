@@ -124,16 +124,22 @@ async function runRelease(options) {
     ],
     cardUrl: releaseReport.cardUrl,
   });
-  await saveState({
-    run_id: runId,
-    stage: "complete",
-    node_version: nodeVersion,
-    npm_version: npmRelease.version,
-    base_image_digest: currentBaseDigest,
-    image_digest: image.digest,
-    generation: active.generation,
-    completed: new Date().toISOString(),
-  });
+  try {
+    await saveState({
+      run_id: runId,
+      stage: "complete",
+      node_version: nodeVersion,
+      npm_version: npmRelease.version,
+      base_image_digest: currentBaseDigest,
+      image_digest: image.digest,
+      generation: active.generation,
+      completed: new Date().toISOString(),
+    });
+  } catch (error) {
+    console.error(
+      `[conductor] release completed but final state could not be saved: ${error.message}`,
+    );
+  }
 }
 
 export default function conductorReleaseModule() {

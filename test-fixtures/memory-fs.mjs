@@ -1,4 +1,5 @@
 import path from "node:path";
+import { Readable } from "node:stream";
 
 function createMemoryFs() {
   const entries = new Map([[path.resolve("/"), { type: "directory" }]]);
@@ -202,6 +203,16 @@ function createMemoryFs() {
     return directory;
   }
 
+  function createReadStream(file) {
+    return Readable.from(
+      (async function* () {
+        const contents = await readFile(file);
+        yield contents.subarray(0, Math.ceil(contents.length / 2));
+        yield contents.subarray(Math.ceil(contents.length / 2));
+      })(),
+    );
+  }
+
   return {
     mkdir,
     mkdirSync,
@@ -216,6 +227,7 @@ function createMemoryFs() {
     rename,
     symlink,
     mkdtemp,
+    createReadStream,
   };
 }
 

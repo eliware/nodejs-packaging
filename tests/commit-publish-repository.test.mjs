@@ -50,10 +50,18 @@ async function setupRepository() {
 test("skips a commit when the repository has no changes", async () => {
   await setupRepository();
   const log = jest.spyOn(console, "log").mockImplementation(() => {});
-  spawnSync.mockReturnValueOnce({ status: 0, stdout: "", stderr: "" });
+  spawnSync
+    .mockReturnValueOnce({ status: 0, stdout: "", stderr: "" })
+    .mockReturnValueOnce({ status: 0, stdout: "", stderr: "" });
   try {
     await expect(main()).resolves.toBeUndefined();
     expect(log).toHaveBeenCalledWith("[repo-git] repository is clean. Nothing to commit.");
+    expect(spawnSync).toHaveBeenNthCalledWith(
+      2,
+      "git",
+      ["push", "origin", "main:main"],
+      expect.objectContaining({ cwd: path.resolve("/virtual/nodejs-repository") }),
+    );
   } finally {
     log.mockRestore();
     delete process.env.NODEJS_REPOSITORY_ROOT;
@@ -81,7 +89,7 @@ test("commits repository changes and pushes the configured branch", async () => 
     );
     expect(stdout).toHaveBeenCalledWith("commit output");
     expect(stdout).toHaveBeenCalledWith("push output");
-    expect(log).toHaveBeenCalledWith("[repo-git] committed and pushed generation generation-1");
+    expect(log).toHaveBeenCalledWith("[repo-git] pushed generation generation-1");
   } finally {
     stdout.mockRestore();
     log.mockRestore();

@@ -5,6 +5,7 @@ import memoryFilesystemFixture from "../../test-fixtures/memory-fs.mjs";
 const { createMemoryFs } = memoryFilesystemFixture();
 const fs = createMemoryFs();
 jest.unstable_mockModule("node:fs/promises", () => fs);
+jest.unstable_mockModule("node:fs", () => ({ createReadStream: fs.createReadStream }));
 const { default: generateIndexModule } = await import("../../src/generate/index.mjs");
 const { buildIndex } = generateIndexModule();
 

@@ -6,11 +6,11 @@ import {
   readdir,
   rename,
   rm,
-  readFile,
   stat,
   symlink,
   writeFile,
 } from "node:fs/promises";
+import { createReadStream } from "node:fs";
 import path from "node:path";
 
 async function exists(file, lstat = statLink) {
@@ -47,9 +47,9 @@ async function atomicCopy(source, destination) {
   await rename(temporary, destination);
 }
 
-async function hashFile(file) {
+async function hashFile(file, createStream = createReadStream) {
   const hash = createHash("sha256");
-  hash.update(await readFile(file));
+  for await (const chunk of createStream(file)) hash.update(chunk);
   return hash.digest("hex");
 }
 

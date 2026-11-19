@@ -24,6 +24,14 @@ async function main(argv = process.argv.slice(2), dependencies = {}) {
   const outputRoot = path.resolve(
     process.env.NODEJS_SOURCE_DIR || path.join(root, ".state/sources"),
   );
+  const outputRelative = path.relative(root, outputRoot);
+  const outputIsInsideRepository =
+    outputRelative === "" ||
+    (outputRelative !== ".." && !outputRelative.startsWith(`..${path.sep}`));
+  const outputIsIgnoredState =
+    outputRelative === ".state" || outputRelative.startsWith(`.state${path.sep}`);
+  if (outputIsInsideRepository && !outputIsIgnoredState)
+    throw new Error("NODEJS_SOURCE_DIR must be outside the repository or under ignored .state");
   const args = new Map();
   for (let index = 0; index < argv.length; index += 1) {
     if (argv[index].startsWith("--")) args.set(argv[index].slice(2), argv[++index]);

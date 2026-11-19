@@ -1,11 +1,22 @@
 import { createHash } from "node:crypto";
 import path from "node:path";
+import { Readable } from "node:stream";
 import { expect, jest, test } from "@jest/globals";
 import memoryFilesystemFixture from "../../test-fixtures/memory-fs.mjs";
 
 const { createMemoryFs } = memoryFilesystemFixture();
 const fs = createMemoryFs();
 jest.unstable_mockModule("node:fs/promises", () => fs);
+jest.unstable_mockModule("node:fs", () => ({
+  createReadStream: (file) =>
+    Readable.from(
+      (async function* () {
+        const contents = await fs.readFile(file);
+        yield contents.subarray(0, 2);
+        yield contents.subarray(2);
+      })(),
+    ),
+}));
 const { default: generateFilesModule } = await import("../../src/generate/files.mjs");
 const { exists, hashFile, listFiles } = generateFilesModule();
 

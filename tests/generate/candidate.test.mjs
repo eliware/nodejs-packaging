@@ -6,6 +6,7 @@ const { createMemoryFs } = memoryFilesystemFixture();
 const fs = createMemoryFs();
 const spawnSync = jest.fn();
 jest.unstable_mockModule("node:fs/promises", () => fs);
+jest.unstable_mockModule("node:fs", () => ({ createReadStream: fs.createReadStream }));
 jest.unstable_mockModule("node:child_process", () => ({ spawnSync }));
 const { default: generateCandidateModule } = await import("../../src/generate/candidate.mjs");
 const { generateCandidate } = generateCandidateModule();

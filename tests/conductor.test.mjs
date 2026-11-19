@@ -169,9 +169,48 @@ test("reports no updates during a wet run", async () => {
     }),
   );
   expect(runRelease).not.toHaveBeenCalled();
+  expect(runtime.runNode).toHaveBeenCalledWith("bin/commit-publish-repository.mjs", [], {
+    NODEJS_REPOSITORY_ROOT: path.resolve("/eliware/nodejs-repository"),
+  });
   expect(runtime.releaseLock).toHaveBeenCalled();
 });
 
+test("keeps concurrent conductor invocations isolated", async () => {
+  const dryRuntime = makeRuntime();
+  const wetRuntime = makeRuntime();
+  let releaseDryLock;
+  const dryLockWait = new Promise((resolve) => {
+    releaseDryLock = resolve;
+  });
+  dryRuntime.acquireLock.mockImplementation(async () => {
+    await dryLockWait;
+    return true;
+  });
+  conductorRuntime.mockReturnValueOnce(dryRuntime).mockReturnValueOnce(wetRuntime);
+  prepareReleasePlan.mockImplementation(async () => plan());
+  const log = jest.spyOn(console, "log").mockImplementation(() => {});
+  try {
+    const dryRun = main(["--dry-run"], {
+      NODEJS_CONDUCTOR_STATE_ROOT: "/tmp/dry-state",
+    });
+    const wetRun = main(["--wet-run"], {
+      NODEJS_CONDUCTOR_STATE_ROOT: "/tmp/wet-state",
+    });
+    await wetRun;
+    releaseDryLock();
+    await dryRun;
+    expect(dryRuntime.acquireLock).toHaveBeenCalledWith("/tmp/dry-state/lock");
+    expect(wetRuntime.acquireLock).toHaveBeenCalledWith("/tmp/wet-state/lock");
+    expect(dryRuntime.runNode).not.toHaveBeenCalled();
+    expect(wetRuntime.runNode).toHaveBeenCalledWith("bin/commit-publish-repository.mjs", [], {
+      NODEJS_REPOSITORY_ROOT: path.resolve("/eliware/nodejs-repository"),
+    });
+    expect(dryRuntime.releaseLock).toHaveBeenCalledWith("/tmp/dry-state/lock");
+    expect(wetRuntime.releaseLock).toHaveBeenCalledWith("/tmp/wet-state/lock");
+  } finally {
+    log.mockRestore();
+  }
+});
 test("runs the release workflow when updates exist", async () => {
   const runtime = reset();
   const releasePlan = plan({ plan: { noOp: false, buildRpm: true, buildImage: false } });

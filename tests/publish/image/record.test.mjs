@@ -1,4 +1,5 @@
 import path from "node:path";
+import { Readable } from "node:stream";
 import { expect, jest, test } from "@jest/globals";
 import memoryFilesystemFixture from "../../../test-fixtures/memory-fs.mjs";
 
@@ -6,6 +7,14 @@ const { createMemoryFs } = memoryFilesystemFixture();
 const fs = createMemoryFs();
 const spawnSync = jest.fn();
 jest.unstable_mockModule("node:fs/promises", () => fs);
+jest.unstable_mockModule("node:fs", () => ({
+  createReadStream: (file) =>
+    Readable.from(
+      (async function* () {
+        yield await fs.readFile(file);
+      })(),
+    ),
+}));
 jest.unstable_mockModule("node:child_process", () => ({ spawnSync }));
 const { default: imageModule } = await import("../../../src/publish/image/record.mjs");
 const { main } = imageModule();
@@ -70,6 +79,8 @@ async function setup() {
       source_release: "26.13.1",
       source_sha256: "d".repeat(64),
       local_image_id: "sha256:local",
+      repository_generation: "generation-1",
+      published: true,
       validation: "passed",
     }),
   );
@@ -144,6 +155,7 @@ test("rejects invalid image evidence and mismatched stable releases", async () =
   const mismatch = await setup();
   const image = JSON.parse(await fs.readFile(mismatch.recordPath, "utf8"));
   image.source_release = "26.13.0";
+  image.tag = "26.13.0";
   await fs.writeFile(mismatch.recordPath, JSON.stringify(image));
   await expect(main([mismatch.recordPath])).rejects.toThrow(
     "image release does not match the published stable RPM",

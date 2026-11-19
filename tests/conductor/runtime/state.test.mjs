@@ -22,6 +22,21 @@ test("creates and removes a lock and saves state atomically", async () => {
   );
   await state.releaseLock(lockPath);
   await expect(fs.stat(lockPath)).rejects.toMatchObject({ code: "ENOENT" });
+  await expect(state.releaseLock(lockPath)).resolves.toBe(false);
+
+  await fs.mkdir(lockPath, { recursive: true });
+  await fs.writeFile(
+    path.join(lockPath, "owner.json"),
+    JSON.stringify({ run_id: "other-run", pid: process.pid }),
+  );
+  await expect(state.releaseLock(lockPath)).resolves.toBe(false);
+  await expect(fs.stat(lockPath)).resolves.toBeDefined();
+  await fs.writeFile(
+    path.join(lockPath, "owner.json"),
+    JSON.stringify({ run_id: "run-1", pid: process.pid + 1 }),
+  );
+  await expect(state.releaseLock(lockPath)).resolves.toBe(false);
+  await fs.rm(lockPath, { recursive: true, force: true });
 });
 
 test("recovers a stale lock and keeps a lock held by a live process", async () => {
@@ -79,6 +94,14 @@ test("reports lock errors that do not indicate stale owners", async () => {
     },
   });
   await expect(processErrorState.acquireLock(lockPath)).rejects.toThrow("permission denied");
+  const releaseErrorState = conductorState({
+    stateRoot,
+    runId: "run-4",
+    readOwner: async () => {
+      throw Object.assign(new Error("owner read denied"), { code: "EACCES" });
+    },
+  });
+  await expect(releaseErrorState.releaseLock(lockPath)).rejects.toThrow("owner read denied");
 });
 
 test("propagates lock creation errors unrelated to an existing lock", async () => {
@@ -102,6 +125,22 @@ test("propagates invalid lock owner process identifiers", async () => {
   await fs.mkdir(lockPath, { recursive: true });
   await fs.writeFile(path.join(lockPath, "owner.json"), JSON.stringify({ pid: "invalid" }));
   await expect(state.acquireLock(lockPath)).rejects.toThrow();
+});
+
+test("treats permission denied as a live lock owner", async () => {
+  const stateRoot = "/virtual/conductor-eperm-lock";
+  const lockPath = path.join(stateRoot, "lock");
+  const state = conductorState({ stateRoot, runId: "run-11" });
+  await fs.mkdir(lockPath, { recursive: true });
+  await fs.writeFile(path.join(lockPath, "owner.json"), JSON.stringify({ pid: 12345 }));
+  const kill = jest.spyOn(process, "kill").mockImplementation(() => {
+    throw Object.assign(new Error("permission denied"), { code: "EPERM" });
+  });
+  try {
+    await expect(state.acquireLock(lockPath)).rejects.toThrow("conductor lock is held");
+  } finally {
+    kill.mockRestore();
+  }
 });
 
 test("allows only one process to claim a stale lock", async () => {

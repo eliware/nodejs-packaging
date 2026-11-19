@@ -14,6 +14,7 @@ function conductorState({
       return true;
     } catch (error) {
       if (error.code === "ESRCH") return false;
+      if (error.code === "EPERM") return true;
       throw error;
     }
   },
@@ -59,7 +60,16 @@ function conductorState({
   }
 
   async function releaseLock(lockPath) {
+    let owner;
+    try {
+      owner = JSON.parse(await readOwner(path.join(lockPath, "owner.json"), "utf8"));
+    } catch (error) {
+      if (error.code === "ENOENT") return false;
+      throw error;
+    }
+    if (owner.run_id !== runId || owner.pid !== process.pid) return false;
     await rm(lockPath, { recursive: true, force: true });
+    return true;
   }
 
   async function saveState(value) {

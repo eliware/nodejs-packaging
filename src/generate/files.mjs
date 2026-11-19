@@ -1,5 +1,6 @@
 import { createHash } from "node:crypto";
-import { readFile, readdir, stat } from "node:fs/promises";
+import { readdir, stat } from "node:fs/promises";
+import { createReadStream } from "node:fs";
 import path from "node:path";
 
 async function exists(file, statFile = stat) {
@@ -12,9 +13,14 @@ async function exists(file, statFile = stat) {
   }
 }
 
-async function hashFile(file, algorithm = "sha256", encoding = "hex") {
+async function hashFile(
+  file,
+  algorithm = "sha256",
+  encoding = "hex",
+  createStream = createReadStream,
+) {
   const hash = createHash(algorithm);
-  hash.update(await readFile(file));
+  for await (const chunk of createStream(file)) hash.update(chunk);
   return hash.digest(encoding);
 }
 

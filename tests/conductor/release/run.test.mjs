@@ -90,6 +90,24 @@ test("publishes RPM and image releases and records final completion", async () =
   }
 });
 
+test("keeps a published release successful when its final state write fails", async () => {
+  const { options, root } = await createOptions({ buildRpm: false, reason: "base-image-update" });
+  options.saveState.mockRejectedValue(new Error("state storage unavailable"));
+  const error = jest.spyOn(console, "error").mockImplementation(() => {});
+  try {
+    await expect(runRelease(options)).resolves.toBeUndefined();
+    expect(options.notifyConductor).toHaveBeenCalledWith(
+      expect.objectContaining({ title: "Node.js conductor run completed" }),
+    );
+    expect(error).toHaveBeenCalledWith(
+      "[conductor] release completed but final state could not be saved: state storage unavailable",
+    );
+  } finally {
+    error.mockRestore();
+    await fs.rm(root, { recursive: true, force: true });
+  }
+});
+
 test("reuses the published RPM when the base image changes", async () => {
   const { options, root, calls } = await createOptions({
     buildRpm: false,
