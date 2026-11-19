@@ -81,18 +81,6 @@ async function main() {
       base_image_digest: currentBaseDigest,
       plan,
     });
-    if (!dryRun)
-      await checkpoint(
-        "Upstream checks passed",
-        `Checked Node.js ${release.node_version}, npm ${npmRelease.version}, and the CentOS Stream 10 base image.`,
-        [
-          { name: "Published Node.js", value: published?.node_version || "none" },
-          { name: "Latest Node.js", value: release.node_version },
-          { name: "Published npm", value: published?.npm?.version || "none" },
-          { name: "Latest npm", value: npmRelease.version },
-          { name: "CentOS base digest", value: currentBaseDigest },
-        ],
-      );
     console.log(
       `[conductor] run=${runId} node=${release.node_version} base=${currentBaseDigest} plan=${plan.reason}`,
     );
@@ -103,17 +91,8 @@ async function main() {
       return;
     }
     if (plan.noOp) {
-      await checkpoint(
-        "No updates found",
-        "Node.js, npm, and the CentOS Stream 10 base image match the published release.",
-        [
-          { name: "Node.js", value: release.node_version },
-          { name: "npm", value: npmRelease.version },
-          { name: "Base digest", value: currentBaseDigest },
-        ],
-      );
       await notifyConductor({
-        title: "Node.js conductor completed",
+        title: "No updates available",
         description: "No updates were found. No packages, images, or repository files changed.",
         status: "success",
         fields: [
@@ -195,15 +174,6 @@ async function main() {
     const active = JSON.parse(
       await readFile(path.join(repositoryRoot, "metadata/active-generation.json"), "utf8"),
     );
-    await checkpoint(
-      "Repository metadata checkpoint passed",
-      "The signed image record and release catalog now point to the active generation.",
-      [
-        { name: "Generation", value: active.generation },
-        { name: "Image digest", value: image.digest },
-      ],
-    );
-
     stage = "release-report";
     const releaseReport = await generateReleaseReport({
       runId,
@@ -217,27 +187,10 @@ async function main() {
       reason: plan.reason,
       changed: true,
     });
-    await checkpoint(
-      "Release card passed",
-      "The release card and full report are ready in the Node.js repository.",
-      [
-        { name: "Report", value: releaseReport.reportPath },
-        { name: "Card", value: releaseReport.cardUrl },
-      ],
-    );
-
     stage = "repository-commit-push";
     await runNode("bin/commit-publish-repository.mjs", [], {
       NODEJS_REPOSITORY_ROOT: repositoryRoot,
     });
-    await checkpoint(
-      "Repository commit and push passed",
-      "The completed release and report are committed and pushed to nodejs-repository.",
-      [
-        { name: "Generation", value: active.generation },
-        { name: "Branch", value: "main" },
-      ],
-    );
     await notifyConductor({
       title: "Node.js conductor run completed",
       description:
