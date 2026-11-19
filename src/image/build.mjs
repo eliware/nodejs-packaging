@@ -1,12 +1,14 @@
 import { spawnSync } from "node:child_process";
-import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { mkdtemp, readFile, rm } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import buildCatalogModule from "../repository/catalog.mjs";
 import imagePublishModule from "./publish.mjs";
+import imageRecordModule from "./record.mjs";
 const { loadPublishedRelease } = buildCatalogModule();
 const { publishImage } = imagePublishModule();
+const { writeImageRecord } = imageRecordModule();
 
 async function main(argv = process.argv.slice(2)) {
   const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
@@ -116,9 +118,7 @@ async function main(argv = process.argv.slice(2)) {
     const resultDir = path.resolve(
       args.get("output") || path.join(root, "artifacts/images", version),
     );
-    await mkdir(resultDir, { recursive: true });
-    await writeFile(path.join(resultDir, "image.json"), `${JSON.stringify(record, null, 2)}\n`);
-    process.stdout.write(`${JSON.stringify(record, null, 2)}\n`);
+    await writeImageRecord(resultDir, record);
   } finally {
     await rm(context, { recursive: true, force: true });
   }
