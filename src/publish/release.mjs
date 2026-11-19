@@ -45,6 +45,7 @@ async function main(argv = process.argv.slice(2)) {
   await mkdir(path.dirname(stagingRoot), { recursive: true });
   await cp(candidateRoot, stagingRoot, { recursive: true });
 
+  let activated = false;
   try {
     const { rpmSha256 } = await prepareReleaseGeneration({
       stagingRoot,
@@ -56,7 +57,6 @@ async function main(argv = process.argv.slice(2)) {
       files,
     });
 
-    await rename(stagingRoot, finalRoot);
     const stablePointer = path.join(repositoryRoot, "el10/x86_64/stable");
     if (await files.exists(stablePointer)) {
       const info = await lstat(stablePointer);
@@ -71,6 +71,7 @@ async function main(argv = process.argv.slice(2)) {
           throw new Error(`metadata path is not empty: ${publicPath}`);
       }
     }
+    await rename(stagingRoot, finalRoot);
     await activateGeneration({
       repositoryRoot,
       generationRoot: finalRoot,
@@ -83,11 +84,13 @@ async function main(argv = process.argv.slice(2)) {
         { source: "nodejs26.repo", destination: "nodejs26.repo" },
       ],
     });
+    activated = true;
     process.stdout.write(
       `${JSON.stringify({ generation: generationId, repository: repositoryRoot, rpm_sha256: rpmSha256, signing_key: keyFingerprint }, null, 2)}\n`,
     );
   } catch (error) {
     await rm(stagingRoot, { recursive: true, force: true });
+    if (!activated) await rm(finalRoot, { recursive: true, force: true });
     throw error;
   }
 

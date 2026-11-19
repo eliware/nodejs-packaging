@@ -32,15 +32,44 @@ test("replaces repository pointers and copies files atomically", async () => {
   await fs.writeFile(path.join(target, "content"), "new");
   await replacePointer(pointer, target);
   await expect(fs.readFile(path.join(pointer, "content"), "utf8")).resolves.toBe("new");
-  await fs.rm(pointer, { recursive: true, force: true });
-  await fs.mkdir(pointer);
-  await fs.writeFile(path.join(pointer, "old"), "old");
-  await replacePointer(pointer, target);
-  await expect(fs.readFile(path.join(pointer, "content"), "utf8")).resolves.toBe("new");
+  const secondTarget = path.join(root, "second-target");
+  await fs.mkdir(secondTarget, { recursive: true });
+  await fs.writeFile(path.join(secondTarget, "content"), "replacement");
+  await replacePointer(pointer, secondTarget);
+  await expect(fs.readFile(path.join(pointer, "content"), "utf8")).resolves.toBe("replacement");
 
   const destination = path.join(root, "copy.json");
   await atomicCopy(path.join(target, "content"), destination);
   await expect(fs.readFile(destination, "utf8")).resolves.toBe("new");
+});
+
+test("cleans temporary pointers when an atomic replacement fails", async () => {
+  const root = "/virtual/publish-pointer-errors";
+  const target = path.join(root, "target");
+  const pointer = path.join(root, "pointer");
+  await fs.mkdir(target, { recursive: true });
+  await fs.mkdir(path.dirname(pointer), { recursive: true });
+  await replacePointer(pointer, target);
+  try {
+    await expect(
+      replacePointer(pointer, target, {
+        rename: async () => {
+          throw Object.assign(new Error("exists"), { code: "EEXIST" });
+        },
+      }),
+    ).rejects.toThrow("cannot atomically replace repository pointer");
+    expect((await fs.readdir(root)).sort()).toEqual(["pointer", "target"]);
+    const denied = {
+      rename: async () => {
+        throw Object.assign(new Error("denied"), { code: "EACCES" });
+      },
+    };
+    await expect(replacePointer(pointer, target, denied)).rejects.toThrow("denied");
+    await fs.rm(pointer, { force: true });
+    await expect(replacePointer(pointer, target, denied)).rejects.toThrow("denied");
+  } finally {
+    await fs.rm(root, { recursive: true, force: true });
+  }
 });
 
 test("writes JSON and hashes files", async () => {

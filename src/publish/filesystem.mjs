@@ -23,10 +23,22 @@ async function exists(file, lstat = statLink) {
   }
 }
 
-async function replacePointer(pointer, target) {
+async function replacePointer(pointer, target, dependencies = {}) {
+  const remove = dependencies.rm || rm;
+  const move = dependencies.rename || rename;
+  const pointerExists = dependencies.exists || exists;
   await mkdir(path.dirname(pointer), { recursive: true });
-  if (await exists(pointer)) await rm(pointer, { recursive: true, force: true });
-  await symlink(path.relative(path.dirname(pointer), target), pointer);
+  const temporary = `${pointer}.tmp-${process.pid}`;
+  await remove(temporary, { recursive: true, force: true });
+  await symlink(path.relative(path.dirname(pointer), target), temporary);
+  try {
+    await move(temporary, pointer);
+  } catch (error) {
+    await remove(temporary, { force: true });
+    if ((await pointerExists(pointer)) && error.code === "EEXIST")
+      throw new Error(`cannot atomically replace repository pointer: ${pointer}`, { cause: error });
+    throw error;
+  }
 }
 
 async function atomicCopy(source, destination) {

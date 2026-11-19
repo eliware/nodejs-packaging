@@ -13,7 +13,9 @@ function compareVersions(left, right) {
   return 0;
 }
 
-async function discoverLatestRelease(fetchImpl = fetch) {
+async function discoverLatestRelease(fetchImplOrVersion = fetch, requestedVersion = null) {
+  const fetchImpl = typeof fetchImplOrVersion === "function" ? fetchImplOrVersion : fetch;
+  if (typeof fetchImplOrVersion === "string") requestedVersion = fetchImplOrVersion;
   const response = await fetchImpl(RELEASE_INDEX_URL, {
     headers: { accept: "application/json" },
     signal: AbortSignal.timeout(30_000),
@@ -25,10 +27,20 @@ async function discoverLatestRelease(fetchImpl = fetch) {
 
   const latest = releases
     .map((release) => ({ release, version: numericVersion(release?.version) }))
-    .filter(({ release, version }) => version && release.files?.includes("linux-x64"))
+    .filter(
+      ({ release, version }) =>
+        version &&
+        release.files?.includes("linux-x64") &&
+        (!requestedVersion || release.version === `v${requestedVersion}`),
+    )
     .sort((left, right) => compareVersions(right.version, left.version))[0];
 
-  if (!latest) throw new Error("Node.js release index has no stable Node.js 26 x64 release");
+  if (!latest)
+    throw new Error(
+      requestedVersion
+        ? `Node.js release index has no stable Node.js ${requestedVersion} x64 release`
+        : "Node.js release index has no stable Node.js 26 x64 release",
+    );
 
   const version = latest.release.version.slice(1);
   const directory = `https://nodejs.org/dist/${latest.release.version}/`;

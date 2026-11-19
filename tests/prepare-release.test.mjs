@@ -137,7 +137,17 @@ test("uses default arguments, discovery functions, and source output paths", asy
 
 test("prepares an explicitly selected older release with its own official URLs", async () => {
   await setup();
-  const discoverLatestRelease = jest.fn(async () => release);
+  const discoverLatestRelease = jest.fn(async (version) => ({
+    ...release,
+    node_version: version || release.node_version,
+    source: {
+      ...release.source,
+      file: `node-v${version || release.node_version}-linux-x64.tar.xz`,
+      url: `https://nodejs.org/dist/v${version || release.node_version}/node-v${version || release.node_version}-linux-x64.tar.xz`,
+      checksums_url: `https://nodejs.org/dist/v${version || release.node_version}/SHASUMS256.txt`,
+      signature_url: `https://nodejs.org/dist/v${version || release.node_version}/SHASUMS256.txt.sig`,
+    },
+  }));
   globalThis.fetch = jest.fn(async (url) => {
     if (url.endsWith("node-v26.12.0-linux-x64.tar.xz")) return fetchResponse(url, archive);
     if (url.endsWith("SHASUMS256.txt"))

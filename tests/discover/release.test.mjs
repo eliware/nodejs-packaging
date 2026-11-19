@@ -21,6 +21,38 @@ test("selects the newest stable Node.js 26 x64 release", async () => {
   expect(release.source.file).toBe("node-v26.13.1-linux-x64.tar.xz");
 });
 
+test("finds a requested stable release and rejects an unavailable version", async () => {
+  const fetchImpl = async () => ({
+    ok: true,
+    json: async () => [
+      { version: "v26.13.1", files: ["linux-x64"], date: "2026-01-01" },
+      { version: "v26.12.0", files: ["linux-x64"], date: "2025-12-01" },
+    ],
+  });
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = fetchImpl;
+  try {
+    await expect(discoverLatestRelease("26.12.0")).resolves.toMatchObject({
+      node_version: "26.12.0",
+      source: { file: "node-v26.12.0-linux-x64.tar.xz" },
+    });
+    await expect(discoverLatestRelease(fetchImpl, "26.12.0")).resolves.toMatchObject({
+      node_version: "26.12.0",
+    });
+    await expect(
+      discoverLatestRelease(
+        async () => ({
+          ok: true,
+          json: async () => [{ version: "v26.12.0", files: ["linux-x64"] }],
+        }),
+        "26.11.0",
+      ),
+    ).rejects.toThrow("Node.js release index has no stable Node.js 26.11.0 x64 release");
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
 test("rejects a malformed Node.js release index", async () => {
   await expect(
     discoverLatestRelease(async () => ({ ok: true, json: async () => ({}) })),

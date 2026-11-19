@@ -1,10 +1,41 @@
-import { mkdir, rename, rm, writeFile } from "node:fs/promises";
+import { mkdir, readFile, rename, rm, stat, writeFile } from "node:fs/promises";
 import path from "node:path";
 
-function conductorState({ stateRoot, runId }) {
+function conductorState({
+  stateRoot,
+  runId,
+  createDirectory = mkdir,
+  readOwner = readFile,
+  getInfo = stat,
+  isProcessAlive = (pid) => {
+    try {
+      process.kill(pid, 0);
+      return true;
+    } catch (error) {
+      if (error.code === "ESRCH") return false;
+      throw error;
+    }
+  },
+}) {
   async function acquireLock(lockPath) {
-    await mkdir(stateRoot, { recursive: true });
-    await mkdir(lockPath);
+    await createDirectory(stateRoot, { recursive: true });
+    try {
+      await createDirectory(lockPath);
+    } catch (error) {
+      if (error.code !== "EEXIST") throw error;
+      let stale = false;
+      try {
+        const owner = JSON.parse(await readOwner(path.join(lockPath, "owner.json"), "utf8"));
+        stale = !(await isProcessAlive(owner.pid));
+      } catch (ownerError) {
+        if (ownerError.code !== "ENOENT" && !(ownerError instanceof SyntaxError)) throw ownerError;
+        const lockInfo = await getInfo(lockPath);
+        stale = Date.now() - lockInfo.mtimeMs > 5 * 60 * 1000;
+      }
+      if (!stale) throw new Error(`conductor lock is held: ${lockPath}`, { cause: error });
+      await rm(lockPath, { recursive: true, force: true });
+      await createDirectory(lockPath);
+    }
     await writeFile(
       path.join(lockPath, "owner.json"),
       `${JSON.stringify({ run_id: runId, pid: process.pid, started: new Date().toISOString() }, null, 2)}\n`,

@@ -8,6 +8,9 @@ async function download(url, destination, trustedHosts, dependencies = {}) {
   const pipe = dependencies.pipeline || pipeline;
   const remove = dependencies.rm || rm;
   const move = dependencies.rename || rename;
+  const initialUrl = new URL(url);
+  if (initialUrl.protocol !== "https:" || !trustedHosts.includes(initialUrl.hostname))
+    throw new Error(`download left the trusted HTTPS hosts: ${url}`);
   const response = await fetchFile(url, { signal: AbortSignal.timeout(120_000) });
   const finalUrl = new URL(response.url || url);
   if (!response.ok) throw new Error(`download failed with HTTP ${response.status}: ${url}`);

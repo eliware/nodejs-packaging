@@ -14,7 +14,18 @@ test("uses the selected release when versions match or older releases are disall
 });
 
 test("creates official source paths for a requested older version", async () => {
-  const discover = jest.fn(async () => ({ node_version: "26.13.1" }));
+  const olderRelease = {
+    node_version: "26.12.0",
+    source: {
+      file: "node-v26.12.0-linux-x64.tar.xz",
+      url: "https://nodejs.org/dist/v26.12.0/node-v26.12.0-linux-x64.tar.xz",
+      checksums_file: "SHASUMS256.txt",
+      checksums_url: "https://nodejs.org/dist/v26.12.0/SHASUMS256.txt",
+      signature_file: "SHASUMS256.txt.sig",
+      signature_url: "https://nodejs.org/dist/v26.12.0/SHASUMS256.txt.sig",
+    },
+  };
+  const discover = jest.fn(async () => olderRelease);
   const release = await resolveReleaseVersion(
     "26.12.0",
     { node_version: "26.13.1" },
@@ -22,14 +33,16 @@ test("creates official source paths for a requested older version", async () => 
     discover,
   );
   expect(discover).toHaveBeenCalledTimes(1);
-  expect(release.source).toEqual({
-    file: "node-v26.12.0-linux-x64.tar.xz",
-    url: "https://nodejs.org/dist/v26.12.0/node-v26.12.0-linux-x64.tar.xz",
-    checksums_file: "SHASUMS256.txt",
-    checksums_url: "https://nodejs.org/dist/v26.12.0/SHASUMS256.txt",
-    signature_file: "SHASUMS256.txt.sig",
-    signature_url: "https://nodejs.org/dist/v26.12.0/SHASUMS256.txt.sig",
-  });
+  expect(discover).toHaveBeenCalledWith("26.12.0");
+  expect(release).toBe(olderRelease);
+});
+
+test("rejects a requested older version that the release index does not confirm", async () => {
+  await expect(
+    resolveReleaseVersion("26.12.0", { node_version: "26.13.1" }, true, async () => ({
+      node_version: "26.13.1",
+    })),
+  ).rejects.toThrow("Node.js 26.12.0 is not an available stable release");
 });
 
 test("extracts the primary signing key fingerprint", () => {

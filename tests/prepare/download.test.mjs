@@ -45,6 +45,9 @@ test("rejects failed responses and URLs outside trusted HTTPS hosts", async () =
   await expect(
     download("https://nodejs.org/file", "/virtual/file", ["nodejs.org"], dependencies),
   ).rejects.toThrow("download left the trusted HTTPS hosts");
+  await expect(
+    download("https://evil.test/file", "/virtual/file", ["nodejs.org"], dependencies),
+  ).rejects.toThrow("download left the trusted HTTPS hosts");
   dependencies.fetch.mockResolvedValue({
     ok: true,
     status: 200,

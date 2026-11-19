@@ -4,12 +4,12 @@ import generateFilesModule from "./files.mjs";
 
 const { hashFile } = generateFilesModule();
 
-async function buildIndex(directory, relative = "/", excludedPath = "") {
+async function buildIndex(directory, relative = "/", excludedPath = "", relativeFs = "") {
   const items = [];
   const directories = {};
   for (const entry of await readdir(directory, { withFileTypes: true })) {
     const file = path.join(directory, entry.name);
-    const entryPath = relative === "/" ? entry.name : `${relative.slice(1)}${entry.name}`;
+    const entryPath = relativeFs ? `${relativeFs}/${entry.name}` : entry.name;
     if (entryPath === excludedPath) continue;
     const info = await stat(file);
     const isDirectory = info.isDirectory();
@@ -32,6 +32,7 @@ async function buildIndex(directory, relative = "/", excludedPath = "") {
         path.join(directory, item.name),
         `${relative}${encodeURIComponent(item.name)}/`,
         excludedPath,
+        relativeFs ? `${relativeFs}/${item.name}` : item.name,
       ),
     );
   return directories;

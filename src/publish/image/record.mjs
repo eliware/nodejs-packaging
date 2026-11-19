@@ -47,6 +47,7 @@ async function main(argv = process.argv.slice(2)) {
   await mkdir(path.dirname(stage), { recursive: true });
   await cp(oldRoot, stage, { recursive: true });
 
+  let activated = false;
   try {
     const { imageRecord, catalogPath } = await writeImageRecords({
       stage,
@@ -86,11 +87,13 @@ async function main(argv = process.argv.slice(2)) {
 
     await rename(stage, finalRoot);
     await activateGeneration({ repositoryRoot, generationRoot: finalRoot, files });
+    activated = true;
     process.stdout.write(
       `${JSON.stringify({ generation: generationId, image: imageRecord }, null, 2)}\n`,
     );
   } catch (error) {
     await rm(stage, { recursive: true, force: true });
+    if (!activated) await rm(finalRoot, { recursive: true, force: true });
     throw error;
   }
 }

@@ -120,6 +120,23 @@ test("publishes a signed generation and updates repository pointers", async () =
   }
 });
 
+test("keeps an activated generation when writing the command result fails", async () => {
+  const { candidate, root, generation } = await setup();
+  const output = jest.spyOn(process.stdout, "write").mockImplementation(() => {
+    throw new Error("output failed");
+  });
+  try {
+    await expect(runWithEnv(candidate, root)).rejects.toThrow("output failed");
+    await expect(
+      fs.stat(path.join(root, ".generations", generation, "metadata/catalog.json")),
+    ).resolves.toBeDefined();
+  } finally {
+    output.mockRestore();
+    delete process.env.NODEJS_SIGNING_KEY;
+    delete process.env.NODEJS_REPOSITORY_ROOT;
+  }
+});
+
 test("rejects malformed candidates, duplicate releases, and Git tool errors", async () => {
   const { candidate, root } = await setup();
   await fs.writeFile(path.join(candidate, "metadata/release-manifest.json"), "{}");

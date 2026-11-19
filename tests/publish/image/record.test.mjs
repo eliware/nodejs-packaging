@@ -171,3 +171,26 @@ test("rejects an existing generation and removes stage data after signing errors
   delete process.env.NODEJS_SIGNING_KEY;
   jest.useRealTimers();
 });
+
+test("keeps an activated generation when writing the command result fails", async () => {
+  jest.useFakeTimers();
+  jest.setSystemTime(new Date("2026-11-19T12:00:00.000Z"));
+  const { root, recordPath } = await setup();
+  const output = jest.spyOn(process.stdout, "write").mockImplementation(() => {
+    throw new Error("output failed");
+  });
+  try {
+    await expect(main([recordPath])).rejects.toThrow("output failed");
+    const active = JSON.parse(
+      await fs.readFile(path.join(root, "metadata/active-generation.json"), "utf8"),
+    );
+    await expect(
+      fs.stat(path.join(root, ".generations", active.generation, "metadata/catalog.json")),
+    ).resolves.toBeDefined();
+  } finally {
+    output.mockRestore();
+    delete process.env.NODEJS_REPOSITORY_ROOT;
+    delete process.env.NODEJS_SIGNING_KEY;
+    jest.useRealTimers();
+  }
+});

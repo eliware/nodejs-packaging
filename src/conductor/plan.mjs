@@ -46,7 +46,7 @@ export default function planRelease({
   const npmUpdate =
     !publishedNpmVersion || compareNpmVersions(latestNpmVersion, publishedNpmVersion) > 0;
   const baseImageUpdate =
-    Boolean(publishedImageDigest) && publishedBaseImageDigest !== currentBaseImageDigest;
+    !publishedImageDigest || publishedBaseImageDigest !== currentBaseImageDigest;
   const buildRpm = nodeUpdate || npmUpdate;
   const buildImage = buildRpm || baseImageUpdate;
   const reason =

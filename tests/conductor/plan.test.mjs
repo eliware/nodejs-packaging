@@ -63,9 +63,10 @@ test("does nothing when no image record exists and upstream versions match", () 
     publishedImageDigest: null,
   });
   expect(result.buildRpm).toBe(false);
-  expect(result.buildImage).toBe(false);
-  expect(result.noOp).toBe(true);
-  expect(result.reason).toBe("no-updates");
+  expect(result.buildImage).toBe(true);
+  expect(result.baseImageUpdate).toBe(true);
+  expect(result.noOp).toBe(false);
+  expect(result.reason).toBe("base-image-update");
 });
 
 test("builds the RPM when the published release has no npm version", () => {

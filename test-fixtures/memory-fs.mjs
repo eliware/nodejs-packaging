@@ -36,6 +36,7 @@ function createMemoryFs() {
     return {
       size: entry.type === "file" ? Buffer.byteLength(entry.content) : 0,
       mtime: new Date("2026-01-01T00:00:00.000Z"),
+      mtimeMs: new Date("2026-01-01T00:00:00.000Z").getTime(),
       isDirectory: () => entry.type === "directory",
       isFile: () => entry.type === "file",
       isSymbolicLink: () => entry.type === "symlink",

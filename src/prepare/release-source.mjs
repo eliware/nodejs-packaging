@@ -7,21 +7,10 @@ async function resolveReleaseVersion(
   discoverLatestRelease,
 ) {
   if (selected.node_version === requestedVersion || !allowOlder) return selected;
-  await discoverLatestRelease();
-  const base = `https://nodejs.org/dist/v${requestedVersion}/`;
-  return {
-    metadata_version: "0.1.0",
-    schema: 1,
-    node_version: requestedVersion,
-    source: {
-      file: `node-v${requestedVersion}-linux-x64.tar.xz`,
-      url: `${base}node-v${requestedVersion}-linux-x64.tar.xz`,
-      checksums_file: "SHASUMS256.txt",
-      checksums_url: `${base}SHASUMS256.txt`,
-      signature_file: "SHASUMS256.txt.sig",
-      signature_url: `${base}SHASUMS256.txt.sig`,
-    },
-  };
+  const release = await discoverLatestRelease(requestedVersion);
+  if (release.node_version !== requestedVersion)
+    throw new Error(`Node.js ${requestedVersion} is not an available stable release`);
+  return release;
 }
 
 function verifySignature(keyringDirPath, signature, content, run = spawnSync) {
