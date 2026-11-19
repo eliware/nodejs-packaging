@@ -8,13 +8,14 @@ async function writeImageCatalog({ stage, image, imageRecord, generationId, gene
   release.image = imageRecord;
   release.generation_id = generationId;
   release.generated = generated;
-  catalog.stable.items = catalog.stable.items.map((item) => ({
-    ...item,
-    image: imageRecord,
-    generation_id: generationId,
-    generated,
-  }));
+  catalog.stable.items = catalog.stable.items.map((item) =>
+    item.node_version === image.source_release
+      ? { ...item, image: imageRecord, generation_id: generationId, generated }
+      : item,
+  );
+  const imageHistory = Array.isArray(catalog.images) ? catalog.images : [];
   catalog.images = [
+    ...imageHistory.filter((item) => item.node_version !== image.source_release),
     {
       ...imageRecord,
       node_version: image.source_release,

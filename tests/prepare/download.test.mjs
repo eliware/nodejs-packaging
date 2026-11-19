@@ -78,3 +78,38 @@ test("propagates pipeline and rename failures", async () => {
     download("https://nodejs.org/file", "/virtual/file", ["nodejs.org"], dependencies),
   ).rejects.toThrow("rename failed");
 });
+
+test("uses separate temporary files for concurrent downloads to one destination", async () => {
+  const temporaryPaths = [];
+  const dependencies = {
+    fetch: async (_url, options) => ({
+      ok: true,
+      status: 200,
+      url: "https://nodejs.org/archive.tar.xz",
+      body: options.signal ? Buffer.from(`archive-${temporaryPaths.length}`) : null,
+    }),
+    createWriteStream: (file) => {
+      temporaryPaths.push(file);
+      return { file };
+    },
+    pipeline: (body, output) => fs.writeFile(output.file, body),
+  };
+  await fs.mkdir("/virtual", { recursive: true });
+  await Promise.all([
+    download(
+      "https://nodejs.org/archive.tar.xz",
+      "/virtual/shared.tar.xz",
+      ["nodejs.org"],
+      dependencies,
+    ),
+    download(
+      "https://nodejs.org/archive.tar.xz",
+      "/virtual/shared.tar.xz",
+      ["nodejs.org"],
+      dependencies,
+    ),
+  ]);
+  expect(new Set(temporaryPaths).size).toBe(2);
+  await expect(fs.readFile("/virtual/shared.tar.xz", "utf8")).resolves.toMatch(/^archive-/);
+  expect((await fs.readdir("/virtual")).filter((name) => name.endsWith(".part"))).toEqual([]);
+});
