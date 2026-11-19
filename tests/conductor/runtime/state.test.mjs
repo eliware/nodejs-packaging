@@ -118,6 +118,20 @@ test("propagates lock creation errors unrelated to an existing lock", async () =
   await expect(state.acquireLock(lockPath)).rejects.toThrow("denied");
 });
 
+test("removes a newly created lock when the owner record cannot be written", async () => {
+  const stateRoot = "/virtual/conductor-owner-write-error";
+  const lockPath = path.join(stateRoot, "lock");
+  const state = conductorState({
+    stateRoot,
+    runId: "run-owner-write",
+    writeOwner: async () => {
+      throw new Error("owner write failed");
+    },
+  });
+  await expect(state.acquireLock(lockPath)).rejects.toThrow("owner write failed");
+  await expect(fs.stat(lockPath)).rejects.toMatchObject({ code: "ENOENT" });
+});
+
 test("propagates invalid lock owner process identifiers", async () => {
   const stateRoot = "/virtual/conductor-invalid-owner";
   const lockPath = path.join(stateRoot, "lock");

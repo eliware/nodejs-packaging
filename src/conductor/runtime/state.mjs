@@ -6,6 +6,7 @@ function conductorState({
   runId,
   createDirectory = mkdir,
   readOwner = readFile,
+  writeOwner = writeFile,
   getInfo = stat,
   moveStaleLock = rename,
   isProcessAlive = (pid) => {
@@ -52,10 +53,15 @@ function conductorState({
         throw createError;
       }
     }
-    await writeFile(
-      path.join(lockPath, "owner.json"),
-      `${JSON.stringify({ run_id: runId, pid: process.pid, started: new Date().toISOString() }, null, 2)}\n`,
-    );
+    try {
+      await writeOwner(
+        path.join(lockPath, "owner.json"),
+        `${JSON.stringify({ run_id: runId, pid: process.pid, started: new Date().toISOString() }, null, 2)}\n`,
+      );
+    } catch (error) {
+      await rm(lockPath, { recursive: true, force: true });
+      throw error;
+    }
     return true;
   }
 
