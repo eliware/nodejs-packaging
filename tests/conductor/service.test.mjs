@@ -1,21 +1,15 @@
-import { EventEmitter } from "node:events";
-import path from "node:path";
 import { expect, jest, test } from "@jest/globals";
 
-const spawn = jest.fn();
 const notifyConductor = jest.fn();
-jest.unstable_mockModule("node:child_process", () => ({ spawn }));
+const runConductor = jest.fn(async () => {});
 jest.unstable_mockModule("../../src/discord-notifier.mjs", () => ({
   default: () => ({ notifyConductor }),
 }));
+jest.unstable_mockModule("../../src/conductor/service/runner.mjs", () => ({
+  default: () => ({ runConductor }),
+}));
 const { default: serviceModule } = await import("../../src/conductor/service.mjs");
 const { runConductorService, main } = serviceModule();
-
-function childWith(event, ...values) {
-  const child = new EventEmitter();
-  process.nextTick(() => child.emit(event, ...values));
-  return child;
-}
 
 test("runs preflight before the wet release", async () => {
   const calls = [];
@@ -26,6 +20,20 @@ test("runs preflight before the wet release", async () => {
   });
   expect(succeeded).toBe(true);
   expect(calls).toEqual(["--dry-run", "--wet-run"]);
+});
+
+test("uses default service dependencies and completes successfully", async () => {
+  runConductor.mockClear();
+  const info = jest.spyOn(console, "info").mockImplementation(() => {});
+  try {
+    process.exitCode = 0;
+    await main();
+    expect(runConductor).toHaveBeenNthCalledWith(1, "--dry-run", expect.any(Object));
+    expect(runConductor).toHaveBeenNthCalledWith(2, "--wet-run", expect.any(Object));
+    expect(process.exitCode).toBe(0);
+  } finally {
+    info.mockRestore();
+  }
 });
 
 test("uses console logging and reports dry-run and wet-run failures", async () => {
@@ -64,58 +72,6 @@ test("uses console logging and reports dry-run and wet-run failures", async () =
   } finally {
     info.mockRestore();
     error.mockRestore();
-  }
-});
-
-test("runs the child conductor twice and returns a successful status", async () => {
-  spawn.mockReset().mockImplementation(() => childWith("exit", 0, null));
-  const info = jest.spyOn(console, "info").mockImplementation(() => {});
-  try {
-    process.exitCode = 0;
-    await main();
-    expect(spawn).toHaveBeenCalledTimes(2);
-    expect(spawn).toHaveBeenNthCalledWith(
-      1,
-      process.execPath,
-      [path.resolve("src/bin/conductor.mjs"), "--dry-run"],
-      expect.objectContaining({ env: process.env, stdio: "inherit" }),
-    );
-    expect(process.exitCode).toBe(0);
-  } finally {
-    info.mockRestore();
-  }
-});
-
-test("reports child exit codes, signals, and spawn errors", async () => {
-  const notices = [];
-  const log = { info() {}, error: jest.fn() };
-  const info = jest.spyOn(console, "info").mockImplementation(() => {});
-  const original = console.error;
-  console.error = log.error;
-  try {
-    spawn.mockReset().mockImplementation(() => childWith("exit", 7, null));
-    process.exitCode = 0;
-    await main({ notify: async (notice) => notices.push(notice) });
-    expect(process.exitCode).toBe(1);
-    expect(notices.at(-1)).toMatchObject({
-      title: "Node.js conductor dry-run failed",
-      fields: expect.arrayContaining([{ name: "Error", value: "conductor exited with code 7 " }]),
-    });
-
-    spawn.mockReset().mockImplementation(() => childWith("exit", null, "SIGTERM"));
-    await main({ notify: async (notice) => notices.push(notice) });
-    expect(notices.at(-1).fields).toContainEqual({
-      name: "Error",
-      value: "conductor exited with code signal SIGTERM",
-    });
-
-    spawn.mockReset().mockImplementation(() => childWith("error", new Error("spawn failed")));
-    await main({ notify: async (notice) => notices.push(notice) });
-    expect(notices.at(-1).fields).toContainEqual({ name: "Error", value: "spawn failed" });
-  } finally {
-    info.mockRestore();
-    console.error = original;
-    process.exitCode = 0;
   }
 });
 

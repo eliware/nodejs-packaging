@@ -5,10 +5,12 @@ import imageRecordsModule from "./records.mjs";
 import signModule from "../sign.mjs";
 import generateIndexModule from "../../generate/index.mjs";
 import activateGenerationModule from "../activate-generation.mjs";
+import imageValidationModule from "./validation.mjs";
 const files = publishFilesystemModule();
 const { sign } = signModule();
 const { buildIndex } = generateIndexModule();
 const { activateGeneration } = activateGenerationModule();
+const { validateImageRecord } = imageValidationModule();
 const { writeImageRecords } = imageRecordsModule();
 
 async function main(argv = process.argv.slice(2)) {
@@ -24,9 +26,7 @@ async function main(argv = process.argv.slice(2)) {
   if (!/^[A-F0-9]{40}$/.test(keyFingerprint || ""))
     throw new Error("set NODEJS_SIGNING_KEY to the signing key fingerprint");
 
-  const image = JSON.parse(await readFile(recordPath, "utf8"));
-  if (image.validation !== "passed" || !/^sha256:[a-f0-9]{64}$/.test(image.digest || ""))
-    throw new Error("image record must contain a passed validation and registry digest");
+  const image = validateImageRecord(JSON.parse(await readFile(recordPath, "utf8")));
   const oldActive = JSON.parse(
     await readFile(path.join(repositoryRoot, "metadata/active-generation.json"), "utf8"),
   );

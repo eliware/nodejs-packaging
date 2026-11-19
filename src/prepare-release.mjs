@@ -1,4 +1,4 @@
-import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { mkdir, readFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import discoverReleaseModule from "./discover/release.mjs";
@@ -9,8 +9,10 @@ import releaseSourceModule from "./prepare/release-source.mjs";
 const { resolveReleaseVersion, verifySignature, checksumForFile } = releaseSourceModule();
 import downloadModule from "./prepare/download.mjs";
 import hashModule from "./prepare/hash.mjs";
+import prepareRecordModule from "./prepare/record.mjs";
 const { download } = downloadModule();
 const { hashFile } = hashModule();
+const { writeReleaseRecord } = prepareRecordModule();
 
 async function main(argv = process.argv.slice(2), dependencies = {}) {
   const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
@@ -82,40 +84,14 @@ async function main(argv = process.argv.slice(2), dependencies = {}) {
   if (`sha512-${npmArchiveSha512}` !== npmRelease.integrity)
     throw new Error(`npm archive integrity mismatch for ${npmRelease.file}`);
 
-  const record = {
-    metadata_version: "0.1.0",
-    schema: 1,
-    release_id: `node-v${version}-el10-x86_64`,
-    channel: "stable",
-    node_version: version,
-    target: {
-      distribution: "centos-stream",
-      version: "10",
-      repository: "epel",
-      architecture: "x86_64",
-      format: "rpm",
-    },
-    source: {
-      url: release.source.url,
-      file: release.source.file,
-      sha256: archiveSha256,
-      signature_url: release.source.signature_url,
-      signing_key_fingerprint: fingerprint,
-      verified_at: new Date().toISOString(),
-    },
-    npm: {
-      version: npmRelease.version,
-      file: npmRelease.file,
-      url: npmRelease.url,
-      integrity: npmRelease.integrity,
-    },
-    prepared_at: new Date().toISOString(),
-  };
-  await writeFile(
-    path.join(outputDir, "release-input.json"),
-    `${JSON.stringify(record, null, 2)}\n`,
-    { mode: 0o600 },
-  );
+  const record = await writeReleaseRecord({
+    outputDir,
+    version,
+    release,
+    npmRelease,
+    fingerprint,
+    archiveSha256,
+  });
   process.stdout.write(`${JSON.stringify(record, null, 2)}\n`);
 }
 

@@ -1,8 +1,9 @@
 import path from "node:path";
-import { spawn } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import discordNotifierModule from "../discord-notifier.mjs";
+import conductorRunnerModule from "./service/runner.mjs";
 const { notifyConductor } = discordNotifierModule();
+const { runConductor } = conductorRunnerModule();
 
 async function runConductorService({ run, notify, log = console }) {
   let phase = "dry-run";
@@ -39,22 +40,6 @@ async function main(dependencies = {}) {
   const notify = dependencies.notify || notifyConductor;
   const succeeded = await runConductorService({ run, notify });
   if (!succeeded) process.exitCode = 1;
-}
-
-function runConductor(mode, { root, conductor }) {
-  return new Promise((resolve, reject) => {
-    const child = spawn(process.execPath, [conductor, mode], {
-      cwd: root,
-      env: process.env,
-      stdio: "inherit",
-    });
-    child.once("error", reject);
-    child.once("exit", (code, signal) =>
-      code === 0
-        ? resolve()
-        : reject(new Error(`conductor exited with code ${code ?? "signal"} ${signal || ""}`)),
-    );
-  });
 }
 
 export default function moduleApi() {

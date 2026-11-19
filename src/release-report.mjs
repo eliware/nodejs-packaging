@@ -1,9 +1,11 @@
-import { copyFile, mkdir, readFile, writeFile } from "node:fs/promises";
+import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import renderCardModule from "./report/render-card.mjs";
+import reportPublishModule from "./report/publish.mjs";
 
 const { renderCard } = renderCardModule();
+const { publishReport } = reportPublishModule();
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const escapeHtml = (value) =>
@@ -83,12 +85,7 @@ async function generateReleaseReport({
     },
   };
   const reportPath = path.join(directory, "release-report.json");
-  await writeFile(reportPath, `${JSON.stringify(report, null, 2)}\n`);
-  await copyFile(imagePath, path.join(repositoryRoot, "metadata/latest-release-card.png"));
-  await writeFile(
-    path.join(repositoryRoot, "metadata/latest-release-report.json"),
-    `${JSON.stringify({ metadata_version: "0.1.0", schema: 1, run_id: runId, report: `${baseUrl}/metadata/runs/${runId}/release-report.json`, card: report.card.latest }, null, 2)}\n`,
-  );
+  await publishReport({ reportPath, imagePath, repositoryRoot, report });
   return { cardUrl, reportPath, imagePath, imageSha256 };
 }
 
