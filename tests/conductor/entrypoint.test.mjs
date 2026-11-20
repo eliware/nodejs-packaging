@@ -25,3 +25,15 @@ test("uses process arguments and environment by default", async () => {
     process.argv = argv;
   }
 });
+
+test("starts the configured workflow from the command line launcher", async () => {
+  const argv = process.argv;
+  process.argv = [process.execPath, "conductor.mjs", "--dry-run"];
+  try {
+    await import("../../bin/conductor.mjs");
+    expect(createConductorConfig).toHaveBeenLastCalledWith(process.argv.slice(2), process.env);
+    expect(runConductor).toHaveBeenLastCalledWith({ dryRun: true });
+  } finally {
+    process.argv = argv;
+  }
+});
