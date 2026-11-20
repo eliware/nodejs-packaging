@@ -25,3 +25,17 @@ test("loads settings and the active generation before delegating publication", a
     generation: "generation-1",
   });
 });
+
+test("starts the publication command from its launcher", async () => {
+  repositoryGitSettings.mockClear();
+  loadActiveGeneration.mockClear();
+  commitAndPushRepository.mockClear();
+  await import("../bin/commit-publish-repository.mjs");
+  expect(repositoryGitSettings).toHaveBeenCalledWith(undefined);
+  expect(loadActiveGeneration).toHaveBeenCalledWith("/repo");
+  expect(commitAndPushRepository).toHaveBeenCalledWith({
+    repositoryRoot: "/repo",
+    branch: "main",
+    generation: "generation-1",
+  });
+});

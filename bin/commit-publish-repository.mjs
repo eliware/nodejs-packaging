@@ -1,5 +1,4 @@
 #!/usr/bin/env node
-import sourceModule from "../src/commit-publish-repository.mjs";
-const { main } = sourceModule();
+import main from "../src/commit-publish-repository.mjs";
 
 await main();
