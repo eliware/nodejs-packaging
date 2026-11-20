@@ -1,7 +1,7 @@
-import path from "node:path";
 import writeImageCatalog from "./catalog.mjs";
 import writeImageEvidence from "./evidence.mjs";
 import createImageRecord from "./record-data.mjs";
+import writeImageGenerationMetadata from "./generation-metadata.mjs";
 
 export default async function writeImageRecords({
   stage,
@@ -31,8 +31,6 @@ export default async function writeImageRecords({
     gpgHome,
     files,
   });
-  const active = { metadata_version: "0.1.0", schema: 1, generation: generationId, generated };
-  await files.writeJson(path.join(stage, "metadata/active-generation.json"), active);
-  await files.writeJson(path.join(stage, "generation.json"), active);
+  await writeImageGenerationMetadata({ stage, generationId, generated, files });
   return { imageRecord, catalogPath };
 }

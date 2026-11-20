@@ -1,5 +1,6 @@
 import { mkdir, readFile, rename, rm, stat, writeFile } from "node:fs/promises";
 import path from "node:path";
+import saveConductorState from "./state-file.mjs";
 
 export default function conductorState({
   stateRoot,
@@ -79,13 +80,7 @@ export default function conductorState({
   }
 
   async function saveState(value) {
-    const file = path.join(stateRoot, "last-run.json");
-    const temporary = `${file}.tmp`;
-    await writeFile(
-      temporary,
-      `${JSON.stringify({ ...value, updated: new Date().toISOString() }, null, 2)}\n`,
-    );
-    await rename(temporary, file);
+    await saveConductorState(stateRoot, value);
   }
 
   return { acquireLock, releaseLock, saveState };

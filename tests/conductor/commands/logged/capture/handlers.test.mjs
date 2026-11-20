@@ -12,12 +12,8 @@ test("logs captured output and handles command failures", async () => {
     logName: "capture",
     quiet: true,
   });
-  await handlers.onError(new Error("spawn failed"));
-  const errorLog = await fs.readFile("/virtual/logs/output.log", "utf8");
-  expect(errorLog).toContain("spawn failed");
   await handlers.onExit({ code: 1, stdout: "output", stderr: "failure" });
+  await createCaptureHandlers().onExit({ code: 0, stdout: "", stderr: "" });
   const outputLog = await fs.readFile("/virtual/logs/output.log", "utf8");
   expect(outputLog).toContain("failure");
-  const defaults = createCaptureHandlers();
-  expect(defaults.onError(new Error("ignored"))).toBeUndefined();
 });

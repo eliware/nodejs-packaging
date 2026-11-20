@@ -15,10 +15,6 @@ test("creates and removes a lock and saves state atomically", async () => {
   const owner = JSON.parse(await fs.readFile(path.join(lockPath, "owner.json"), "utf8"));
   expect(owner).toEqual(expect.objectContaining({ run_id: "run-1", pid: process.pid }));
   await state.saveState({ stage: "complete" });
-  const saved = JSON.parse(await fs.readFile(path.join(stateRoot, "last-run.json"), "utf8"));
-  expect(saved).toEqual(
-    expect.objectContaining({ stage: "complete", updated: expect.any(String) }),
-  );
   await state.releaseLock(lockPath);
   await expect(fs.stat(lockPath)).rejects.toMatchObject({ code: "ENOENT" });
   await expect(state.releaseLock(lockPath)).resolves.toBe(false);

@@ -92,3 +92,17 @@ test("cleans the staging directory when repository metadata generation fails", a
   ).rejects.toThrow("createrepo_c exited with status 1: createrepo failed");
   await expect(fs.readdir("/virtual/candidate-failed")).resolves.toEqual([]);
 });
+
+test("rejects an existing candidate output directory", async () => {
+  const input = await setup("/virtual/candidate-existing/generation-1");
+  await fs.mkdir(input.outputRoot, { recursive: true });
+  await expect(
+    generateCandidate({
+      ...input,
+      version: "26.13.1",
+      generationId: "generation-1",
+      sourceInput: { source: { sha256: "a".repeat(64) }, npm: { version: "12.2.3" } },
+      now: new Date("2026-11-19T12:00:00.000Z"),
+    }),
+  ).rejects.toThrow("candidate output already exists");
+});

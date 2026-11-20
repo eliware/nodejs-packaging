@@ -4,121 +4,83 @@ import memoryFilesystemFixture from "../test-fixtures/memory-fs.mjs";
 
 const { createMemoryFs } = memoryFilesystemFixture();
 const fs = createMemoryFs();
-const spawnSync = jest.fn();
+const generateCandidate = jest.fn(async ({ outputRoot, generationId }) => ({
+  output: outputRoot,
+  generation_id: generationId,
+}));
 jest.unstable_mockModule("node:fs/promises", () => fs);
-jest.unstable_mockModule("node:fs", () => ({ createReadStream: fs.createReadStream }));
-jest.unstable_mockModule("node:child_process", () => ({ spawnSync }));
+jest.unstable_mockModule("../src/generate/candidate.mjs", () => ({
+  default: generateCandidate,
+}));
 const { default: main } = await import("../src/generate-repository.mjs");
 
-async function setup() {
+async function prepareInputs(packageDir) {
   const root = process.cwd();
-  const packageDir = "/virtual/packages";
   const version = "26.13.1";
-  await fs.mkdir(path.join(root, "templates"), { recursive: true });
-  await fs.writeFile(path.join(root, "templates/nodejs26.repo"), "[nodejs26]\n");
-  await fs.writeFile(
-    path.join(root, "templates/catalog.seed.json"),
-    JSON.stringify({ metadata_version: "0.1.0", stable: { items: [] } }),
-  );
   await fs.mkdir(packageDir, { recursive: true });
-  await fs.writeFile(path.join(packageDir, "node.rpm"), "rpm data");
+  await fs.writeFile(path.join(packageDir, "node.rpm"), "rpm");
   await fs.writeFile(
     path.join(packageDir, "package.json"),
     JSON.stringify({
       name: "eliware-node26",
       version,
-      npm_version: "12.2.3",
       path: "node.rpm",
-      sha256: "a".repeat(64),
-      size: 8,
+      npm_version: "12.2.3",
     }),
   );
   await fs.mkdir(path.join(root, ".state/sources", version), { recursive: true });
   await fs.writeFile(
     path.join(root, ".state/sources", version, "release-input.json"),
-    JSON.stringify({ source: { sha256: "b".repeat(64) }, npm: { version: "12.2.3" } }),
+    JSON.stringify({ source: { sha256: "source-hash" }, npm: { version: "12.2.3" } }),
   );
-  spawnSync.mockReset();
-  spawnSync.mockImplementation((command, args) => {
-    const repositoryDir = args.at(-1);
-    fs.mkdirSync(path.join(repositoryDir, "repodata"), { recursive: true });
-    fs.writeFileSync(path.join(repositoryDir, "repodata/repomd.xml"), "repository metadata");
-    return { status: 0, stderr: "" };
-  });
-  return { root, packageDir, version };
+  return { root, version };
 }
 
-test("requires a valid stable Node.js 26 version", async () => {
-  await expect(main()).rejects.toThrow("pass a stable Node.js 26 version with --version");
-  await expect(main([])).rejects.toThrow("pass a stable Node.js 26 version with --version");
-  await expect(main(["--version", "27.0.0"])).rejects.toThrow(
-    "pass a stable Node.js 26 version with --version",
-  );
-});
-
-test("generates a signed repository candidate layout and metadata", async () => {
-  const { root, packageDir, version } = await setup();
-  const output = "/virtual/generated/repository";
+test("parses explicit arguments and prints the generated candidate result", async () => {
+  const packageDir = "/virtual/rpm-input";
+  const { root, version } = await prepareInputs(packageDir);
+  const output = "/virtual/repository-output";
   const write = jest.spyOn(process.stdout, "write").mockImplementation(() => true);
   try {
-    await main(["--version", version, "ignored", "--rpm-dir", packageDir, "--output", output]);
-    const cliResult = JSON.parse(write.mock.calls[0][0]);
-    expect(cliResult).toEqual(
+    await main(["--version", version, "--rpm-dir", packageDir, "--output", output]);
+    expect(generateCandidate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        root,
+        version,
+        outputRoot: output,
+        rpmPath: path.join(packageDir, "node.rpm"),
+        rpmRecord: expect.objectContaining({ name: "eliware-node26", version }),
+        sourceInput: expect.objectContaining({ source: { sha256: "source-hash" } }),
+      }),
+    );
+    expect(JSON.parse(write.mock.calls[0][0])).toEqual(
       expect.objectContaining({ output, generation_id: expect.any(String) }),
     );
-    await expect(fs.stat(output)).resolves.toBeDefined();
-    expect(write).toHaveBeenCalled();
-    expect(root).toBe(process.cwd());
   } finally {
     write.mockRestore();
   }
-
-  const defaultPackageDir = path.join(root, "artifacts/rpms", version);
-  await fs.mkdir(defaultPackageDir, { recursive: true });
-  await fs.writeFile(path.join(defaultPackageDir, "node.rpm"), "rpm data");
-  await fs.writeFile(
-    path.join(defaultPackageDir, "package.json"),
-    JSON.stringify({
-      name: "eliware-node26",
-      version,
-      npm_version: "12.2.3",
-      path: "node.rpm",
-      sha256: "a".repeat(64),
-      size: 8,
-    }),
-  );
-  const defaultWrite = jest.spyOn(process.stdout, "write").mockImplementation(() => true);
-  try {
-    await expect(main(["--version", version])).resolves.toBeUndefined();
-    const cliResult = JSON.parse(defaultWrite.mock.calls[0][0]);
-    expect(cliResult.output).toContain(path.join("artifacts", "repositories"));
-  } finally {
-    defaultWrite.mockRestore();
-  }
 });
 
-test("rejects mismatched package records, existing output, and repository tool failures", async () => {
-  const { packageDir, version } = await setup();
-  const recordPath = path.join(packageDir, "package.json");
-  await fs.writeFile(recordPath, JSON.stringify({ name: "wrong", version }));
-  await expect(main(["--version", version, "--rpm-dir", packageDir])).rejects.toThrow(
-    "RPM record does not match the requested Node.js version",
-  );
-
-  await setup();
-  await fs.mkdir("/virtual/existing", { recursive: true });
-  await expect(
-    main(["--version", version, "--rpm-dir", packageDir, "--output", "/virtual/existing"]),
-  ).rejects.toThrow("candidate output already exists");
-
-  await setup();
-  spawnSync.mockReturnValue({ status: 1, stderr: "tool failed" });
-  await expect(
-    main(["--version", version, "--rpm-dir", packageDir, "--output", "/virtual/failed"]),
-  ).rejects.toThrow("createrepo_c exited with status 1: tool failed");
-  await setup();
-  spawnSync.mockReturnValue({ status: 0, error: new Error("tool missing") });
-  await expect(
-    main(["--version", version, "--rpm-dir", packageDir, "--output", "/virtual/missing"]),
-  ).rejects.toThrow("tool missing");
+test("uses default paths and rejects unsupported release versions", async () => {
+  await expect(main()).rejects.toThrow("pass a stable Node.js 26 version with --version");
+  const { root, version } = await prepareInputs(path.join(process.cwd(), "artifacts/rpms/26.13.1"));
+  const write = jest.spyOn(process.stdout, "write").mockImplementation(() => true);
+  try {
+    await main(["--version", version]);
+    const candidate = generateCandidate.mock.calls.at(-1)[0];
+    expect(candidate.rpmPath).toBe(path.join(root, "artifacts/rpms", version, "node.rpm"));
+    expect(candidate.outputRoot).toContain(path.join("artifacts", "repositories"));
+    await fs.writeFile(
+      path.join(root, "artifacts/rpms", version, "package.json"),
+      JSON.stringify({ name: "wrong", version }),
+    );
+    await expect(main(["--version", version])).rejects.toThrow(
+      "RPM record does not match the requested Node.js version",
+    );
+    await expect(main(["--version", "27.0.0"])).rejects.toThrow(
+      "pass a stable Node.js 26 version with --version",
+    );
+  } finally {
+    write.mockRestore();
+  }
 });
