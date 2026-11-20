@@ -6,9 +6,6 @@ function createRepository() {
   const runCommandCapture = jest.fn(async () => ({ code: 0, stdout: "", stderr: "" }));
   const repository = conductorRepository({
     repositoryUrl: "https://nodejs.eliware.org",
-    baseImage: "quay.io/centos/centos:stream10",
-    runCommand,
-    runCommandCapture,
   });
   return { repository, runCommand, runCommandCapture };
 }
@@ -28,22 +25,6 @@ test("loads JSON and reports HTTP errors", async () => {
   } finally {
     globalThis.fetch = originalFetch;
   }
-});
-
-test("pulls and inspects the configured base image digest", async () => {
-  const { repository, runCommand, runCommandCapture } = createRepository();
-  runCommandCapture
-    .mockResolvedValueOnce({
-      stdout: JSON.stringify([
-        { RepoDigests: ["other@sha256:no", "quay.io/centos/centos@sha256:abc"] },
-      ]),
-    })
-    .mockResolvedValueOnce({ stdout: JSON.stringify([{ RepoDigests: ["other@sha256:no"] }]) })
-    .mockResolvedValueOnce({ stdout: JSON.stringify([{}]) });
-  await expect(repository.getBaseImageDigest()).resolves.toBe("quay.io/centos/centos@sha256:abc");
-  await expect(repository.getBaseImageDigest()).rejects.toThrow("immutable digest");
-  await expect(repository.getBaseImageDigest()).rejects.toThrow("immutable digest");
-  expect(runCommand).toHaveBeenCalledWith("docker", ["pull", "quay.io/centos/centos:stream10"]);
 });
 
 test("waits for the published Node.js and npm versions", async () => {

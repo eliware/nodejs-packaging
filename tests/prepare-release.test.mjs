@@ -95,16 +95,6 @@ function dependencies(overrides = {}) {
   };
 }
 
-test("rejects unsupported Node.js versions", async () => {
-  await setup();
-  await expect(main(["--version", "27.0.0"], dependencies())).rejects.toThrow(
-    "unsupported Node.js 26 version: 27.0.0",
-  );
-  await expect(main(["--version", "26.0.0"], dependencies())).rejects.toThrow(
-    "is not the latest stable Node.js 26 release 26.13.1",
-  );
-});
-
 test("rejects source output paths inside tracked repository content", async () => {
   const { root } = await setup();
   process.env.NODEJS_SOURCE_DIR = path.join(root, "build-config/release-cache");

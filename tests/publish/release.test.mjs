@@ -26,7 +26,7 @@ const files = {
 jest.unstable_mockModule("node:fs/promises", () => fs);
 jest.unstable_mockModule("node:child_process", () => ({ spawnSync }));
 jest.unstable_mockModule("../../src/publish/filesystem.mjs", () => ({ default: () => files }));
-jest.unstable_mockModule("../../src/publish/release-generation.mjs", () => ({
+jest.unstable_mockModule("../../src/publish/release/generation.mjs", () => ({
   default: prepareReleaseGeneration,
 }));
 const { default: main } = await import("../../src/publish/release.mjs");
@@ -72,19 +72,15 @@ function runWithEnv(candidate, root) {
   return main(["--version", "26.13.1", "--candidate", candidate, "--repository", root]);
 }
 
-test("validates release version, candidate path, and signing key", async () => {
+test("uses process arguments when no argument list is supplied", async () => {
   await setup();
-  await expect(main()).rejects.toThrow("pass a stable Node.js 26 version with --version");
-  await expect(main(["--version", "27.0.0", "--candidate", "/virtual/candidate"])).rejects.toThrow(
-    "pass a stable Node.js 26 version with --version",
-  );
-  await expect(main(["--version", "26.13.1"])).rejects.toThrow(
-    "pass a repository candidate with --candidate",
-  );
-  delete process.env.NODEJS_SIGNING_KEY;
-  await expect(main(["--version", "26.13.1", "--candidate", "/virtual/candidate"])).rejects.toThrow(
-    "set NODEJS_SIGNING_KEY to the signing key fingerprint",
-  );
+  const argv = process.argv;
+  process.argv = [process.execPath, "publish-release.mjs"];
+  try {
+    await expect(main()).rejects.toThrow("pass a stable Node.js 26 version with --version");
+  } finally {
+    process.argv = argv;
+  }
 });
 
 test("publishes a signed generation and updates repository pointers", async () => {

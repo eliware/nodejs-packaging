@@ -1,12 +1,12 @@
 import { stat } from "node:fs/promises";
 import path from "node:path";
-import writeRepositoryIndex from "../generate/write-index.mjs";
-import validatePublishedMetadata from "./validate-metadata.mjs";
-import signReleaseRpm from "./sign/release-rpm.mjs";
-import updateReleaseRecords from "./update-release/records.mjs";
-import signRepositoryMetadata from "./sign/repository-metadata.mjs";
-import updateReleaseCatalog from "./update-release/catalog.mjs";
-import writeReleaseManifest from "./write-release-manifest.mjs";
+import writeRepositoryIndex from "../../generate/write-index.mjs";
+import validatePublishedMetadata from "../validate-metadata.mjs";
+import signReleaseRpm from "../sign/release-rpm.mjs";
+import updateReleaseRecords from "../update-release/records.mjs";
+import signRepositoryMetadata from "../sign/repository-metadata.mjs";
+import updateReleaseCatalog from "../update-release/catalog.mjs";
+import writeReleaseManifest from "../write-release-manifest.mjs";
 
 export default async function prepareReleaseGeneration({
   stagingRoot,

@@ -1,19 +1,19 @@
 import path from "node:path";
 import { expect, jest, test } from "@jest/globals";
-import memoryFilesystemFixture from "../../test-fixtures/memory-fs.mjs";
+import memoryFilesystemFixture from "../../../test-fixtures/memory-fs.mjs";
 
 const { createMemoryFs } = memoryFilesystemFixture();
 const fs = createMemoryFs();
 const sign = jest.fn(async () => {});
 const buildIndex = jest.fn(async () => ({ "/": { entries: [] } }));
 jest.unstable_mockModule("node:fs/promises", () => fs);
-jest.unstable_mockModule("../../src/publish/sign.mjs", () => ({ default: sign }));
-jest.unstable_mockModule("../../src/publish/validate-metadata.mjs", () => ({
+jest.unstable_mockModule("../../../src/publish/sign.mjs", () => ({ default: sign }));
+jest.unstable_mockModule("../../../src/publish/validate-metadata.mjs", () => ({
   default: jest.fn(async () => true),
 }));
-jest.unstable_mockModule("../../src/generate/index.mjs", () => ({ default: buildIndex }));
+jest.unstable_mockModule("../../../src/generate/index.mjs", () => ({ default: buildIndex }));
 const { default: prepareReleaseGeneration } =
-  await import("../../src/publish/release-generation.mjs");
+  await import("../../../src/publish/release/generation.mjs");
 
 test("signs RPM and repository metadata and completes release manifests", async () => {
   const stagingRoot = "/virtual/release-generation/stage";

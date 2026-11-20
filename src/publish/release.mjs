@@ -1,31 +1,14 @@
 import { cp, lstat, mkdir, readFile, readdir, rename, rm } from "node:fs/promises";
 import path from "node:path";
 import publishFilesystemModule from "./filesystem.mjs";
-import prepareReleaseGeneration from "./release-generation.mjs";
+import loadReleaseInput from "./release/input.mjs";
+import prepareReleaseGeneration from "./release/generation.mjs";
 import activateGeneration from "./activate-generation.mjs";
 import pruneGenerations from "./retention.mjs";
 import runRepositoryTool from "./repository-tools.mjs";
 const files = publishFilesystemModule();
 export default async function main(argv = process.argv.slice(2)) {
-  const args = new Map();
-  for (let index = 0; index < argv.length; index += 1) {
-    if (argv[index].startsWith("--")) args.set(argv[index].slice(2), argv[++index]);
-  }
-  const version = args.get("version");
-  const candidateRoot = path.resolve(args.get("candidate") || "");
-  const repositoryRoot = path.resolve(
-    args.get("repository") || process.env.NODEJS_REPOSITORY_ROOT || "/eliware/nodejs-repository",
-  );
-  const keyFingerprint = process.env.NODEJS_SIGNING_KEY;
-  const gpgHome = path.resolve(
-    process.env.NODEJS_GNUPGHOME || "/var/lib/eliware/nodejs-signing/gnupg",
-  );
-  if (!/^26\.(0|[1-9]\d*)\.(0|[1-9]\d*)$/.test(version || ""))
-    throw new Error("pass a stable Node.js 26 version with --version");
-  if (!candidateRoot || !args.get("candidate"))
-    throw new Error("pass a repository candidate with --candidate");
-  if (!/^[A-F0-9]{40}$/.test(keyFingerprint || ""))
-    throw new Error("set NODEJS_SIGNING_KEY to the signing key fingerprint");
+  const { candidateRoot, repositoryRoot, keyFingerprint, gpgHome } = loadReleaseInput(argv);
 
   const candidateManifest = JSON.parse(
     await readFile(path.join(candidateRoot, "metadata/release-manifest.json"), "utf8"),

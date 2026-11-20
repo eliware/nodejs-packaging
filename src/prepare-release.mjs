@@ -10,37 +10,20 @@ import verifyReleaseInput from "./prepare/verification.mjs";
 import resolveSourceDirectory from "./prepare/source-path.mjs";
 import writeReleaseRecord from "./prepare/record.mjs";
 import prepareReleaseDirectories from "./prepare/directories.mjs";
+import loadPrepareInput from "./prepare/input.mjs";
 export default async function main(argv = process.argv.slice(2), dependencies = {}) {
   const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
   const keyConfig = JSON.parse(
     await readFile(path.join(root, "build-config/nodejs-release-keys.json"), "utf8"),
   );
   const outputRoot = resolveSourceDirectory(root, process.env.NODEJS_SOURCE_DIR);
-  const args = new Map();
-  for (let index = 0; index < argv.length; index += 1) {
-    if (argv[index].startsWith("--")) args.set(argv[index].slice(2), argv[++index]);
-  }
-
   const discoverRelease =
     dependencies.discoverLatestRelease || ((version) => discoverLatestRelease(fetch, version));
   const selected = await discoverRelease();
-  const version = args.get("version") || selected.node_version;
-  if (!/^26\.(0|[1-9]\d*)\.(0|[1-9]\d*)$/.test(version))
-    throw new Error(`unsupported Node.js 26 version: ${version}`);
-  if (version !== selected.node_version && args.get("allow-older") !== "true")
-    throw new Error(
-      `version ${version} is not the latest stable Node.js 26 release ${selected.node_version}`,
-    );
+  const { version, allowOlder, npmVersion } = loadPrepareInput(argv, selected);
 
-  const release = await resolveReleaseVersion(
-    version,
-    selected,
-    args.get("allow-older") === "true",
-    discoverRelease,
-  );
-  const npmRelease = await (dependencies.discoverLatestNpm || discoverLatestNpm)(
-    args.get("npm-version") || "latest",
-  );
+  const release = await resolveReleaseVersion(version, selected, allowOlder, discoverRelease);
+  const npmRelease = await (dependencies.discoverLatestNpm || discoverLatestNpm)(npmVersion);
   const {
     outputDir,
     archivePath,

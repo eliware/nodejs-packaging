@@ -4,8 +4,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import loadPublishedRelease from "../repository/catalog.mjs";
 import runDocker from "./docker.mjs";
-import publishBuiltImage from "./publish-build.mjs";
-import writeImageRecord from "./record.mjs";
+import publishImage from "./publication.mjs";
 export default async function main(argv = process.argv.slice(2)) {
   const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
   const args = new Map();
@@ -85,31 +84,19 @@ export default async function main(argv = process.argv.slice(2)) {
         throw new Error(`${command} runtime check failed: ${check.stderr || check.stdout}`);
     }
 
-    let registryDigest = null;
-    if (pushImage) registryDigest = await publishBuiltImage(image, target.image);
-
-    const inspect = JSON.parse(
-      runDocker(["image", "inspect", image], { encoding: "utf8" }).stdout,
-    )[0];
-    const record = {
-      repository: target.image,
-      tag: version,
-      digest: registryDigest,
-      published: pushImage,
-      local_image_id: inspect.Id,
-      base_image: baseImage,
-      base_image_digest: baseDigest,
-      source_release: version,
-      source_sha256: sourceInput.source.sha256,
-      rpm_sha256: publishedRelease.package.sha256,
-      repository_generation: publishedRelease.generation_id,
-      validation: "passed",
-      built_at: new Date().toISOString(),
-    };
-    const resultDir = path.resolve(
-      args.get("output") || path.join(root, "artifacts/images", version),
-    );
-    await writeImageRecord(resultDir, record);
+    await publishImage({
+      image,
+      target,
+      pushImage,
+      version,
+      root,
+      args,
+      sourceInput,
+      publishedRelease,
+      baseImage,
+      baseDigest,
+      runDocker,
+    });
   } finally {
     await rm(context, { recursive: true, force: true });
   }
