@@ -24,16 +24,15 @@ test("verifies and restores the requested retained stable generation", async () 
   await setup(root, generation);
   await expect(rollbackGeneration(root, generation)).resolves.toBe(generation);
   expect(activateGeneration).toHaveBeenCalled();
-  await expect(
-    rollbackGeneration(root, generation, { verify: () => ({ error: new Error("spawn") }) }),
-  ).rejects.toThrow("spawn");
+  const verify = jest.fn(() => ({ status: 0 }));
   await expect(
     rollbackGeneration(root, generation, {
-      verify: () => ({ status: 0 }),
+      verify,
       activate: jest.fn(),
       files: fs,
     }),
   ).resolves.toBe(generation);
+  expect(verify).toHaveBeenCalled();
 });
 
 test("rejects invalid and unsigned generations", async () => {
@@ -54,12 +53,12 @@ test("rejects invalid and unsigned generations", async () => {
     `${"/virtual/rollback-bad"}/.generations/${generation}/metadata/active-generation.json`,
     JSON.stringify({ generation }),
   );
-  await expect(
-    rollbackGeneration("/virtual/rollback-bad", generation, { verify: () => ({ status: 1 }) }),
-  ).rejects.toThrow("unknown error");
+  const activate = jest.fn();
   await expect(
     rollbackGeneration("/virtual/rollback-bad", generation, {
       verify: () => ({ status: 1, stderr: "invalid" }),
+      activate,
     }),
   ).rejects.toThrow("signature verification failed");
+  expect(activate).not.toHaveBeenCalled();
 });

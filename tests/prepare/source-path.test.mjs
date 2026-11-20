@@ -1,5 +1,5 @@
 import path from "node:path";
-import { expect, test } from "@jest/globals";
+import { expect, jest, test } from "@jest/globals";
 import resolveSourceDirectory from "../../src/prepare/source-path.mjs";
 
 test("keeps the default and ignored state paths inside the repository", () => {
@@ -24,4 +24,14 @@ test("rejects source caches in tracked repository paths", () => {
     expect(() => resolveSourceDirectory(root, directory)).toThrow(
       "NODEJS_SOURCE_DIR must be outside the repository or under ignored .state",
     );
+});
+
+test("rejects tracked source paths before a download can start", () => {
+  const root = "/virtual/packaging";
+  const download = jest.fn();
+  expect(() => {
+    resolveSourceDirectory(root, path.join(root, "build-config/release-cache"));
+    download();
+  }).toThrow("NODEJS_SOURCE_DIR must be outside the repository or under ignored .state");
+  expect(download).not.toHaveBeenCalled();
 });

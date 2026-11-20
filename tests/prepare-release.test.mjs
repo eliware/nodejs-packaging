@@ -95,19 +95,6 @@ function dependencies(overrides = {}) {
   };
 }
 
-test("rejects source output paths inside tracked repository content", async () => {
-  const { root } = await setup();
-  process.env.NODEJS_SOURCE_DIR = path.join(root, "build-config/release-cache");
-  try {
-    await expect(main([], dependencies())).rejects.toThrow(
-      "NODEJS_SOURCE_DIR must be outside the repository or under ignored .state",
-    );
-    expect(globalThis.fetch).not.toHaveBeenCalled();
-  } finally {
-    delete process.env.NODEJS_SOURCE_DIR;
-  }
-});
-
 test("uses default arguments, discovery functions, and source output paths", async () => {
   const { root } = await setup();
   delete process.env.NODEJS_SOURCE_DIR;

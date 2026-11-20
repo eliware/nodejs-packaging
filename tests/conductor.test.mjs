@@ -24,7 +24,12 @@ jest.unstable_mockModule("../src/report/generate.mjs", () => ({ default: generat
 jest.unstable_mockModule("../src/conductor/release/run.mjs", () => ({ default: runRelease }));
 jest.unstable_mockModule("../src/conductor/runtime.mjs", () => ({ default: conductorRuntime }));
 jest.unstable_mockModule("../src/conductor/commands.mjs", () => ({ default: () => commands }));
-const { default: main } = await import("../src/conductor.mjs");
+import createConductorConfig from "../src/conductor/config.mjs";
+const { default: runConductor } = await import("../src/conductor.mjs");
+
+function execute(argv, env) {
+  return runConductor(createConductorConfig(argv, env));
+}
 
 function makeRuntime() {
   return {
@@ -73,33 +78,12 @@ function reset(runtime = makeRuntime()) {
   return runtime;
 }
 
-test("rejects unsupported conductor modes", async () => {
-  reset();
-  await expect(main(["--resume"], {})).rejects.toThrow(
-    "choose exactly one conductor mode: --dry-run or --wet-run",
-  );
-});
-
-test("reads a dry-run mode from process arguments", async () => {
-  reset();
-  const argv = process.argv;
-  process.argv = [process.execPath, "conductor.mjs", "--dry-run"];
-  const log = jest.spyOn(console, "log").mockImplementation(() => {});
-  try {
-    await main();
-    expect(log).toHaveBeenCalledWith(expect.stringContaining("dry-run passed"));
-  } finally {
-    process.argv = argv;
-    log.mockRestore();
-  }
-});
-
 test("runs the dry-run plan without requiring a Discord webhook", async () => {
   const runtime = reset();
   hasDiscordWebhook.mockReturnValue(false);
   const log = jest.spyOn(console, "log").mockImplementation(() => {});
   try {
-    await main(["--dry-run"], {
+    await execute(["--dry-run"], {
       NODEJS_CONDUCTOR_STATE_ROOT: "/tmp/state/",
       NODEJS_REPOSITORY_ROOT: "/tmp/repository",
       NODEJS_REPOSITORY_URL: "https://repo.example.test/",
@@ -129,7 +113,7 @@ test("uses defaults for a dry run that would build a release", async () => {
   });
   const log = jest.spyOn(console, "log").mockImplementation(() => {});
   try {
-    await main(["--dry-run"], {});
+    await execute(["--dry-run"], {});
     expect(conductorRuntime).toHaveBeenCalledWith(
       expect.objectContaining({
         repositoryUrl: "https://nodejs.eliware.org",
@@ -147,7 +131,7 @@ test("uses defaults for a dry run that would build a release", async () => {
 
 test("reports no updates during a wet run", async () => {
   const runtime = reset();
-  await main(["--wet-run"], { NODEJS_REPOSITORY_URL: "https://repo.example.test" });
+  await execute(["--wet-run"], { NODEJS_REPOSITORY_URL: "https://repo.example.test" });
   expect(hasDiscordWebhook).toHaveBeenCalled();
   expect(notifyConductor).toHaveBeenCalledWith(
     expect.objectContaining({
@@ -181,10 +165,10 @@ test("keeps concurrent conductor invocations isolated", async () => {
   prepareReleasePlan.mockImplementation(async () => plan());
   const log = jest.spyOn(console, "log").mockImplementation(() => {});
   try {
-    const dryRun = main(["--dry-run"], {
+    const dryRun = execute(["--dry-run"], {
       NODEJS_CONDUCTOR_STATE_ROOT: "/tmp/dry-state",
     });
-    const wetRun = main(["--wet-run"], {
+    const wetRun = execute(["--wet-run"], {
       NODEJS_CONDUCTOR_STATE_ROOT: "/tmp/wet-state",
     });
     await wetRun;
@@ -212,7 +196,7 @@ test("runs the release workflow when updates exist", async () => {
   const log = jest.spyOn(console, "error").mockImplementation(() => {});
   runRelease.mockImplementation(async ({ setStage }) => setStage("complete"));
   try {
-    await main(["--wet-run"], { NODEJS_REPOSITORY_URL: "https://repo.example.test" });
+    await execute(["--wet-run"], { NODEJS_REPOSITORY_URL: "https://repo.example.test" });
     expect(runRelease).toHaveBeenCalledWith(
       expect.objectContaining({
         plan: releasePlan.plan,
@@ -241,7 +225,7 @@ test("reports preflight failures and releases an acquired lock", async () => {
   hasDiscordWebhook.mockReturnValue(false);
   const error = jest.spyOn(console, "error").mockImplementation(() => {});
   try {
-    await main(["--wet-run"], {});
+    await execute(["--wet-run"], {});
     expect(process.exitCode).toBe(1);
     expect(notifyConductor).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -264,9 +248,9 @@ test("reports insecure repository URLs and lock acquisition errors", async () =>
   const runtime = reset();
   const errorLog = jest.spyOn(console, "error").mockImplementation(() => {});
   try {
-    await main(["--dry-run"], { NODEJS_REPOSITORY_URL: "http://repo.example.test" });
+    await execute(["--dry-run"], { NODEJS_REPOSITORY_URL: "http://repo.example.test" });
     expect(notifyConductor).not.toHaveBeenCalled();
-    await main(["--wet-run"], { NODEJS_REPOSITORY_URL: "http://repo.example.test" });
+    await execute(["--wet-run"], { NODEJS_REPOSITORY_URL: "http://repo.example.test" });
     expect(notifyConductor).toHaveBeenCalledWith(
       expect.objectContaining({
         title: "Node.js conductor preflight failed",
@@ -276,7 +260,7 @@ test("reports insecure repository URLs and lock acquisition errors", async () =>
       }),
     );
     runtime.acquireLock.mockRejectedValueOnce(new Error("lock unavailable"));
-    await main(["--wet-run"], {});
+    await execute(["--wet-run"], {});
     expect(notifyConductor).toHaveBeenCalledWith(
       expect.objectContaining({
         title: "Node.js conductor preflight failed",

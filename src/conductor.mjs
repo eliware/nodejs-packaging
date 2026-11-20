@@ -1,5 +1,4 @@
 #!/usr/bin/env node
-import createConductorConfig from "./conductor/config.mjs";
 import discoverLatestRelease from "./discover/release.mjs";
 import discoverLatestNpm from "./discover/npm.mjs";
 import prepareReleasePlan from "./conductor/release/plan.mjs";
@@ -11,11 +10,7 @@ import conductorRuntime from "./conductor/runtime.mjs";
 import conductorCommandsModule from "./conductor/commands.mjs";
 import runConductorBoundary from "./conductor/failure-handling.mjs";
 const commands = conductorCommandsModule();
-export default async function main(argv = process.argv.slice(2), env = process.env) {
-  await runConductor(createConductorConfig(argv, env));
-}
-
-async function runConductor({
+export default async function runConductor({
   root,
   repositoryRoot,
   repositoryUrl,
