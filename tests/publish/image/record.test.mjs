@@ -115,6 +115,15 @@ test("requires an image record path and a valid signing key", async () => {
 
 test("publishes a validated image into a new signed repository generation", async () => {
   const { root, recordPath } = await setup();
+  const oldLogDirectory = process.env.NODEJS_CONDUCTOR_LOG_DIR;
+  const oldRunId = process.env.NODEJS_CONDUCTOR_RUN_ID;
+  process.env.NODEJS_CONDUCTOR_LOG_DIR = "/virtual/conductor-logs/run-7";
+  process.env.NODEJS_CONDUCTOR_RUN_ID = "run-7";
+  await fs.mkdir(process.env.NODEJS_CONDUCTOR_LOG_DIR, { recursive: true });
+  await fs.writeFile(
+    path.join(process.env.NODEJS_CONDUCTOR_LOG_DIR, "build-image.log"),
+    "image build output",
+  );
   const output = jest.spyOn(process.stdout, "write").mockImplementation(() => true);
   try {
     await main([recordPath]);
@@ -128,6 +137,12 @@ test("publishes a validated image into a new signed repository generation", asyn
     expect(catalog.images[0]).toEqual(expect.objectContaining({ node_version: "26.13.1", digest }));
     expect(report).toEqual(expect.objectContaining({ status: "passed", registry_push: "passed" }));
     expect(active.generation).toMatch(/^node-v26\.13\.1-el10-x86_64-\d+$/);
+    await expect(
+      fs.readFile(
+        path.join(root, ".generations", active.generation, "metadata/logs/run-7/build-image.log"),
+        "utf8",
+      ),
+    ).resolves.toBe("image build output");
     expect((await fs.lstat(path.join(root, "el10/x86_64/stable"))).isSymbolicLink()).toBe(true);
     expect(spawnSync).toHaveBeenCalledTimes(3);
     expect(output).toHaveBeenCalled();
@@ -135,6 +150,10 @@ test("publishes a validated image into a new signed repository generation", asyn
     output.mockRestore();
     delete process.env.NODEJS_REPOSITORY_ROOT;
     delete process.env.NODEJS_SIGNING_KEY;
+    if (oldLogDirectory === undefined) delete process.env.NODEJS_CONDUCTOR_LOG_DIR;
+    else process.env.NODEJS_CONDUCTOR_LOG_DIR = oldLogDirectory;
+    if (oldRunId === undefined) delete process.env.NODEJS_CONDUCTOR_RUN_ID;
+    else process.env.NODEJS_CONDUCTOR_RUN_ID = oldRunId;
   }
 });
 

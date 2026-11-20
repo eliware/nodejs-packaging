@@ -89,12 +89,25 @@ test("validates release version, candidate path, and signing key", async () => {
 
 test("publishes a signed generation and updates repository pointers", async () => {
   const { candidate, root, generation } = await setup();
+  const oldLogDirectory = process.env.NODEJS_CONDUCTOR_LOG_DIR;
+  const oldRunId = process.env.NODEJS_CONDUCTOR_RUN_ID;
+  const logDirectory = "/virtual/conductor-logs/run-7";
+  process.env.NODEJS_CONDUCTOR_LOG_DIR = logDirectory;
+  process.env.NODEJS_CONDUCTOR_RUN_ID = "run-7";
+  await fs.mkdir(logDirectory, { recursive: true });
+  await fs.writeFile(path.join(logDirectory, "build-rpm.log"), "rpm build output");
   const output = jest.spyOn(process.stdout, "write").mockImplementation(() => true);
   prepareReleaseGeneration.mockImplementation(async ({ run }) => {
-    expect(run("gpg", ["--version"])).toEqual(expect.objectContaining({ status: 0 }));
+    await expect(
+      run("gpg", ["--version"], {
+        DISCORD_WEBHOOK: "secret-webhook-value",
+        TOKEN: "tiny",
+        PASSWORD: null,
+      }),
+    ).resolves.toEqual(expect.objectContaining({ status: 0 }));
     return { rpmSha256: "b".repeat(64) };
   });
-  spawnSync.mockReturnValue({ status: 0, stdout: "ok", stderr: "" });
+  spawnSync.mockReturnValue({ status: 0, stdout: "secret-webhook-value", stderr: "" });
   try {
     await main(["--version", "26.13.1", "ignored", "--candidate", candidate, "--repository", root]);
     const stable = await fs.lstat(path.join(root, "el10/x86_64/stable"));
@@ -103,6 +116,13 @@ test("publishes a signed generation and updates repository pointers", async () =
     expect(await fs.readFile(path.join(root, "metadata/active-generation.json"), "utf8")).toBe(
       "{}",
     );
+    const publishedLogs = path.join(root, ".generations", generation, "metadata/logs/run-7");
+    await expect(fs.readFile(path.join(publishedLogs, "build-rpm.log"), "utf8")).resolves.toBe(
+      "rpm build output",
+    );
+    const toolLog = await fs.readFile(path.join(publishedLogs, "repository-tools.log"), "utf8");
+    expect(toolLog).not.toContain("secret-webhook-value");
+    expect(toolLog).toContain("[REDACTED]");
     expect(prepareReleaseGeneration).toHaveBeenCalledWith(
       expect.objectContaining({
         generationId: generation,
@@ -116,6 +136,10 @@ test("publishes a signed generation and updates repository pointers", async () =
     output.mockRestore();
     delete process.env.NODEJS_SIGNING_KEY;
     delete process.env.NODEJS_REPOSITORY_ROOT;
+    if (oldLogDirectory === undefined) delete process.env.NODEJS_CONDUCTOR_LOG_DIR;
+    else process.env.NODEJS_CONDUCTOR_LOG_DIR = oldLogDirectory;
+    if (oldRunId === undefined) delete process.env.NODEJS_CONDUCTOR_RUN_ID;
+    else process.env.NODEJS_CONDUCTOR_RUN_ID = oldRunId;
   }
 });
 
@@ -158,18 +182,27 @@ test("rejects malformed candidates, duplicate releases, and Git tool errors", as
   );
 
   const failed = await setup();
-  prepareReleaseGeneration.mockImplementation(async ({ run }) => {
-    run("gpg", ["--version"]);
-  });
-  spawnSync.mockReturnValue({ status: 3, stderr: "gpg failed" });
+  prepareReleaseGeneration.mockImplementation(async ({ run }) =>
+    run("gpg", ["--version"], {
+      DISCORD_WEBHOOK: "secret-webhook-value",
+      TOKEN: "tiny",
+      PASSWORD: null,
+    }),
+  );
+  spawnSync.mockReturnValue({ status: 3, stderr: "gpg failed secret-webhook-value" });
   await expect(runWithEnv(failed.candidate, failed.root)).rejects.toThrow(
     "gpg exited with status 3: gpg failed",
   );
 
+  const failedWithoutOutput = await setup();
+  prepareReleaseGeneration.mockImplementation(async ({ run }) => run("gpg", ["--version"]));
+  spawnSync.mockReturnValue({ status: 3, stderr: "" });
+  await expect(runWithEnv(failedWithoutOutput.candidate, failedWithoutOutput.root)).rejects.toThrow(
+    "gpg exited with status 3:",
+  );
+
   const missing = await setup();
-  prepareReleaseGeneration.mockImplementation(async ({ run }) => {
-    run("gpg", ["--version"]);
-  });
+  prepareReleaseGeneration.mockImplementation(async ({ run }) => run("gpg", ["--version"]));
   spawnSync.mockReturnValue({ error: new Error("gpg missing") });
   await expect(runWithEnv(missing.candidate, missing.root)).rejects.toThrow("gpg missing");
   delete process.env.NODEJS_SIGNING_KEY;

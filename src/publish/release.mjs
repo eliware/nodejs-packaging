@@ -1,4 +1,6 @@
 import { spawnSync } from "node:child_process";
+import writeCommandLog from "../conductor/commands/log.mjs";
+import { redactText } from "@eliware/common";
 import { cp, lstat, mkdir, readFile, readdir, rename, rm } from "node:fs/promises";
 import path from "node:path";
 import publishFilesystemModule from "./filesystem.mjs";
@@ -42,8 +44,16 @@ export default async function main(argv = process.argv.slice(2)) {
     throw new Error(`generation already exists: ${generationId}`);
   await mkdir(path.dirname(stagingRoot), { recursive: true });
   await cp(candidateRoot, stagingRoot, { recursive: true });
+  const logDirectory = process.env.NODEJS_CONDUCTOR_LOG_DIR;
+  const runId = process.env.NODEJS_CONDUCTOR_RUN_ID;
+  if (logDirectory && runId)
+    await cp(logDirectory, path.join(stagingRoot, "metadata/logs", runId), {
+      recursive: true,
+      force: true,
+    });
 
   let activated = false;
+  const repositoryToolOutput = [];
   try {
     const { rpmSha256 } = await prepareReleaseGeneration({
       stagingRoot,
@@ -93,14 +103,44 @@ export default async function main(argv = process.argv.slice(2)) {
     throw error;
   }
 
-  function run(command, commandArgs, extraEnv = {}) {
-    const result = spawnSync(command, commandArgs, {
-      encoding: "utf8",
-      env: { ...process.env, ...extraEnv },
-    });
-    if (result.error) throw result.error;
+  async function run(command, commandArgs, extraEnv = {}) {
+    const env = { ...process.env, ...extraEnv };
+    const result = spawnSync(command, commandArgs, { encoding: "utf8", env });
+    if (result.error) {
+      repositoryToolOutput.push(`${command}: ${result.error.message}`);
+      await saveRepositoryToolLog(env);
+      throw result.error;
+    }
+    repositoryToolOutput.push(`$ ${command}\n${result.stdout || ""}${result.stderr || ""}`);
+    await saveRepositoryToolLog(env);
     if (result.status !== 0)
-      throw new Error(`${command} exited with status ${result.status}: ${result.stderr}`);
+      throw new Error(
+        `${command} exited with status ${result.status}: ${redactToolOutput(result.stderr || "", env)}`,
+      );
     return result;
   }
+  async function saveRepositoryToolLog(env) {
+    const logDirectory = process.env.NODEJS_CONDUCTOR_LOG_DIR;
+    const runId = process.env.NODEJS_CONDUCTOR_RUN_ID;
+    if (!logDirectory || !runId) return;
+    await writeCommandLog({
+      file: path.join(stagingRoot, "metadata/logs", runId, "repository-tools.log"),
+      name: "repository tools",
+      stdout: repositoryToolOutput.join("\n"),
+      stderr: "",
+      env,
+    });
+  }
+}
+
+function redactToolOutput(value, env) {
+  const secrets = Object.entries(env)
+    .filter(
+      ([name, secret]) =>
+        /(SECRET|TOKEN|PASSWORD|PASSWD|WEBHOOK|CREDENTIAL|KEY)/i.test(name) &&
+        typeof secret === "string" &&
+        secret.length >= 6,
+    )
+    .map(([, secret]) => secret);
+  return redactText(value, { secrets, maxOutputLength: Number.MAX_SAFE_INTEGER });
 }

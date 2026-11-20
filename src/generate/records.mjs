@@ -50,6 +50,9 @@ export default async function writeReleaseRecords({
     package: rpmRecordUpdated,
     validation: { status: "passed", record_path: "metadata/validation/package.json" },
     provenance_path: "metadata/provenance/package.json",
+    ...(process.env.NODEJS_CONDUCTOR_RUN_ID
+      ? { logs_path: `metadata/logs/${process.env.NODEJS_CONDUCTOR_RUN_ID}/` }
+      : {}),
     generation_id: generationId,
     generated,
   };
@@ -66,6 +69,9 @@ export default async function writeReleaseRecords({
         npm: sourceInput.npm,
         package: rpmRecordUpdated,
         validation_path: "metadata/validation/package.json",
+        ...(process.env.NODEJS_CONDUCTOR_RUN_ID
+          ? { logs_path: `metadata/logs/${process.env.NODEJS_CONDUCTOR_RUN_ID}/` }
+          : {}),
         generated,
       },
       null,

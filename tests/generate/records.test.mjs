@@ -29,6 +29,8 @@ test("writes release, validation, provenance, catalog, and generation records", 
     path.join(templateRoot, "catalog.seed.json"),
     JSON.stringify({ metadata_version: "0.1.0", node_major: 26, stable: { items: [] } }),
   );
+  const oldRunId = process.env.NODEJS_CONDUCTOR_RUN_ID;
+  process.env.NODEJS_CONDUCTOR_RUN_ID = "run-7";
   await writeReleaseRecords({
     candidate,
     root,
@@ -44,6 +46,7 @@ test("writes release, validation, provenance, catalog, and generation records", 
   );
   expect(release).toEqual(
     expect.objectContaining({
+      logs_path: "metadata/logs/run-7/",
       channel: "stable",
       node_version: "26.13.1",
       generation_id: "node-v26.13.1-el10-x86_64-test",
@@ -61,7 +64,11 @@ test("writes release, validation, provenance, catalog, and generation records", 
   const provenance = JSON.parse(
     await fs.readFile(path.join(candidate, "metadata/provenance/package.json")),
   );
-  expect(provenance).toEqual(expect.objectContaining({ package: rpmRecordUpdated }));
+  expect(provenance).toEqual(
+    expect.objectContaining({ package: rpmRecordUpdated, logs_path: "metadata/logs/run-7/" }),
+  );
+  if (oldRunId === undefined) delete process.env.NODEJS_CONDUCTOR_RUN_ID;
+  else process.env.NODEJS_CONDUCTOR_RUN_ID = oldRunId;
   const catalog = JSON.parse(await fs.readFile(path.join(candidate, "metadata/catalog.json")));
   expect(catalog.active_generation).toBe("node-v26.13.1-el10-x86_64-test");
   expect(catalog.stable.latest).toEqual(release);

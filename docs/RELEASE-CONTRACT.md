@@ -66,4 +66,14 @@ Skip release work when all three inputs match the published release.
 
 Run archive verification, RPM packaging, package checks, repository generation, signing, image builds, image checks, and publication on the packaging host.
 
+## Build logs
+
+Store conductor logs under `artifacts/logs/<run-id>/`. Keep failed-run logs until an operator removes that run directory.
+
+Publish build logs under `metadata/logs/<run-id>/`. Add the `logs_path` field to each release and image record.
+
+The signed release manifest records each published log path and SHA-256 digest. Published logs follow the retention policy for their generation.
+
+Redact output with `redactText` from `@eliware/common`. Do not record command environments or command arguments.
+
 Do not use GitHub Actions to build Node.js RPMs. Keep signing keys and webhook values outside Git.

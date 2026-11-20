@@ -16,7 +16,7 @@ export default async function prepareReleaseGeneration({
 }) {
   const rpmDirectory = path.join(stagingRoot, "el10/x86_64/stable");
   const rpmPath = path.join(rpmDirectory, rpmName);
-  run("rpmsign", ["--addsign", "--define", `_gpg_name ${keyFingerprint}`, rpmPath], {
+  await run("rpmsign", ["--addsign", "--define", `_gpg_name ${keyFingerprint}`, rpmPath], {
     GNUPGHOME: gpgHome,
   });
   const rpmSha256 = await files.hashFile(rpmPath);
@@ -33,14 +33,15 @@ export default async function prepareReleaseGeneration({
 
   const stablePath = path.join(stagingRoot, "el10/x86_64/stable");
   await rm(path.join(stablePath, "repodata"), { recursive: true, force: true });
-  run("createrepo_c", ["--checksum", "sha256", stablePath]);
+  await run("createrepo_c", ["--checksum", "sha256", stablePath]);
   const publicKeyPath = path.join(stagingRoot, "keys/RPM-GPG-KEY-ELIWARE-NODEJS");
   await mkdir(path.dirname(publicKeyPath), { recursive: true });
-  const publicKey = run("gpg", ["--batch", "--armor", "--export", keyFingerprint], {
-    GNUPGHOME: gpgHome,
-    capture: true,
-  });
-  await writeFile(publicKeyPath, publicKey.stdout);
+  const publicKey = (
+    await run("gpg", ["--batch", "--armor", "--export", keyFingerprint], {
+      GNUPGHOME: gpgHome,
+    })
+  ).stdout;
+  await writeFile(publicKeyPath, publicKey);
   await sign(path.join(stablePath, "repodata/repomd.xml"), keyFingerprint, gpgHome);
   await sign(provenancePath, keyFingerprint, gpgHome);
 

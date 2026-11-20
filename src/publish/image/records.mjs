@@ -21,6 +21,9 @@ export default async function writeImageRecords({
     rpm_sha256: image.rpm_sha256,
     validation: "passed",
     provenance_path: provenancePath,
+    ...(process.env.NODEJS_CONDUCTOR_RUN_ID
+      ? { logs_path: `metadata/logs/${process.env.NODEJS_CONDUCTOR_RUN_ID}/` }
+      : {}),
   };
   const catalogPath = await writeImageCatalog({
     stage,

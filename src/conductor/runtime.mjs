@@ -29,7 +29,7 @@ export default function conductorRuntime({
       runCommand: commands.runCommand,
       runCommandCapture: commands.runCommandCapture,
     }),
-    ...conductorCommands({ root, commands }),
+    ...conductorCommands({ root, commands, runId }),
     checkpoint,
   };
 }

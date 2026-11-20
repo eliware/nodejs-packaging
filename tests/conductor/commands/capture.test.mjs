@@ -1,6 +1,10 @@
 import { EventEmitter } from "node:events";
 import { PassThrough } from "node:stream";
 import { expect, jest, test } from "@jest/globals";
+import memoryFilesystemFixture from "../../../test-fixtures/memory-fs.mjs";
+const { createMemoryFs } = memoryFilesystemFixture();
+const fs = createMemoryFs();
+jest.unstable_mockModule("node:fs/promises", () => fs);
 
 const spawn = jest.fn();
 jest.unstable_mockModule("node:child_process", () => ({ spawn }));
@@ -48,6 +52,37 @@ test("captures command output and uses default process settings", async () => {
   }
 });
 
+test("writes redacted logs while returning command output to the caller", async () => {
+  const stdout = jest.spyOn(process.stdout, "write").mockImplementation(() => true);
+  const stderr = jest.spyOn(process.stderr, "write").mockImplementation(() => true);
+  const webhook = "https://discordapp.com/api/webhooks/123/secretvalue";
+  spawn.mockImplementationOnce(() => childWith({ stdout: webhook, stderr: "token=hidden-value" }));
+  try {
+    await expect(
+      runCommandCapture("node", [], {
+        logPath: "/virtual/logs/capture.log",
+        logName: "capture",
+        env: { DISCORD_WEBHOOK: webhook },
+      }),
+    ).resolves.toEqual({ code: 0, stdout: webhook, stderr: "token=hidden-value" });
+    const log = await fs.readFile("/virtual/logs/capture.log", "utf8");
+    expect(log).not.toContain(webhook);
+    expect(log).not.toContain("hidden-value");
+    expect(stdout).toHaveBeenCalledWith(expect.stringContaining("[REDACTED]"));
+    spawn.mockImplementationOnce(() => childWith({ stdout: "quiet log" }));
+    await expect(
+      runCommandCapture("node", [], {
+        quiet: true,
+        logPath: "/virtual/logs/default-env.log",
+        logName: "default",
+      }),
+    ).resolves.toEqual({ code: 0, stdout: "quiet log", stderr: "" });
+  } finally {
+    stdout.mockRestore();
+    stderr.mockRestore();
+  }
+});
+
 test("supports quiet output and reports command failures", async () => {
   const stdout = jest.spyOn(process.stdout, "write").mockImplementation(() => true);
   const stderr = jest.spyOn(process.stderr, "write").mockImplementation(() => true);
@@ -64,6 +99,17 @@ test("supports quiet output and reports command failures", async () => {
     );
     spawn.mockImplementationOnce(() => childWith({ error: new Error("capture failed") }));
     await expect(runCommandCapture("tool", [], { quiet: true })).rejects.toThrow("capture failed");
+    spawn.mockImplementationOnce(() => childWith({ error: new Error("logged capture failed") }));
+    await expect(
+      runCommandCapture("tool", [], {
+        quiet: true,
+        logPath: "/virtual/logs/capture-error.log",
+        logName: "capture-error",
+      }),
+    ).rejects.toThrow("logged capture failed");
+    await expect(fs.readFile("/virtual/logs/capture-error.log", "utf8")).resolves.toContain(
+      "logged capture failed",
+    );
   } finally {
     stdout.mockRestore();
     stderr.mockRestore();

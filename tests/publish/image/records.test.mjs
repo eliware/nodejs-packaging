@@ -31,6 +31,8 @@ test("adds image validation, metadata, and signed provenance records", async () 
     local_image_id: "sha256:local",
   };
   const generated = "2026-11-19T12:00:00.000Z";
+  const oldRunId = process.env.NODEJS_CONDUCTOR_RUN_ID;
+  process.env.NODEJS_CONDUCTOR_RUN_ID = "run-7";
   await fs.mkdir(path.dirname(catalogPath), { recursive: true });
   await fs.mkdir(path.dirname(packageProvenancePath), { recursive: true });
   await fs.writeFile(
@@ -54,7 +56,11 @@ test("adds image validation, metadata, and signed provenance records", async () 
   });
   expect(result.catalogPath).toBe(catalogPath);
   expect(result.imageRecord).toEqual(
-    expect.objectContaining({ digest: image.digest, validation: "passed" }),
+    expect.objectContaining({
+      digest: image.digest,
+      validation: "passed",
+      logs_path: "metadata/logs/run-7/",
+    }),
   );
   expect(JSON.parse(await fs.readFile(catalogPath, "utf8")).stable.latest.image).toEqual(
     result.imageRecord,
@@ -75,4 +81,6 @@ test("adds image validation, metadata, and signed provenance records", async () 
     expect.objectContaining({ image: result.imageRecord, source_sha256: image.source_sha256 }),
   );
   expect(sign).toHaveBeenCalledTimes(2);
+  if (oldRunId === undefined) delete process.env.NODEJS_CONDUCTOR_RUN_ID;
+  else process.env.NODEJS_CONDUCTOR_RUN_ID = oldRunId;
 });

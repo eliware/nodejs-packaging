@@ -41,6 +41,13 @@ export default async function main(argv = process.argv.slice(2), dependencies = 
     throw new Error(`generation already exists: ${generationId}`);
   await mkdir(path.dirname(stage), { recursive: true });
   await cp(oldRoot, stage, { recursive: true });
+  const logDirectory = process.env.NODEJS_CONDUCTOR_LOG_DIR;
+  const runId = process.env.NODEJS_CONDUCTOR_RUN_ID;
+  if (logDirectory && runId)
+    await cp(logDirectory, path.join(stage, "metadata/logs", runId), {
+      recursive: true,
+      force: true,
+    });
 
   let activationStarted = false;
   try {
