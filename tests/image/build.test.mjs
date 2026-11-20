@@ -45,6 +45,7 @@ async function setup() {
 }
 
 function dockerScenario(overrides = {}) {
+  let pushIndex = 0;
   spawnSync.mockImplementation((command, args) => {
     if (args[0] === "pull") return overrides.pull || { status: 0 };
     if (args[0] === "image" && args[2] === "quay.io/centos/centos:stream10")
@@ -64,8 +65,12 @@ function dockerScenario(overrides = {}) {
         }
       );
     }
+    if (args[0] === "tag") return overrides.tag || { status: 0 };
     if (args[0] === "push")
-      return overrides.push || { status: 0, stdout: `digest: ${registryDigest}\n` };
+      return (
+        overrides.pushes?.[pushIndex++] ||
+        overrides.push || { status: 0, stdout: `digest: ${registryDigest}\n` }
+      );
     return { status: 0, stdout: JSON.stringify([{ Id: "sha256:local" }]) };
   });
 }
@@ -155,6 +160,20 @@ test("pushes a checked image and records the registry digest", async () => {
     expect(spawnSync).toHaveBeenCalledWith(
       "docker",
       ["push", `ghcr.io/eliware/centos10-node26:${version}`],
+      expect.any(Object),
+    );
+    expect(spawnSync).toHaveBeenCalledWith(
+      "docker",
+      [
+        "tag",
+        `ghcr.io/eliware/centos10-node26:${version}`,
+        "ghcr.io/eliware/centos10-node26:latest",
+      ],
+      expect.any(Object),
+    );
+    expect(spawnSync).toHaveBeenCalledWith(
+      "docker",
+      ["push", "ghcr.io/eliware/centos10-node26:latest"],
       expect.any(Object),
     );
   } finally {
@@ -259,4 +278,23 @@ test("reports registry push errors, failures, and missing digests", async () => 
     stderr.mockRestore();
     delete process.env.NODEJS_REPOSITORY_URL;
   }
+});
+test("reports latest tagging failures and digest mismatches", async () => {
+  const output = jest.spyOn(process.stdout, "write").mockImplementation(() => true);
+  await setup();
+  dockerScenario({ tag: { error: new Error("tag unavailable") } });
+  await expect(main(["--version", version, "--push"])).rejects.toThrow("tag unavailable");
+  await setup();
+  dockerScenario({ tag: { status: 1 } });
+  await expect(main(["--version", version, "--push"])).rejects.toThrow("status 1");
+  await setup();
+  dockerScenario({
+    pushes: [
+      { status: 0, stdout: `digest: ${registryDigest}\n` },
+      { status: 0, stdout: `digest: sha256:${"e".repeat(64)}\n` },
+    ],
+  });
+  await expect(main(["--version", version, "--push"])).rejects.toThrow(/latest image digest/);
+  delete process.env.NODEJS_REPOSITORY_URL;
+  output.mockRestore();
 });

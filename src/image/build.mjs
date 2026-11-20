@@ -91,7 +91,16 @@ export default async function main(argv = process.argv.slice(2)) {
     }
 
     let registryDigest = null;
-    if (pushImage) registryDigest = await publishImage(image);
+    if (pushImage) {
+      registryDigest = await publishImage(image);
+      const latestImage = `${target.image}:latest`;
+      const tag = spawnSync("docker", ["tag", image, latestImage], { stdio: "inherit" });
+      if (tag.error) throw tag.error;
+      if (tag.status !== 0) throw new Error(`docker tag exited with status ${tag.status}`);
+      const latestDigest = await publishImage(latestImage);
+      if (latestDigest !== registryDigest)
+        throw new Error(`latest image digest ${latestDigest} does not match ${registryDigest}`);
+    }
 
     const inspect = JSON.parse(
       spawnSync("docker", ["image", "inspect", image], { encoding: "utf8" }).stdout,

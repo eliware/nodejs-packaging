@@ -150,7 +150,9 @@ Build and smoke-check the local image:
 NODEJS_REPOSITORY_URL=https://nodejs.eliware.org npm run release:image -- --version 26.x.y
 ```
 
-Add `--push` to publish the image to GHCR. The build checks Node.js, npm, and npx before it pushes the image.
+Add `--push` to publish the versioned image and update the `latest` tag in GHCR. The build checks
+Node.js, npm, and npx before it pushes both tags. Both tags point to the same image digest. Use the
+version tag to keep an image version fixed.
 The command writes image details to `artifacts/images/<version>/image.json`.
 
 Publish an image record after the repository has published the matching Node.js release:

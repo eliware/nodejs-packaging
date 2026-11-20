@@ -30,8 +30,12 @@ Use the upstream Linux x64 archive as `Source0`. Do not run `configure`, `make`,
 
 ## Runtime image
 
-Publish `ghcr.io/eliware/centos10-node26` with the Node.js version tag. Build from `quay.io/centos/centos:stream10`.
+Publish `ghcr.io/eliware/centos10-node26` with the Node.js version tag and the `latest` tag.
+Point both tags to the same image digest. Update `latest` for each new stable Node.js 26 release.
+Build from `quay.io/centos/centos:stream10`.
+
 Install the matching signed RPM. Run a Node.js version check before the image push.
+
 Record the image tag, registry digest, source release, base image digest, validation result, and provenance path.
 
 ## Repository layout
