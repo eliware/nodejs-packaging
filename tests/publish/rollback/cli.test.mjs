@@ -1,10 +1,10 @@
 import { expect, jest, test } from "@jest/globals";
 
 const rollbackGeneration = jest.fn(async (root, generation) => generation);
-jest.unstable_mockModule("../../src/publish/rollback.mjs", () => ({
+jest.unstable_mockModule("../../../src/publish/rollback/run.mjs", () => ({
   default: rollbackGeneration,
 }));
-const { default: rollbackRepository } = await import("../../src/publish/rollback-cli.mjs");
+const { default: rollbackRepository } = await import("../../../src/publish/rollback/cli.mjs");
 
 test("parses rollback arguments and reports a successful restore", async () => {
   const output = { log: jest.fn(), error: jest.fn() };
@@ -17,6 +17,12 @@ test("parses rollback arguments and reports a successful restore", async () => {
   expect(rollbackGeneration).toHaveBeenCalledWith("/repo", generation);
   expect(output.log).toHaveBeenCalledWith(`Restored ${generation}`);
   expect(output.error).not.toHaveBeenCalled();
+});
+
+test("consumes an option value that starts with two dashes", async () => {
+  const output = { log: jest.fn(), error: jest.fn() };
+  await rollbackRepository(["--generation", "--unexpected"], {}, output);
+  expect(rollbackGeneration).toHaveBeenCalledWith("/eliware/nodejs-repository", "--unexpected");
 });
 
 test("reports rollback errors and sets a failing process status", async () => {

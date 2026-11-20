@@ -1,8 +1,8 @@
 import { spawnSync } from "node:child_process";
 import path from "node:path";
 import { readFile } from "node:fs/promises";
-import filesystemModule from "./filesystem.mjs";
-import activateGeneration from "./activate-generation.mjs";
+import filesystemModule from "../filesystem.mjs";
+import activateGeneration from "../activate-generation.mjs";
 
 const files = filesystemModule();
 export default async function rollbackGeneration(repositoryRoot, generation, dependencies = {}) {

@@ -1,6 +1,5 @@
-import runProcess from "./process.mjs";
-import redactOutput from "./redact-output.mjs";
-import writeCommandLog from "./log.mjs";
+import runProcess from "../process.mjs";
+import writeRedactedCommandOutput from "./output.mjs";
 
 export default function runLoggedCommand(command, args, options) {
   const env = options.env || process.env;
@@ -12,12 +11,21 @@ export default function runLoggedCommand(command, args, options) {
     onStderr: () => {},
     onError: (error) =>
       (async () => {
-        const safe = redactOutput({ stderr: error.message, env });
-        await writeCommandLog({ file: options.logPath, name: options.logName, ...safe });
+        await writeRedactedCommandOutput({
+          file: options.logPath,
+          name: options.logName,
+          stderr: error.message,
+          env,
+        });
       })(),
     onExit: async ({ stdout, stderr }) => {
-      const safe = redactOutput({ stdout, stderr, env });
-      await writeCommandLog({ file: options.logPath, name: options.logName, ...safe });
+      const safe = await writeRedactedCommandOutput({
+        file: options.logPath,
+        name: options.logName,
+        stdout,
+        stderr,
+        env,
+      });
       process.stdout.write(safe.stdout);
       process.stderr.write(safe.stderr);
       return "";

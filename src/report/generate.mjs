@@ -6,8 +6,9 @@ import renderCard from "./render-card.mjs";
 import publishReportRecord from "./publish.mjs";
 import updateLatestReport from "./latest.mjs";
 import reportRecordModule from "./record.mjs";
+import createReportDetails from "./details.mjs";
 
-const { createReportDetails, createReportRecord } = reportRecordModule();
+const { createReportRecord } = reportRecordModule();
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
 
 export default async function generateReleaseReport({

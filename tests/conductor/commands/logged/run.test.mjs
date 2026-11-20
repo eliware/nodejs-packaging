@@ -1,7 +1,7 @@
 import { EventEmitter } from "node:events";
 import { PassThrough } from "node:stream";
 import { expect, jest, test } from "@jest/globals";
-import memoryFilesystemFixture from "../../../test-fixtures/memory-fs.mjs";
+import memoryFilesystemFixture from "../../../../test-fixtures/memory-fs.mjs";
 
 const { createMemoryFs } = memoryFilesystemFixture();
 const fs = createMemoryFs();
@@ -9,7 +9,7 @@ const spawn = jest.fn();
 jest.unstable_mockModule("node:fs/promises", () => fs);
 jest.unstable_mockModule("node:child_process", () => ({ spawn }));
 const { default: runLoggedCommand } =
-  await import("../../../src/conductor/commands/logged-run.mjs");
+  await import("../../../../src/conductor/commands/logged/run.mjs");
 
 function childWith(stdout, stderr) {
   const child = new EventEmitter();

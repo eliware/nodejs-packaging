@@ -1,5 +1,5 @@
 import { expect, jest, test } from "@jest/globals";
-import memoryFilesystemFixture from "../../test-fixtures/memory-fs.mjs";
+import memoryFilesystemFixture from "../../../test-fixtures/memory-fs.mjs";
 const { createMemoryFs } = memoryFilesystemFixture();
 const fs = createMemoryFs();
 const activateGeneration = jest.fn();
@@ -7,10 +7,10 @@ jest.unstable_mockModule("node:fs/promises", () => fs);
 jest.unstable_mockModule("node:child_process", () => ({
   spawnSync: jest.fn(() => ({ status: 0 })),
 }));
-jest.unstable_mockModule("../../src/publish/activate-generation.mjs", () => ({
+jest.unstable_mockModule("../../../src/publish/activate-generation.mjs", () => ({
   default: activateGeneration,
 }));
-const { default: rollbackGeneration } = await import("../../src/publish/rollback.mjs");
+const { default: rollbackGeneration } = await import("../../../src/publish/rollback/run.mjs");
 
 async function setup(root, generation) {
   const metadata = `${root}/.generations/${generation}/metadata`;

@@ -1,4 +1,4 @@
-import runLoggedCommand from "./logged-run.mjs";
+import runLoggedCommand from "./logged/run.mjs";
 import runProcess from "./process.mjs";
 
 export default function runCommand(command, args, options = {}) {
