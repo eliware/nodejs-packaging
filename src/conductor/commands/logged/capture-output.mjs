@@ -1,4 +1,5 @@
 import logCapturedOutput from "./captured-output.mjs";
+import formatExitDetail from "./exit-detail.mjs";
 
 export default function captureOutput(options = {}) {
   const environment = options.env || process.env;
@@ -30,7 +31,7 @@ export default function captureOutput(options = {}) {
             quiet: options.quiet,
           })
         : { stdout, stderr };
-      return code === 0 ? "" : `: ${safe.stderr}`;
+      return formatExitDetail(code, safe.stderr);
     },
   };
 }

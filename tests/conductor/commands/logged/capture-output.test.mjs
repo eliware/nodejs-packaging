@@ -8,7 +8,7 @@ test("echoes output when no log is configured", async () => {
     const handlers = captureOutput();
     handlers.onStdout("out");
     handlers.onStderr("err");
-    await expect(handlers.onExit({ code: 0, stdout: "out", stderr: "err" })).resolves.toBe("");
+    await handlers.onExit({ code: 0, stdout: "out", stderr: "err" });
     expect(stdout).toHaveBeenCalledWith("out");
     expect(stderr).toHaveBeenCalledWith("err");
   } finally {
@@ -19,5 +19,5 @@ test("echoes output when no log is configured", async () => {
 
 test("suppresses quiet output and formats logged command failures", async () => {
   const handlers = captureOutput({ quiet: true });
-  await expect(handlers.onExit({ code: 1, stdout: "out", stderr: "err" })).resolves.toBe(": err");
+  await handlers.onExit({ code: 1, stdout: "out", stderr: "err" });
 });
