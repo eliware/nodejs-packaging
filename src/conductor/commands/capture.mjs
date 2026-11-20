@@ -1,35 +1,27 @@
-import { spawn } from "node:child_process";
-import path from "node:path";
 import writeCommandLog from "./log.mjs";
+import runProcess from "./process.mjs";
 
 export default function runCommandCapture(command, args, options = {}) {
-  return new Promise((resolve, reject) => {
-    const child = spawn(command, args, {
-      cwd: options.cwd || process.cwd(),
-      env: options.env || process.env,
-      stdio: ["ignore", "pipe", "pipe"],
-    });
-    let stdout = "";
-    let stderr = "";
-    child.stdout.setEncoding("utf8").on("data", (chunk) => {
-      stdout += chunk;
+  return runProcess(command, args, {
+    cwd: options.cwd || process.cwd(),
+    env: options.env || process.env,
+    stdio: ["ignore", "pipe", "pipe"],
+    onStdout: (chunk) => {
       if (!options.quiet && !options.logPath) process.stdout.write(chunk);
-    });
-    child.stderr.setEncoding("utf8").on("data", (chunk) => {
-      stderr += chunk;
+    },
+    onStderr: (chunk) => {
       if (!options.quiet && !options.logPath) process.stderr.write(chunk);
-    });
-    child.once("error", async (error) => {
-      if (options.logPath)
-        await writeCommandLog({
-          file: options.logPath,
-          name: options.logName,
-          stderr: error.message,
-          env: options.env || process.env,
-        });
-      reject(error);
-    });
-    child.once("exit", async (code, signal) => {
+    },
+    onError: (error) =>
+      options.logPath
+        ? writeCommandLog({
+            file: options.logPath,
+            name: options.logName,
+            stderr: error.message,
+            env: options.env || process.env,
+          })
+        : undefined,
+    onExit: async ({ code, stdout, stderr }) => {
       const safe = options.logPath
         ? await writeCommandLog({
             file: options.logPath,
@@ -39,17 +31,11 @@ export default function runCommandCapture(command, args, options = {}) {
             env: options.env || process.env,
           })
         : { stdout, stderr };
-      if (!options.quiet) {
-        if (options.logPath) process.stdout.write(safe.stdout);
-        if (options.logPath) process.stderr.write(safe.stderr);
+      if (!options.quiet && options.logPath) {
+        process.stdout.write(safe.stdout);
+        process.stderr.write(safe.stderr);
       }
-      if (code === 0) resolve({ code, stdout, stderr });
-      else
-        reject(
-          new Error(
-            `${path.basename(command)} exited with code ${code ?? "signal"} ${signal || ""}: ${safe.stderr}`,
-          ),
-        );
-    });
+      return code === 0 ? "" : `: ${safe.stderr}`;
+    },
   });
 }

@@ -63,6 +63,17 @@ test("stages a complete repository candidate and publishes it atomically", async
     ),
   ).toEqual(expect.objectContaining({ publication_ready: false, generation_id: "generation-1" }));
   expect(
+    JSON.parse(
+      await fs.readFile(path.join(input.outputRoot, "metadata/repository-index.json"), "utf8"),
+    ),
+  ).toEqual(
+    expect.objectContaining({
+      metadata_version: "0.1.0",
+      schema: 1,
+      generated: "2026-11-19T12:00:00.000Z",
+    }),
+  );
+  expect(
     await fs.readFile(path.join(input.outputRoot, "el10/x86_64/stable/SHA256SUMS"), "utf8"),
   ).toContain("node.rpm");
 });

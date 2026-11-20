@@ -1,18 +1,6 @@
 import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
-import { redactText } from "@eliware/common";
-
-function redact(text, env) {
-  const secrets = Object.entries(env)
-    .filter(
-      ([name, value]) =>
-        /(SECRET|TOKEN|PASSWORD|PASSWD|WEBHOOK|CREDENTIAL|KEY)/i.test(name) &&
-        typeof value === "string" &&
-        value.length >= 6,
-    )
-    .map(([, value]) => value);
-  return redactText(text, { secrets, maxOutputLength: Number.MAX_SAFE_INTEGER });
-}
+import redactCommandOutput from "./redact.mjs";
 
 export default async function writeCommandLog({
   file,
@@ -21,8 +9,8 @@ export default async function writeCommandLog({
   stderr = "",
   env = process.env,
 }) {
-  const safeStdout = redact(stdout, env);
-  const safeStderr = redact(stderr, env);
+  const safeStdout = redactCommandOutput(stdout, env);
+  const safeStderr = redactCommandOutput(stderr, env);
   await mkdir(path.dirname(file), { recursive: true });
   await writeFile(
     file,

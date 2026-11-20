@@ -2,7 +2,7 @@ import { spawnSync } from "node:child_process";
 import { cp, mkdir, mkdtemp, rename, rm, stat, writeFile } from "node:fs/promises";
 import path from "node:path";
 import generateFilesModule from "./files.mjs";
-import buildIndex from "./index.mjs";
+import writeRepositoryIndex from "./write-index.mjs";
 import writeReleaseRecords from "./records.mjs";
 
 const { exists, hashFile, listFiles } = generateFilesModule();
@@ -68,19 +68,7 @@ export default async function generateCandidate({
       path.join(candidate, "metadata/release-manifest.json"),
       `${JSON.stringify(manifest, null, 2)}\n`,
     );
-    await writeFile(
-      path.join(candidate, "metadata/repository-index.json"),
-      `${JSON.stringify(
-        {
-          metadata_version: "0.1.0",
-          schema: 1,
-          generated: now.toISOString(),
-          directories: await buildIndex(candidate),
-        },
-        null,
-        2,
-      )}\n`,
-    );
+    await writeRepositoryIndex({ directory: candidate, generated: now.toISOString() });
     await rename(candidate, outputRoot);
     return { output: outputRoot, generation_id: generationId, rpm: rpmRecordUpdated };
   } finally {

@@ -1,7 +1,7 @@
 import { mkdir, readFile, stat, writeFile, rm } from "node:fs/promises";
 import path from "node:path";
 import sign from "./sign.mjs";
-import buildIndex from "../generate/index.mjs";
+import writeRepositoryIndex from "../generate/write-index.mjs";
 import validatePublishedMetadata from "./validate-metadata.mjs";
 
 export default async function prepareReleaseGeneration({
@@ -81,11 +81,10 @@ export default async function prepareReleaseGeneration({
   );
   await files.writeJson(manifestPath, manifest);
   await sign(manifestPath, keyFingerprint, gpgHome);
-  await files.writeJson(path.join(stagingRoot, "metadata/repository-index.json"), {
-    metadata_version: "0.1.0",
-    schema: 1,
+  await writeRepositoryIndex({
+    directory: stagingRoot,
     generated: active.generated,
-    directories: await buildIndex(stagingRoot, "/", "metadata/repository-index.json"),
+    excludedPath: "metadata/repository-index.json",
   });
   await validateMetadata();
   return { rpmSha256 };

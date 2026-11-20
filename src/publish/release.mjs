@@ -1,6 +1,6 @@
 import { spawnSync } from "node:child_process";
 import writeCommandLog from "../conductor/commands/log.mjs";
-import { redactText } from "@eliware/common";
+import redactCommandOutput from "../conductor/commands/redact.mjs";
 import { cp, lstat, mkdir, readFile, readdir, rename, rm } from "node:fs/promises";
 import path from "node:path";
 import publishFilesystemModule from "./filesystem.mjs";
@@ -115,7 +115,7 @@ export default async function main(argv = process.argv.slice(2)) {
     await saveRepositoryToolLog(env);
     if (result.status !== 0)
       throw new Error(
-        `${command} exited with status ${result.status}: ${redactToolOutput(result.stderr || "", env)}`,
+        `${command} exited with status ${result.status}: ${redactCommandOutput(result.stderr || "", env)}`,
       );
     return result;
   }
@@ -131,16 +131,4 @@ export default async function main(argv = process.argv.slice(2)) {
       env,
     });
   }
-}
-
-function redactToolOutput(value, env) {
-  const secrets = Object.entries(env)
-    .filter(
-      ([name, secret]) =>
-        /(SECRET|TOKEN|PASSWORD|PASSWD|WEBHOOK|CREDENTIAL|KEY)/i.test(name) &&
-        typeof secret === "string" &&
-        secret.length >= 6,
-    )
-    .map(([, secret]) => secret);
-  return redactText(value, { secrets, maxOutputLength: Number.MAX_SAFE_INTEGER });
 }

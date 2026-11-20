@@ -81,4 +81,8 @@ test("signs RPM and repository metadata and completes release manifests", async 
   expect(
     JSON.parse(await fs.readFile(path.join(metadata, "release-manifest.json"), "utf8")),
   ).toEqual(expect.objectContaining({ signed: true, publication_ready: true }));
+  expect(buildIndex).toHaveBeenCalledWith(stagingRoot, "/", "metadata/repository-index.json");
+  expect(
+    JSON.parse(await fs.readFile(path.join(metadata, "repository-index.json"), "utf8")),
+  ).toEqual(expect.objectContaining({ metadata_version: "0.1.0", schema: 1 }));
 });
