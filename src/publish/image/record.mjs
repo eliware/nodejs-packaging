@@ -1,9 +1,9 @@
-import { cp, mkdir, readFile, rename, rm } from "node:fs/promises";
+import { cp, mkdir, rename, rm } from "node:fs/promises";
 import path from "node:path";
 import publishFilesystemModule from "../filesystem.mjs";
 import writeImageRecords from "./records.mjs";
-import sign from "../sign.mjs";
-import buildIndex from "../../generate/index.mjs";
+import writeImageManifest from "./manifest.mjs";
+import writeRepositoryIndex from "../../generate/write-index.mjs";
 import activateGeneration from "../activate-generation.mjs";
 import loadImagePublicationInput from "./input.mjs";
 import copyConductorLogs from "./logs.mjs";
@@ -26,7 +26,7 @@ export default async function main(argv = process.argv.slice(2), dependencies = 
 
   let activationStarted = false;
   try {
-    const { imageRecord, catalogPath } = await writeImageRecords({
+    const { imageRecord } = await writeImageRecords({
       stage,
       image,
       generationId,
@@ -36,30 +36,11 @@ export default async function main(argv = process.argv.slice(2), dependencies = 
       files,
     });
 
-    const manifestPath = path.join(stage, "metadata/release-manifest.json");
-    const manifest = JSON.parse(await readFile(manifestPath, "utf8"));
-    manifest.generation_id = generationId;
-    manifest.generated = generated;
-    manifest.catalog_sha256 = await files.hashFile(catalogPath);
-    manifest.repository_metadata_sha256 = await files.hashFile(
-      path.join(stage, "el10/x86_64/stable/repodata/repomd.xml"),
-    );
-    manifest.files = await files.listFiles(
-      stage,
-      new Set([
-        "metadata/release-manifest.json",
-        "metadata/release-manifest.json.asc",
-        "metadata/repository-index.json",
-      ]),
-    );
-    await files.writeJson(manifestPath, manifest);
-    await sign(manifestPath, keyFingerprint, gpgHome);
-    const indexPath = path.join(stage, "metadata/repository-index.json");
-    await files.writeJson(indexPath, {
-      metadata_version: "0.1.0",
-      schema: 1,
+    await writeImageManifest({ stage, generationId, generated, keyFingerprint, gpgHome, files });
+    await writeRepositoryIndex({
+      directory: stage,
       generated,
-      directories: await buildIndex(stage, "/", "metadata/repository-index.json"),
+      excludedPath: "metadata/repository-index.json",
     });
 
     await rename(stage, finalRoot);

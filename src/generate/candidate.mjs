@@ -1,9 +1,9 @@
-import { spawnSync } from "node:child_process";
 import { cp, mkdir, mkdtemp, rename, rm, stat, writeFile } from "node:fs/promises";
 import path from "node:path";
 import generateFilesModule from "./files.mjs";
 import writeRepositoryIndex from "./write-index.mjs";
 import writeReleaseRecords from "./records.mjs";
+import createRepositoryMetadata from "./repository-metadata.mjs";
 
 const { exists, hashFile, listFiles } = generateFilesModule();
 export default async function generateCandidate({
@@ -36,12 +36,7 @@ export default async function generateCandidate({
 
   try {
     const rpmDirectory = path.dirname(rpmTarget);
-    const repository = spawnSync("createrepo_c", ["--checksum", "sha256", rpmDirectory], {
-      encoding: "utf8",
-    });
-    if (repository.error) throw repository.error;
-    if (repository.status !== 0)
-      throw new Error(`createrepo_c exited with status ${repository.status}: ${repository.stderr}`);
+    createRepositoryMetadata(rpmDirectory);
 
     await writeReleaseRecords({
       candidate,

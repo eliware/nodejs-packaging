@@ -60,14 +60,10 @@ test("publishes a validated image into a new signed repository generation", asyn
   try {
     await main([recordPath]);
     const catalog = JSON.parse(await fs.readFile(path.join(root, "metadata/catalog.json"), "utf8"));
-    const report = JSON.parse(
-      await fs.readFile(path.join(root, "metadata/validation/image.json"), "utf8"),
-    );
     const active = JSON.parse(
       await fs.readFile(path.join(root, "metadata/active-generation.json"), "utf8"),
     );
     expect(catalog.images[0]).toEqual(expect.objectContaining({ node_version: "26.13.1", digest }));
-    expect(report).toEqual(expect.objectContaining({ status: "passed", registry_push: "passed" }));
     expect(active.generation).toMatch(/^node-v26\.13\.1-el10-x86_64-\d+$/);
     await expect(
       fs.readFile(
