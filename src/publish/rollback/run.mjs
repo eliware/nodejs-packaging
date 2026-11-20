@@ -9,6 +9,7 @@ export default async function rollbackGeneration(repositoryRoot, generation, dep
     repositoryRoot,
     generation,
     dependencies.readFile,
+    { hashFile: dependencies.hashFile, stat: dependencies.stat },
   );
   verifyGenerationSignature(signature, manifest, {
     gpgHome: dependencies.gpgHome,

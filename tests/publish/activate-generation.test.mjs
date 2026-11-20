@@ -18,6 +18,8 @@ test("activates repository pointers, metadata, and public repository files", asy
   await fs.mkdir(path.join(generation, "metadata/releases"), { recursive: true });
   await fs.mkdir(path.join(generation, "metadata/validation"), { recursive: true });
   await fs.mkdir(path.join(generation, "el10/x86_64/stable"), { recursive: true });
+  await fs.writeFile(path.join(root, "metadata/catalog.json"), "old catalog");
+  await fs.writeFile(path.join(generation, "nodejs26.repo"), "[nodejs26]\n");
   for (const file of [
     "metadata/catalog.json",
     "metadata/repository-index.json",
@@ -33,12 +35,16 @@ test("activates repository pointers, metadata, and public repository files", asy
     repositoryRoot: root,
     generationRoot: generation,
     files,
+    rootFiles: [{ source: "nodejs26.repo", destination: "metadata/catalog.json" }],
   });
   expect((await fs.lstat(path.join(root, "el10/x86_64/stable"))).isSymbolicLink()).toBe(true);
   expect((await fs.lstat(path.join(root, "metadata/provenance"))).isSymbolicLink()).toBe(true);
   await expect(
     fs.readFile(path.join(root, "metadata/active-generation.json"), "utf8"),
   ).resolves.toBe("metadata/active-generation.json");
+  await expect(fs.readFile(path.join(root, "metadata/catalog.json"), "utf8")).resolves.toBe(
+    "metadata/catalog.json",
+  );
 });
 
 test("restores earlier pointers when a later pointer replacement fails", async () => {
@@ -127,4 +133,38 @@ test("reports pointer restoration failures after an activation error", async () 
   await expect(
     activateGeneration({ repositoryRoot: root, generationRoot: generation, files: failingFiles }),
   ).rejects.toThrow("generation activation rollback failed");
+});
+
+test("restores root metadata files when an atomic copy fails", async () => {
+  const root = "/virtual/activate-copy-failure-repository";
+  const generation = path.join(root, ".generations/generation-6");
+  await fs.mkdir(path.join(root, "metadata"), { recursive: true });
+  await fs.mkdir(path.join(generation, "metadata"), { recursive: true });
+  const names = [
+    "catalog.json",
+    "repository-index.json",
+    "release-manifest.json",
+    "release-manifest.json.asc",
+    "active-generation.json",
+  ];
+  for (const name of names) {
+    await fs.writeFile(path.join(root, "metadata", name), `old ${name}`);
+    await fs.writeFile(path.join(generation, "metadata", name), `new ${name}`);
+  }
+  let copies = 0;
+  const failingFiles = {
+    ...files,
+    atomicCopy: async (...args) => {
+      copies += 1;
+      if (copies === 2) throw new Error("metadata copy failed");
+      return files.atomicCopy(...args);
+    },
+  };
+  await expect(
+    activateGeneration({ repositoryRoot: root, generationRoot: generation, files: failingFiles }),
+  ).rejects.toThrow("metadata copy failed");
+  for (const name of names)
+    await expect(fs.readFile(path.join(root, "metadata", name), "utf8")).resolves.toBe(
+      `old ${name}`,
+    );
 });

@@ -43,6 +43,8 @@ export default function planRelease({
 }) {
   const nodeUpdate =
     !publishedNodeVersion || compareNodeVersions(latestNodeVersion, publishedNodeVersion) > 0;
+  if (publishedNodeVersion && compareNodeVersions(latestNodeVersion, publishedNodeVersion) < 0)
+    throw new Error("discovered Node.js version is older than the published version");
   const npmUpdate =
     !publishedNpmVersion || compareNpmVersions(latestNpmVersion, publishedNpmVersion) > 0;
   const baseImageUpdate =

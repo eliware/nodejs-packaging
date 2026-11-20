@@ -89,6 +89,12 @@ test("rejects a malformed published Node.js version", () => {
   );
 });
 
+test("rejects stale discovery data that would select an older Node.js release", () => {
+  expect(() => plan({ latestNodeVersion: "26.12.0" })).toThrow(
+    "discovered Node.js version is older than the published version",
+  );
+});
+
 test("rejects npm versions older than version 12", () => {
   expect(() => plan({ latestNpmVersion: "11.9.0" })).toThrow(
     "npm versions must use the 12.0.0 or later format",

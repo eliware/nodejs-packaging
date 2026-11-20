@@ -34,8 +34,22 @@ export default async function activateGeneration({
       path.join(generationRoot, "metadata", name),
     ]),
   ];
-  const previous = [];
-  for (const [pointer] of pointers) previous.push(await snapshotPointer(pointer, inspectPointer));
+  const metadataFiles = [
+    "catalog.json",
+    "repository-index.json",
+    "release-manifest.json",
+    "release-manifest.json.asc",
+    "active-generation.json",
+  ].map((name) => path.join(metadataRoot, name));
+  const destinations = [
+    ...pointers.map(([pointer]) => pointer),
+    ...rootFiles.map(({ destination }) => path.join(repositoryRoot, destination)),
+    ...metadataFiles,
+  ];
+  const previous = new Map();
+  for (const destination of destinations)
+    if (!previous.has(destination))
+      previous.set(destination, await snapshotPointer(destination, inspectPointer));
   try {
     for (const [pointer, target] of pointers) await files.replacePointer(pointer, target);
     await copyRootFiles({ repositoryRoot, generationRoot, rootFiles });
@@ -50,20 +64,22 @@ export default async function activateGeneration({
         path.join(generationRoot, "metadata", name),
         path.join(metadataRoot, name),
       );
-    for (const snapshot of previous)
+    for (const snapshot of previous.values())
       if (snapshot.type === "path") await rm(snapshot.backup, { recursive: true, force: true });
   } catch (error) {
     const rollbackErrors = [];
-    for (let index = pointers.length - 1; index >= 0; index -= 1) {
-      const [pointer] = pointers[index];
-      const snapshot = previous[index];
+    for (const destination of [...previous.keys()].reverse()) {
+      const snapshot = previous.get(destination);
       try {
-        if (snapshot.type === "missing") await rm(pointer, { recursive: true, force: true });
+        if (snapshot.type === "missing") await rm(destination, { recursive: true, force: true });
         else if (snapshot.type === "symlink")
-          await files.replacePointer(pointer, path.resolve(path.dirname(pointer), snapshot.target));
+          await files.replacePointer(
+            destination,
+            path.resolve(path.dirname(destination), snapshot.target),
+          );
         else {
-          await rm(pointer, { recursive: true, force: true });
-          await rename(snapshot.backup, pointer);
+          await rm(destination, { recursive: true, force: true });
+          await rename(snapshot.backup, destination);
         }
       } catch (rollbackError) {
         rollbackErrors.push(rollbackError);

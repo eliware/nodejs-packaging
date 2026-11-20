@@ -33,7 +33,7 @@ async function setup(outputRoot) {
     outputRoot,
     rpmPath,
     rpmRecord: {
-      path: "node.rpm",
+      path: "el10/x86_64/stable/node.rpm",
       name: "eliware-node26",
       version: "26.13.1",
       npm_version: "12.2.3",

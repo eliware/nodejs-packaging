@@ -15,7 +15,18 @@ test("writes run state to a temporary file before replacing the current state", 
   expect(saved).toEqual(
     expect.objectContaining({ stage: "complete", run_id: "run-1", updated: expect.any(String) }),
   );
-  await expect(fs.stat(path.join(root, "last-run.json.tmp"))).rejects.toMatchObject({
-    code: "ENOENT",
-  });
+  await expect(fs.readdir(root)).resolves.toEqual(["last-run.json"]);
+});
+
+test("removes a temporary state file when writing fails", async () => {
+  const root = "/virtual/state-file-write-failure";
+  await fs.mkdir(root, { recursive: true });
+  await expect(
+    saveConductorState(
+      root,
+      { stage: "complete", run_id: "run-2" },
+      { writeFile: async () => Promise.reject(new Error("write failed")) },
+    ),
+  ).rejects.toThrow("write failed");
+  await expect(fs.readdir(root)).resolves.toEqual([]);
 });

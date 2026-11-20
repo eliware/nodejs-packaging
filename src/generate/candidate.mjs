@@ -21,7 +21,10 @@ export default async function generateCandidate({
   await mkdir(path.dirname(outputRoot), { recursive: true });
   const stage = await mkdtemp(path.join(path.dirname(outputRoot), ".nodejs26-repository-"));
   const candidate = path.join(stage, "generation");
-  const rpmRelativePath = `el10/x86_64/stable/${rpmRecord.path}`;
+  const rpmRelativePath = path.posix.join(
+    "el10/x86_64/stable",
+    path.posix.basename(rpmRecord.path),
+  );
   const rpmTarget = path.join(candidate, rpmRelativePath);
   await mkdir(path.dirname(rpmTarget), { recursive: true });
   await cp(rpmPath, rpmTarget);
