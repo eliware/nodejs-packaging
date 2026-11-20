@@ -2,9 +2,11 @@ import { mkdir, readFile, stat, writeFile, rm } from "node:fs/promises";
 import path from "node:path";
 import signModule from "./sign.mjs";
 import generateIndexModule from "../generate/index.mjs";
+import validateMetadataModule from "./validate-metadata.mjs";
 
 const { sign } = signModule();
 const { buildIndex } = generateIndexModule();
+const { validatePublishedMetadata } = validateMetadataModule();
 
 async function prepareReleaseGeneration({
   stagingRoot,
@@ -14,6 +16,7 @@ async function prepareReleaseGeneration({
   gpgHome,
   run,
   files,
+  validateMetadata = () => validatePublishedMetadata(stagingRoot),
 }) {
   const rpmDirectory = path.join(stagingRoot, "el10/x86_64/stable");
   const rpmPath = path.join(rpmDirectory, rpmName);
@@ -87,6 +90,7 @@ async function prepareReleaseGeneration({
     generated: active.generated,
     directories: await buildIndex(stagingRoot, "/", "metadata/repository-index.json"),
   });
+  await validateMetadata();
   return { rpmSha256 };
 }
 

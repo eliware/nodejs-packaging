@@ -1,0 +1,12 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://eliware.org/schemas/nodejs/repository-index-0.1.0.json",
+  "type": "object",
+  "required": ["metadata_version", "schema", "generated", "directories"],
+  "properties": {
+    "metadata_version": { "const": "0.1.0" },
+    "schema": { "const": 1 },
+    "generated": { "type": "string" },
+    "directories": { "type": "object", "minProperties": 1 }
+  }
+}

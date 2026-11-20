@@ -1,0 +1,93 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://eliware.org/schemas/nodejs/catalog-0.1.0.json",
+  "type": "object",
+  "required": [
+    "metadata_version",
+    "schema",
+    "active_generation",
+    "node_major",
+    "target",
+    "stable",
+    "preview"
+  ],
+  "properties": {
+    "metadata_version": { "const": "0.1.0" },
+    "schema": { "const": 1 },
+    "active_generation": { "type": "string", "minLength": 1 },
+    "node_major": { "const": 26 },
+    "target": { "$ref": "#/$defs/target" },
+    "stable": {
+      "type": "object",
+      "required": ["available", "latest", "items"],
+      "properties": {
+        "available": { "const": true },
+        "latest": { "$ref": "#/$defs/release" },
+        "items": { "type": "array", "items": { "$ref": "#/$defs/release" } }
+      }
+    },
+    "preview": {
+      "type": "object",
+      "required": ["available"],
+      "properties": { "available": { "const": false } },
+      "additionalProperties": false
+    },
+    "images": { "type": "array" }
+  },
+  "$defs": {
+    "target": {
+      "type": "object",
+      "required": ["distribution", "version", "repository", "architecture", "format"],
+      "properties": {
+        "distribution": { "const": "centos-stream" },
+        "version": { "const": "10" },
+        "repository": { "const": "epel" },
+        "architecture": { "const": "x86_64" },
+        "format": { "const": "rpm" }
+      }
+    },
+    "release": {
+      "type": "object",
+      "required": [
+        "metadata_version",
+        "schema",
+        "release_id",
+        "channel",
+        "node_version",
+        "target",
+        "source",
+        "npm",
+        "package",
+        "validation",
+        "provenance_path",
+        "generation_id"
+      ],
+      "properties": {
+        "metadata_version": { "const": "0.1.0" },
+        "schema": { "const": 1 },
+        "channel": { "const": "stable" },
+        "node_version": { "type": "string", "pattern": "^26\\." },
+        "target": { "$ref": "#/$defs/target" },
+        "source": {
+          "type": "object",
+          "required": [
+            "url",
+            "file",
+            "sha256",
+            "signature_url",
+            "signing_key_fingerprint",
+            "verified_at"
+          ]
+        },
+        "npm": { "type": "object", "required": ["version", "integrity"] },
+        "package": {
+          "type": "object",
+          "required": ["name", "version", "release", "sha256", "size"]
+        },
+        "validation": { "type": "object", "required": ["status", "record_path"] },
+        "provenance_path": { "type": "string" },
+        "generation_id": { "type": "string" }
+      }
+    }
+  }
+}

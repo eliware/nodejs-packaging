@@ -1,0 +1,38 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://eliware.org/schemas/nodejs/release-manifest-0.1.0.json",
+  "type": "object",
+  "required": [
+    "metadata_version",
+    "schema",
+    "generation_id",
+    "generated",
+    "signed",
+    "publication_ready",
+    "catalog_sha256",
+    "repository_metadata_sha256",
+    "files"
+  ],
+  "properties": {
+    "metadata_version": { "const": "0.1.0" },
+    "schema": { "const": 1 },
+    "generation_id": { "type": "string", "pattern": "^node-v26\\." },
+    "generated": { "type": "string", "format": "date-time" },
+    "signed": { "const": true },
+    "publication_ready": { "const": true },
+    "catalog_sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "repository_metadata_sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "files": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["path", "sha256", "size"],
+        "properties": {
+          "path": { "type": "string" },
+          "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+          "size": { "type": "integer", "minimum": 0 }
+        }
+      }
+    }
+  }
+}

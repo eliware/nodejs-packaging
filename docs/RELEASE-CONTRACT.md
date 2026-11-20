@@ -40,6 +40,12 @@ Store the stable RPM repository under `el10/x86_64/stable/`. Store public signin
 
 Store the release catalog, repository index, manifest, provenance, and validation records under `metadata/`.
 Store each immutable publication generation under `.generations/<generation-id>/`.
+Keep the active generation and the six most recently modified generations. Prune older generations only after the new generation becomes active.
+Keep `preview.available` set to `false` in the catalog. Do not publish preview paths or pointers.
+
+To restore a retained generation, run `npm run repository:rollback -- --generation <generation-id>` on the packaging host. The command verifies the signed release manifest before it restores repository pointers.
+
+For an interrupted publication, keep the active generation unchanged. Remove the incomplete `.staging-*` directory, then rerun the release command. Do not edit published metadata by hand.
 Publish a complete generation before you set the active generation pointer. The Node.js HTTP application reads published files only.
 
 ## Metadata rules

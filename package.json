@@ -44,7 +44,8 @@
     "lint": "eliware-test --lint",
     "audit": "eliware-test --audit",
     "format": "eliware-test --format",
-    "format:check": "eliware-test --format-check"
+    "format:check": "eliware-test --format-check",
+    "repository:rollback": "node bin/rollback-repository.mjs"
   },
   "engines": {
     "node": ">=26"
@@ -54,7 +55,8 @@
     "@eliware/discord-webhook": "^15.0.1"
   },
   "devDependencies": {
-    "@eliware/test": "^15.2.0"
+    "@eliware/test": "^15.2.0",
+    "ajv": "^8.20.0"
   },
   "jest": {
     "testEnvironment": "node",

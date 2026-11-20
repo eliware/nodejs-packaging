@@ -6,12 +6,14 @@ import signModule from "../sign.mjs";
 import generateIndexModule from "../../generate/index.mjs";
 import activateGenerationModule from "../activate-generation.mjs";
 import imageValidationModule from "./validation.mjs";
+import retentionModule from "../retention.mjs";
 const files = publishFilesystemModule();
 const { sign } = signModule();
 const { buildIndex } = generateIndexModule();
 const { activateGeneration } = activateGenerationModule();
 const { validateImageRecord } = imageValidationModule();
 const { writeImageRecords } = imageRecordsModule();
+const { pruneGenerations } = retentionModule();
 
 async function main(argv = process.argv.slice(2), dependencies = {}) {
   const repositoryRoot = path.resolve(
@@ -92,6 +94,7 @@ async function main(argv = process.argv.slice(2), dependencies = {}) {
       generationRoot: finalRoot,
       files,
     });
+    await pruneGenerations(repositoryRoot, generationId);
     process.stdout.write(
       `${JSON.stringify({ generation: generationId, image: imageRecord }, null, 2)}\n`,
     );

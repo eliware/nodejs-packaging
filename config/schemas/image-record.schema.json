@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://eliware.org/schemas/nodejs/image-record-0.1.0.json",
+  "type": "object",
+  "required": [
+    "metadata_version",
+    "schema",
+    "repository",
+    "tag",
+    "digest",
+    "base_image_digest",
+    "validation",
+    "provenance_path"
+  ],
+  "properties": {
+    "metadata_version": { "const": "0.1.0" },
+    "schema": { "const": 1 },
+    "repository": { "type": "string" },
+    "tag": { "type": "string" },
+    "digest": { "type": "string", "pattern": "^sha256:[a-f0-9]{64}$" },
+    "base_image_digest": { "type": "string", "pattern": "^sha256:[a-f0-9]{64}$" },
+    "validation": { "type": "object", "required": ["status"] },
+    "provenance_path": { "type": "string" }
+  }
+}

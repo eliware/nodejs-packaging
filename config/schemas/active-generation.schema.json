@@ -1,0 +1,12 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://eliware.org/schemas/nodejs/active-generation-0.1.0.json",
+  "type": "object",
+  "required": ["metadata_version", "schema", "generation", "generated"],
+  "properties": {
+    "metadata_version": { "const": "0.1.0" },
+    "schema": { "const": 1 },
+    "generation": { "type": "string", "pattern": "^node-v26\\." },
+    "generated": { "type": "string", "format": "date-time" }
+  }
+}

@@ -4,9 +4,11 @@ import path from "node:path";
 import publishFilesystemModule from "./filesystem.mjs";
 import releaseGenerationModule from "./release-generation.mjs";
 import activateGenerationModule from "./activate-generation.mjs";
+import retentionModule from "./retention.mjs";
 const files = publishFilesystemModule();
 const { prepareReleaseGeneration } = releaseGenerationModule();
 const { activateGeneration } = activateGenerationModule();
+const { pruneGenerations } = retentionModule();
 
 async function main(argv = process.argv.slice(2)) {
   const args = new Map();
@@ -85,6 +87,7 @@ async function main(argv = process.argv.slice(2)) {
       ],
     });
     activated = true;
+    await pruneGenerations(repositoryRoot, generationId);
     process.stdout.write(
       `${JSON.stringify({ generation: generationId, repository: repositoryRoot, rpm_sha256: rpmSha256, signing_key: keyFingerprint }, null, 2)}\n`,
     );

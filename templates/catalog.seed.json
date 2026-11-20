@@ -17,11 +17,6 @@
     "latest": null,
     "items": []
   },
-  "preview": {
-    "available": false,
-    "retention": 30,
-    "latest": null,
-    "items": []
-  },
+  "preview": { "available": false },
   "images": []
 }
