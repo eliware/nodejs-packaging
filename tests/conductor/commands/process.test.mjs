@@ -29,9 +29,9 @@ const handlers = {
   onExit: jest.fn(async () => ""),
 };
 
-test("collects streams and resolves successful process details", async () => {
+test("resolves successful process lifecycle details", async () => {
   Object.values(handlers).forEach((handler) => handler.mockClear());
-  spawn.mockImplementationOnce(() => childWith());
+  spawn.mockImplementationOnce(() => childWith({ streams: false }));
   await expect(
     runProcess("node", ["script.mjs"], {
       cwd: "/virtual",
@@ -39,19 +39,17 @@ test("collects streams and resolves successful process details", async () => {
       stdio: ["ignore", "pipe", "pipe"],
       ...handlers,
     }),
-  ).resolves.toEqual({ code: 0, stdout: "out", stderr: "err" });
+  ).resolves.toEqual({ code: 0, stdout: "", stderr: "" });
   expect(spawn).toHaveBeenCalledWith("node", ["script.mjs"], {
     cwd: "/virtual",
     env: {},
     stdio: ["ignore", "pipe", "pipe"],
   });
-  expect(handlers.onStdout).toHaveBeenCalledWith("out");
-  expect(handlers.onStderr).toHaveBeenCalledWith("err");
   expect(handlers.onExit).toHaveBeenCalledWith({
     code: 0,
     signal: null,
-    stdout: "out",
-    stderr: "err",
+    stdout: "",
+    stderr: "",
   });
 });
 

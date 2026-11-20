@@ -3,7 +3,8 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import renderReleaseCardHtml from "./html.mjs";
 import renderCard from "./render-card.mjs";
-import publishReport from "./publish.mjs";
+import publishReportRecord from "./publish.mjs";
+import updateLatestReport from "./latest.mjs";
 import reportRecordModule from "./record.mjs";
 
 const { createReportDetails, createReportRecord } = reportRecordModule();
@@ -62,6 +63,7 @@ export default async function generateReleaseReport({
     imageSha256,
   });
   const reportPath = path.join(directory, "release-report.json");
-  await publishReport({ reportPath, imagePath, repositoryRoot, report });
+  await publishReportRecord({ reportPath, report });
+  await updateLatestReport({ imagePath, repositoryRoot, report });
   return { cardUrl, reportPath, imagePath, imageSha256 };
 }

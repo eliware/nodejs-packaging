@@ -6,7 +6,10 @@ test("escapes report values before adding them to the release card", () => {
     logoData: "data:image/svg+xml;base64,logo",
     status: "✓ NO UPDATES",
     statusColor: "#8fb7dc",
-    details: [["Decision", `<script title="x">'&</script>`]],
+    details: [
+      ["Decision", `<script title="x">'&</script>`],
+      ["Optional", null],
+    ],
     runId: `<run&1>`,
     reason: `reason "one"`,
     changed: false,
@@ -14,4 +17,5 @@ test("escapes report values before adding them to the release card", () => {
   expect(html).toContain("&lt;script title=&quot;x&quot;&gt;&#39;&amp;&lt;/script&gt;");
   expect(html).toContain("Run &lt;run&amp;1&gt;");
   expect(html).toContain("reason &quot;one&quot;");
+  expect(html).toContain("<strong></strong>");
 });
