@@ -1,8 +1,8 @@
-import { spawnSync } from "node:child_process";
 import path from "node:path";
 import { readFile } from "node:fs/promises";
 import filesystemModule from "../filesystem.mjs";
 import activateGeneration from "../activate-generation.mjs";
+import verifyGenerationSignature from "./verify-signature.mjs";
 
 const files = filesystemModule();
 export default async function rollbackGeneration(repositoryRoot, generation, dependencies = {}) {
@@ -16,13 +16,11 @@ export default async function rollbackGeneration(repositoryRoot, generation, dep
   );
   if (active.generation !== generation)
     throw new Error("generation metadata does not match its directory");
-  const verify = dependencies.verify || ((args) => spawnSync("gpg", args, { encoding: "utf8" }));
-  const result = verify(["--verify", signature, manifest]);
-  if (result.error) throw result.error;
-  if (result.status !== 0)
-    throw new Error(
-      `generation signature verification failed: ${result.stderr || "unknown error"}`,
-    );
+  verifyGenerationSignature(
+    signature,
+    manifest,
+    dependencies.verify ? (_command, args) => dependencies.verify(args) : undefined,
+  );
   await (dependencies.activate || activateGeneration)({
     repositoryRoot,
     generationRoot: root,
