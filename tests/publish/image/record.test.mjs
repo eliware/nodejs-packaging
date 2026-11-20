@@ -178,7 +178,7 @@ test("preserves a complete generation when activation fails after switching a po
       "second pointer failed",
     );
     const stable = path.join(root, "el10/x86_64/stable");
-    expect(await fs.readlink(stable)).toContain(".generations/node-v26.13.1-el10-x86_64-");
+    await expect(fs.lstat(stable)).rejects.toMatchObject({ code: "ENOENT" });
     const generations = await fs.readdir(path.join(root, ".generations"));
     const generation = generations.find((name) => name.startsWith("node-v26.13.1-el10-x86_64-"));
     expect(generation).toBeDefined();

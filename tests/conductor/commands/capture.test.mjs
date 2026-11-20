@@ -67,7 +67,7 @@ test("writes redacted logs while returning command output to the caller", async 
         logName: "capture",
         env: { DISCORD_WEBHOOK: webhook },
       }),
-    ).resolves.toEqual({ code: 0, stdout: webhook, stderr: "token=hidden-value" });
+    ).resolves.toEqual({ code: 0, stdout: "[REDACTED]", stderr: "token=[REDACTED]" });
     const log = await fs.readFile("/virtual/logs/capture.log", "utf8");
     expect(log).not.toContain(webhook);
     expect(log).not.toContain("hidden-value");
