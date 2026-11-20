@@ -4,7 +4,7 @@ import memoryFilesystemFixture from "../../test-fixtures/memory-fs.mjs";
 const { createMemoryFs } = memoryFilesystemFixture();
 const fs = createMemoryFs();
 const root = "/virtual/published";
-const schemaRoot = "/var/eliware/nodejs-packaging/config/schemas";
+const schemaRoot = path.resolve("config/schemas");
 await fs.mkdir(root, { recursive: true });
 for (const [name, file] of Object.entries({
   catalog: "metadata/catalog.json",
