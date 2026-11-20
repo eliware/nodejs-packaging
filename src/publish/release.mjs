@@ -1,4 +1,4 @@
-import { cp, lstat, mkdir, readFile, readdir, rename, rm } from "node:fs/promises";
+import { cp, mkdir, readFile, readdir, rename, rm } from "node:fs/promises";
 import path from "node:path";
 import publishFilesystemModule from "./filesystem.mjs";
 import loadReleaseInput from "./release/input.mjs";
@@ -6,6 +6,8 @@ import prepareReleaseGeneration from "./release/generation.mjs";
 import activateGeneration from "./activate-generation.mjs";
 import pruneGenerations from "./retention.mjs";
 import runRepositoryTool from "./repository-tools.mjs";
+import copyReleaseLogs from "./release/logs.mjs";
+import assertSafeRepositoryPaths from "./release/paths.mjs";
 const files = publishFilesystemModule();
 export default async function main(argv = process.argv.slice(2)) {
   const { candidateRoot, repositoryRoot, keyFingerprint, gpgHome } = loadReleaseInput(argv);
@@ -25,13 +27,7 @@ export default async function main(argv = process.argv.slice(2)) {
     throw new Error(`generation already exists: ${generationId}`);
   await mkdir(path.dirname(stagingRoot), { recursive: true });
   await cp(candidateRoot, stagingRoot, { recursive: true });
-  const logDirectory = process.env.NODEJS_CONDUCTOR_LOG_DIR;
-  const runId = process.env.NODEJS_CONDUCTOR_RUN_ID;
-  if (logDirectory && runId)
-    await cp(logDirectory, path.join(stagingRoot, "metadata/logs", runId), {
-      recursive: true,
-      force: true,
-    });
+  await copyReleaseLogs(stagingRoot);
 
   let activated = false;
   const repositoryToolOutput = [];
@@ -53,20 +49,7 @@ export default async function main(argv = process.argv.slice(2)) {
       files,
     });
 
-    const stablePointer = path.join(repositoryRoot, "el10/x86_64/stable");
-    if (await files.exists(stablePointer)) {
-      const info = await lstat(stablePointer);
-      if (info.isDirectory() && (await readdir(stablePointer)).length)
-        throw new Error("stable repository path is not empty");
-    }
-    for (const name of ["provenance", "releases", "validation"]) {
-      const publicPath = path.join(repositoryRoot, "metadata", name);
-      if (await files.exists(publicPath)) {
-        const info = await lstat(publicPath);
-        if (info.isDirectory() && (await readdir(publicPath)).length)
-          throw new Error(`metadata path is not empty: ${publicPath}`);
-      }
-    }
+    await assertSafeRepositoryPaths(repositoryRoot);
     await rename(stagingRoot, finalRoot);
     await activateGeneration({
       repositoryRoot,
