@@ -1,4 +1,5 @@
 import { expect, jest, test } from "@jest/globals";
+import path from "node:path";
 import memoryFilesystemFixture from "../../../test-fixtures/memory-fs.mjs";
 const { createMemoryFs } = memoryFilesystemFixture();
 const fs = createMemoryFs();
@@ -7,9 +8,9 @@ const { default: prepareImageManifest } =
   await import("../../../src/publish/image/manifest-data.mjs");
 
 test("prepares manifest fields and excludes generated manifest files", async () => {
-  const stage = "/virtual/image-manifest-data";
-  const manifestPath = `${stage}/metadata/release-manifest.json`;
-  await fs.mkdir(`${stage}/metadata`, { recursive: true });
+  const stage = path.resolve("/virtual/image-manifest-data");
+  const manifestPath = path.join(stage, "metadata/release-manifest.json");
+  await fs.mkdir(path.dirname(manifestPath), { recursive: true });
   await fs.writeFile(manifestPath, JSON.stringify({ signed: false }));
   const files = {
     hashFile: jest.fn(async (file) => (file.endsWith("catalog.json") ? "catalog" : "repo")),

@@ -1,4 +1,5 @@
 import { expect, jest, test } from "@jest/globals";
+import path from "node:path";
 
 const publishBuiltImage = jest.fn(async () => "sha256:digest");
 const writeImageRecord = jest.fn(async () => {});
@@ -35,7 +36,7 @@ test("publishes an image and writes its publication record", async () => {
   await publishImage(value);
   expect(publishBuiltImage).toHaveBeenCalledWith(value.image, value.target.image);
   expect(writeImageRecord).toHaveBeenCalledWith(
-    "/repository/artifacts/images/26.13.1",
+    path.join(path.resolve("/repository"), "artifacts/images/26.13.1"),
     expect.objectContaining({
       digest: "sha256:digest",
       published: true,
@@ -48,11 +49,12 @@ test("publishes an image and writes its publication record", async () => {
 
 test("records a local image without publishing it and honors the output path", async () => {
   publishBuiltImage.mockClear();
-  const value = input({ pushImage: false, args: new Map([["output", "/tmp/images"]]) });
+  const output = path.resolve("/tmp/images");
+  const value = input({ pushImage: false, args: new Map([["output", output]]) });
   await publishImage(value);
   expect(publishBuiltImage).not.toHaveBeenCalled();
   expect(writeImageRecord).toHaveBeenLastCalledWith(
-    "/tmp/images",
+    output,
     expect.objectContaining({ digest: null, published: false }),
   );
 });

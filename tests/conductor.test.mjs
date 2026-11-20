@@ -174,14 +174,16 @@ test("keeps concurrent conductor invocations isolated", async () => {
     await wetRun;
     releaseDryLock();
     await dryRun;
-    expect(dryRuntime.acquireLock).toHaveBeenCalledWith("/tmp/dry-state/lock");
-    expect(wetRuntime.acquireLock).toHaveBeenCalledWith("/tmp/wet-state/lock");
+    const dryLock = path.join(path.resolve("/tmp/dry-state"), "lock");
+    const wetLock = path.join(path.resolve("/tmp/wet-state"), "lock");
+    expect(dryRuntime.acquireLock).toHaveBeenCalledWith(dryLock);
+    expect(wetRuntime.acquireLock).toHaveBeenCalledWith(wetLock);
     expect(dryRuntime.runNode).not.toHaveBeenCalled();
     expect(wetRuntime.runNode).toHaveBeenCalledWith("bin/commit-publish-repository.mjs", [], {
       NODEJS_REPOSITORY_ROOT: path.resolve("/eliware/nodejs-repository"),
     });
-    expect(dryRuntime.releaseLock).toHaveBeenCalledWith("/tmp/dry-state/lock");
-    expect(wetRuntime.releaseLock).toHaveBeenCalledWith("/tmp/wet-state/lock");
+    expect(dryRuntime.releaseLock).toHaveBeenCalledWith(dryLock);
+    expect(wetRuntime.releaseLock).toHaveBeenCalledWith(wetLock);
   } finally {
     log.mockRestore();
   }

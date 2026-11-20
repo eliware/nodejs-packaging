@@ -11,11 +11,12 @@ const { default: validateGeneration } =
   await import("../../../src/publish/rollback/validate-generation.mjs");
 
 const generation = "node-v26.1.2-el10-x86_64-20261120112233";
-const root = `/virtual/rollback/.generations/${generation}`;
-const manifestPath = `${root}/metadata/release-manifest.json`;
-const catalogPath = `${root}/metadata/catalog.json`;
-const repositoryPath = `${root}/el10/x86_64/stable/repodata/repomd.xml`;
-const filePath = `${root}/el10/x86_64/stable/node.rpm`;
+const repositoryRoot = path.resolve("/virtual/rollback");
+const root = path.join(repositoryRoot, ".generations", generation);
+const manifestPath = path.join(root, "metadata/release-manifest.json");
+const catalogPath = path.join(root, "metadata/catalog.json");
+const repositoryPath = path.join(root, "el10/x86_64/stable/repodata/repomd.xml");
+const filePath = path.join(root, "el10/x86_64/stable/node.rpm");
 const hash = "a".repeat(64);
 
 function fixtures(overrides = {}) {
@@ -47,7 +48,7 @@ function fixtures(overrides = {}) {
 test("validates and resolves a complete retained generation", async () => {
   const dependencies = fixtures();
   await expect(
-    validateGeneration("/virtual/rollback", generation, dependencies.load, dependencies),
+    validateGeneration(repositoryRoot, generation, dependencies.load, dependencies),
   ).resolves.toEqual({
     root,
     manifest: manifestPath,
@@ -66,14 +67,14 @@ test("rejects mismatched generation metadata", async () => {
       : JSON.stringify({}),
   );
   await expect(
-    validateGeneration("/virtual/rollback", generation, dependencies.load, dependencies),
+    validateGeneration(repositoryRoot, generation, dependencies.load, dependencies),
   ).rejects.toThrow("generation metadata does not match its directory");
 });
 
 test("rejects incomplete manifests, unsafe paths, and changed generation files", async () => {
   const incomplete = fixtures({ publication_ready: false });
   await expect(
-    validateGeneration("/virtual/rollback", generation, incomplete.load, incomplete),
+    validateGeneration(repositoryRoot, generation, incomplete.load, incomplete),
   ).rejects.toThrow("generation manifest is not publication ready");
 
   for (const entry of [
@@ -90,25 +91,25 @@ test("rejects incomplete manifests, unsafe paths, and changed generation files",
   ]) {
     const unsafe = fixtures({ files: [entry] });
     await expect(
-      validateGeneration("/virtual/rollback", generation, unsafe.load, unsafe),
+      validateGeneration(repositoryRoot, generation, unsafe.load, unsafe),
     ).rejects.toThrow("generation manifest contains an invalid file entry");
   }
 
   const changed = fixtures();
   changed.hashFile.mockImplementation(async (file) => (file === filePath ? "b".repeat(64) : hash));
   await expect(
-    validateGeneration("/virtual/rollback", generation, changed.load, changed),
+    validateGeneration(repositoryRoot, generation, changed.load, changed),
   ).rejects.toThrow("generation file integrity check failed");
 
   const badMetadata = fixtures({ catalog_sha256: "b".repeat(64) });
   await expect(
-    validateGeneration("/virtual/rollback", generation, badMetadata.load, badMetadata),
+    validateGeneration(repositoryRoot, generation, badMetadata.load, badMetadata),
   ).rejects.toThrow("generation metadata integrity check failed");
 
   const symlink = fixtures();
   symlink.lstat.mockResolvedValue({ size: 4, isFile: () => false });
   await expect(
-    validateGeneration("/virtual/rollback", generation, symlink.load, symlink),
+    validateGeneration(repositoryRoot, generation, symlink.load, symlink),
   ).rejects.toThrow("generation file is not a regular file");
 });
 

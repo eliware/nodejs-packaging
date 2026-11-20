@@ -1,4 +1,5 @@
 import { expect, jest, test } from "@jest/globals";
+import path from "node:path";
 import inspectPublishedImage from "../../src/image/inspection.mjs";
 
 test("inspects the built image and assembles its publication record", () => {
@@ -21,7 +22,7 @@ test("inspects the built image and assembles its publication record", () => {
     encoding: "utf8",
   });
   expect(result).toMatchObject({
-    resultDir: "/virtual/repository/artifacts/images/26.13.1",
+    resultDir: path.join(path.resolve("/virtual/repository"), "artifacts/images/26.13.1"),
     record: {
       local_image_id: "sha256:local",
       digest: "sha256:registry",

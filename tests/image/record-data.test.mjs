@@ -1,4 +1,5 @@
 import { expect, test } from "@jest/globals";
+import path from "node:path";
 import createImageRecordData from "../../src/image/record-data.mjs";
 
 test("builds image record data and resolves its output directory", () => {
@@ -16,7 +17,7 @@ test("builds image record data and resolves its output directory", () => {
     registryDigest: "sha256:registry",
   });
   expect(result).toMatchObject({
-    resultDir: "/repository/artifacts/images/26.13.1",
+    resultDir: path.join(path.resolve("/repository"), "artifacts/images/26.13.1"),
     record: {
       repository: "ghcr.io/eliware/node",
       digest: "sha256:registry",
@@ -34,7 +35,7 @@ test("uses an explicit output directory for local images", () => {
     pushImage: false,
     version: "26.13.1",
     root: "/repository",
-    args: new Map([["output", "/tmp/images"]]),
+    args: new Map([["output", path.resolve("/tmp/images")]]),
     sourceInput: { source: { sha256: "source-hash" } },
     publishedRelease: { package: { sha256: "rpm-hash" }, generation_id: "generation-1" },
     baseImage: "centos:stream10",
@@ -42,6 +43,6 @@ test("uses an explicit output directory for local images", () => {
     inspect: { Id: "local-id" },
     registryDigest: null,
   });
-  expect(result.resultDir).toBe("/tmp/images");
+  expect(result.resultDir).toBe(path.resolve("/tmp/images"));
   expect(result.record).toEqual(expect.objectContaining({ digest: null, published: false }));
 });

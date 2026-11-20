@@ -25,18 +25,18 @@ test("uses configured wet-run paths and rejects unsupported modes", () => {
     createConductorConfig(
       ["--wet-run"],
       {
-        NODEJS_REPOSITORY_ROOT: "/srv/repository",
+        NODEJS_REPOSITORY_ROOT: path.resolve("/srv/repository"),
         NODEJS_REPOSITORY_URL: "https://repo.example.test/",
-        NODEJS_CONDUCTOR_STATE_ROOT: "/srv/workspace/conductor",
+        NODEJS_CONDUCTOR_STATE_ROOT: path.resolve("/srv/workspace/conductor"),
       },
       "/workspace",
     ),
   ).toEqual(
     expect.objectContaining({
-      repositoryRoot: "/srv/repository",
+      repositoryRoot: path.resolve("/srv/repository"),
       repositoryUrl: "https://repo.example.test",
-      stateRoot: "/srv/workspace/conductor",
-      lockPath: "/srv/workspace/conductor/lock",
+      stateRoot: path.resolve("/srv/workspace/conductor"),
+      lockPath: path.resolve("/srv/workspace/conductor/lock"),
       dryRun: false,
     }),
   );

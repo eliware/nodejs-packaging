@@ -1,8 +1,10 @@
 import { expect, jest, test } from "@jest/globals";
+import path from "node:path";
 import loadRpmInput from "../../src/rpm/input.mjs";
 
-const root = "/virtual/rpm";
-const releasePath = `${root}/.state/sources/26.13.1/release-input.json`;
+const root = path.resolve("/virtual/rpm");
+const sourceRoot = path.join(root, ".state/sources/26.13.1");
+const releasePath = path.join(sourceRoot, "release-input.json");
 const nodeHash = "node-sha256";
 const npmHash = "npm-sha512";
 
@@ -37,8 +39,8 @@ test("validates release archives and returns the packaging inputs", async () => 
   const result = await loadRpmInput(["--version", "26.13.1", "--output", "/tmp/rpm"], injected);
   expect(result).toMatchObject({
     version: "26.13.1",
-    archive: `${root}/.state/sources/26.13.1/node.tar.xz`,
-    npmArchive: `${root}/.state/sources/26.13.1/npm.tgz`,
+    archive: path.join(sourceRoot, "node.tar.xz"),
+    npmArchive: path.join(sourceRoot, "npm.tgz"),
   });
   expect(result.args.get("output")).toBe("/tmp/rpm");
   const explicit = dependencies();

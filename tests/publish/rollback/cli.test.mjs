@@ -1,4 +1,5 @@
 import { expect, jest, test } from "@jest/globals";
+import path from "node:path";
 
 const rollbackGeneration = jest.fn(async (root, generation) => generation);
 jest.unstable_mockModule("../../../src/publish/rollback/run.mjs", () => ({
@@ -10,14 +11,16 @@ test("reports successful restores for configured and default inputs", async () =
   const output = { log: jest.fn(), error: jest.fn() };
   const keyFingerprint = "A".repeat(40);
   const generation = "node-v26.13.1-el10-x86_64-20261119161944";
+  const gpgHome = path.resolve("/var/lib/eliware/nodejs-signing/gnupg");
+  const repositoryRoot = path.resolve("/repo");
   await rollbackRepository(
     ["--generation", generation],
-    { NODEJS_REPOSITORY_ROOT: "/repo", NODEJS_SIGNING_KEY: keyFingerprint },
+    { NODEJS_REPOSITORY_ROOT: repositoryRoot, NODEJS_SIGNING_KEY: keyFingerprint },
     output,
   );
-  expect(rollbackGeneration).toHaveBeenCalledWith("/repo", generation, {
+  expect(rollbackGeneration).toHaveBeenCalledWith(repositoryRoot, generation, {
     keyFingerprint,
-    gpgHome: "/var/lib/eliware/nodejs-signing/gnupg",
+    gpgHome,
   });
   expect(output.log).toHaveBeenCalledWith(`Restored ${generation}`);
 
@@ -26,13 +29,14 @@ test("reports successful restores for configured and default inputs", async () =
   const previousKey = process.env.NODEJS_SIGNING_KEY;
   const log = jest.spyOn(console, "log").mockImplementation(() => {});
   process.argv = [process.execPath, "rollback-repository.mjs", "--generation", generation];
-  process.env.NODEJS_REPOSITORY_ROOT = "/default-repo";
+  const defaultRoot = path.resolve("/default-repo");
+  process.env.NODEJS_REPOSITORY_ROOT = defaultRoot;
   process.env.NODEJS_SIGNING_KEY = keyFingerprint;
   try {
     await rollbackRepository();
-    expect(rollbackGeneration).toHaveBeenLastCalledWith("/default-repo", generation, {
+    expect(rollbackGeneration).toHaveBeenLastCalledWith(defaultRoot, generation, {
       keyFingerprint,
-      gpgHome: "/var/lib/eliware/nodejs-signing/gnupg",
+      gpgHome,
     });
     expect(log).toHaveBeenCalledWith(`Restored ${generation}`);
   } finally {

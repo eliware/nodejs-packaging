@@ -22,14 +22,14 @@ test("loads validated publication inputs and active repository state", async () 
   const { root, oldRoot, recordPath } = await setupImagePublication();
   const result = await loadImagePublicationInput([recordPath], {
     ...process.env,
-    NODEJS_GNUPGHOME: "/custom/gnupg",
+    NODEJS_GNUPGHOME: path.resolve("/custom/gnupg"),
   });
   expect(result).toEqual(
     expect.objectContaining({
       repositoryRoot: root,
       recordPath,
       keyFingerprint: "A".repeat(40),
-      gpgHome: "/custom/gnupg",
+      gpgHome: path.resolve("/custom/gnupg"),
       oldRoot,
       image: expect.objectContaining({ source_release: "26.13.1" }),
     }),
@@ -38,7 +38,7 @@ test("loads validated publication inputs and active repository state", async () 
 
 test("uses the default repository root when no path is configured", async () => {
   const { recordPath } = await setupImagePublication();
-  const root = "/eliware/nodejs-repository";
+  const root = path.resolve("/eliware/nodejs-repository");
   await fs.mkdir(path.join(root, "metadata"), { recursive: true });
   await fs.writeFile(
     path.join(root, "metadata/active-generation.json"),

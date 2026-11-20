@@ -1,11 +1,17 @@
 import { expect, test } from "@jest/globals";
+import path from "node:path";
+import { pathToFileURL } from "node:url";
 import resolveServicePaths from "../../../src/conductor/service/paths.mjs";
 
 test("resolves the project root and conductor executable", () => {
   expect(
-    resolveServicePaths("file:///workspace/nodejs-packaging/src/conductor/service/entrypoint.mjs"),
+    resolveServicePaths(
+      pathToFileURL(
+        path.resolve("/workspace/nodejs-packaging/src/conductor/service/entrypoint.mjs"),
+      ),
+    ),
   ).toEqual({
-    root: "/workspace/nodejs-packaging",
-    conductor: "/workspace/nodejs-packaging/bin/conductor.mjs",
+    root: path.resolve("/workspace/nodejs-packaging"),
+    conductor: path.join(path.resolve("/workspace/nodejs-packaging"), "bin/conductor.mjs"),
   });
 });

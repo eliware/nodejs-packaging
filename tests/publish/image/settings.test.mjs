@@ -1,20 +1,24 @@
 import { expect, test } from "@jest/globals";
+import path from "node:path";
 import loadImagePublicationSettings from "../../../src/publish/image/settings.mjs";
 
 const fingerprint = "A".repeat(40);
 
 test("resolves image record and signing settings", () => {
+  const recordPath = path.resolve("/virtual/image.json");
+  const repositoryRoot = path.resolve("/virtual/repository");
+  const gpgHome = path.resolve("/virtual/gnupg");
   expect(
-    loadImagePublicationSettings(["/virtual/image.json"], {
+    loadImagePublicationSettings([recordPath], {
       NODEJS_SIGNING_KEY: fingerprint,
-      NODEJS_REPOSITORY_ROOT: "/virtual/repository",
-      NODEJS_GNUPGHOME: "/virtual/gnupg",
+      NODEJS_REPOSITORY_ROOT: repositoryRoot,
+      NODEJS_GNUPGHOME: gpgHome,
     }),
   ).toEqual({
-    recordPath: "/virtual/image.json",
-    repositoryRoot: "/virtual/repository",
+    recordPath,
+    repositoryRoot,
     keyFingerprint: fingerprint,
-    gpgHome: "/virtual/gnupg",
+    gpgHome,
   });
 });
 

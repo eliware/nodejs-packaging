@@ -45,9 +45,9 @@ async function prepareInputs(packageDir) {
 }
 
 test("parses explicit arguments and prints the generated candidate result", async () => {
-  const packageDir = "/virtual/rpm-input";
+  const packageDir = path.resolve("/virtual/rpm-input");
   const { root, version } = await prepareInputs(packageDir);
-  const output = "/virtual/repository-output";
+  const output = path.resolve("/virtual/repository-output");
   const write = jest.spyOn(process.stdout, "write").mockImplementation(() => true);
   try {
     await main(["--version", version, "--rpm-dir", packageDir, "--output", output]);

@@ -1,4 +1,5 @@
 import { expect, jest, test } from "@jest/globals";
+import path from "node:path";
 import conductorCommands from "../../../src/conductor/runtime/commands.mjs";
 
 test("runs Node.js commands with default and explicit arguments", async () => {
@@ -19,12 +20,12 @@ test("runs Node.js commands with default and explicit arguments", async () => {
   expect(runCommand).toHaveBeenNthCalledWith(
     1,
     process.execPath,
-    ["/workspace/bin/example.mjs"],
+    [path.join("/workspace", "bin/example.mjs")],
     expect.objectContaining({ cwd: "/workspace", env: expect.any(Object) }),
   );
   expect(runCommandCapture).toHaveBeenCalledWith(
     process.execPath,
-    ["/workspace/bin/example.mjs", "--version"],
+    [path.join("/workspace", "bin/example.mjs"), "--version"],
     { cwd: "/workspace" },
   );
 });
@@ -41,18 +42,18 @@ test("adds per-run log paths when the conductor supplies a run identifier", asyn
   await execute("bin/build-rpm.mjs");
   expect(runNode).toHaveBeenCalledWith(
     process.execPath,
-    ["/workspace/bin/build-rpm.mjs"],
+    [path.join("/workspace", "bin/build-rpm.mjs")],
     expect.objectContaining({
-      logPath: "/workspace/artifacts/logs/run-7/001-build-rpm.log",
+      logPath: path.join("/workspace", "artifacts/logs/run-7/001-build-rpm.log"),
       env: expect.objectContaining({ NODEJS_CONDUCTOR_RUN_ID: "run-7" }),
     }),
   );
   await executeCapture("bin/generate-repository.mjs");
   expect(runNodeCapture).toHaveBeenCalledWith(
     process.execPath,
-    ["/workspace/bin/generate-repository.mjs"],
+    [path.join("/workspace", "bin/generate-repository.mjs")],
     expect.objectContaining({
-      logPath: "/workspace/artifacts/logs/run-7/002-generate-repository.log",
+      logPath: path.join("/workspace", "artifacts/logs/run-7/002-generate-repository.log"),
       env: expect.objectContaining({ NODEJS_CONDUCTOR_RUN_ID: "run-7" }),
     }),
   );

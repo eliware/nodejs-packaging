@@ -2,9 +2,9 @@ import path from "node:path";
 
 export default function imagePublicationFixture(fs) {
   return async function setupImagePublication() {
-    const root = "/virtual/image-repository";
+    const root = path.resolve("/virtual/image-repository");
     const oldRoot = path.join(root, ".generations/generation-1");
-    const recordPath = "/virtual/image.json";
+    const recordPath = path.resolve("/virtual/image.json");
     await fs.rm(root, { recursive: true, force: true });
     await fs.rm(recordPath, { force: true });
     await fs.mkdir(path.join(root, "metadata"), { recursive: true });

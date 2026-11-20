@@ -1,27 +1,23 @@
 import { expect, test } from "@jest/globals";
+import path from "node:path";
 import loadReleaseInput from "../../../src/publish/release/input.mjs";
 
 const fingerprint = "A".repeat(40);
+const candidateRoot = path.resolve("/virtual/candidate");
+const repositoryRoot = path.resolve("/virtual/repo");
 
 test("resolves publication inputs", () => {
   expect(
     loadReleaseInput(
-      [
-        "--version",
-        "26.13.1",
-        "--candidate",
-        "/virtual/candidate",
-        "--repository",
-        "/virtual/repo",
-      ],
+      ["--version", "26.13.1", "--candidate", candidateRoot, "--repository", repositoryRoot],
       { NODEJS_SIGNING_KEY: fingerprint },
     ),
   ).toMatchObject({
     version: "26.13.1",
-    candidateRoot: "/virtual/candidate",
-    repositoryRoot: "/virtual/repo",
+    candidateRoot,
+    repositoryRoot,
     keyFingerprint: fingerprint,
-    gpgHome: "/var/lib/eliware/nodejs-signing/gnupg",
+    gpgHome: path.resolve("/var/lib/eliware/nodejs-signing/gnupg"),
   });
 });
 
