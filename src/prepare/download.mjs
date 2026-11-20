@@ -3,7 +3,7 @@ import { randomUUID } from "node:crypto";
 import { rename, rm } from "node:fs/promises";
 import { pipeline } from "node:stream/promises";
 
-async function download(url, destination, trustedHosts, dependencies = {}) {
+export default async function download(url, destination, trustedHosts, dependencies = {}) {
   const fetchFile = dependencies.fetch || globalThis.fetch;
   const writeStream = dependencies.createWriteStream || createWriteStream;
   const pipe = dependencies.pipeline || pipeline;
@@ -24,8 +24,4 @@ async function download(url, destination, trustedHosts, dependencies = {}) {
   } finally {
     await remove(temporaryPath, { force: true });
   }
-}
-
-export default function downloadModule() {
-  return { download };
 }

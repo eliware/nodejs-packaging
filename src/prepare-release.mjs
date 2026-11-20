@@ -3,20 +3,14 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import discoverReleaseModule from "./discover/release.mjs";
 const { discoverLatestRelease } = discoverReleaseModule();
-import discoverNpmModule from "./discover/npm.mjs";
-const { discoverLatestNpm } = discoverNpmModule();
+import discoverLatestNpm from "./discover/npm.mjs";
 import releaseSourceModule from "./prepare/release-source.mjs";
 const { resolveReleaseVersion, verifySignature, checksumForFile } = releaseSourceModule();
-import downloadModule from "./prepare/download.mjs";
-import hashModule from "./prepare/hash.mjs";
-import prepareRecordModule from "./prepare/record.mjs";
-import prepareDirectoriesModule from "./prepare/directories.mjs";
-const { download } = downloadModule();
-const { hashFile } = hashModule();
-const { writeReleaseRecord } = prepareRecordModule();
-const { prepareReleaseDirectories } = prepareDirectoriesModule();
-
-async function main(argv = process.argv.slice(2), dependencies = {}) {
+import download from "./prepare/download.mjs";
+import hashFile from "./prepare/hash.mjs";
+import writeReleaseRecord from "./prepare/record.mjs";
+import prepareReleaseDirectories from "./prepare/directories.mjs";
+export default async function main(argv = process.argv.slice(2), dependencies = {}) {
   const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
   const keyConfig = JSON.parse(
     await readFile(path.join(root, "build-config/nodejs-release-keys.json"), "utf8"),
@@ -103,8 +97,4 @@ async function main(argv = process.argv.slice(2), dependencies = {}) {
     archiveSha256,
   });
   process.stdout.write(`${JSON.stringify(record, null, 2)}\n`);
-}
-
-export default function moduleApi() {
-  return { main };
 }

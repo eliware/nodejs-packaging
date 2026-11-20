@@ -1,6 +1,6 @@
 import path from "node:path";
 
-function conductorCommands({ root, commands }) {
+export default function conductorCommands({ root, commands }) {
   const { runCommand, runCommandCapture } = commands;
 
   async function runNode(script, args = [], extraEnv = {}) {
@@ -15,8 +15,4 @@ function conductorCommands({ root, commands }) {
   }
 
   return { runNode, runNodeCapture };
-}
-
-export default function conductorCommandsModule() {
-  return { conductorCommands };
 }

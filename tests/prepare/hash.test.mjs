@@ -6,8 +6,7 @@ const content = Buffer.from("default stream");
 jest.unstable_mockModule("node:fs", () => ({
   createReadStream: () => Readable.from([content]),
 }));
-const { default: hashModule } = await import("../../src/prepare/hash.mjs");
-const { hashFile } = hashModule();
+const { default: hashFile } = await import("../../src/prepare/hash.mjs");
 
 test("hashes streamed file contents with the requested digest format", async () => {
   const content = Buffer.from("release archive");

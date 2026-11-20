@@ -1,7 +1,7 @@
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 
-async function runRelease(options) {
+export default async function runRelease(options) {
   const {
     plan,
     nodeVersion,
@@ -142,8 +142,4 @@ async function runRelease(options) {
       `[conductor] release completed but final state could not be saved: ${error.message}`,
     );
   }
-}
-
-export default function conductorReleaseModule() {
-  return { runRelease };
 }

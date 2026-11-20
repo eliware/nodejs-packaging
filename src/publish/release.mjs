@@ -2,15 +2,11 @@ import { spawnSync } from "node:child_process";
 import { cp, lstat, mkdir, readFile, readdir, rename, rm } from "node:fs/promises";
 import path from "node:path";
 import publishFilesystemModule from "./filesystem.mjs";
-import releaseGenerationModule from "./release-generation.mjs";
-import activateGenerationModule from "./activate-generation.mjs";
-import retentionModule from "./retention.mjs";
+import prepareReleaseGeneration from "./release-generation.mjs";
+import activateGeneration from "./activate-generation.mjs";
+import pruneGenerations from "./retention.mjs";
 const files = publishFilesystemModule();
-const { prepareReleaseGeneration } = releaseGenerationModule();
-const { activateGeneration } = activateGenerationModule();
-const { pruneGenerations } = retentionModule();
-
-async function main(argv = process.argv.slice(2)) {
+export default async function main(argv = process.argv.slice(2)) {
   const args = new Map();
   for (let index = 0; index < argv.length; index += 1) {
     if (argv[index].startsWith("--")) args.set(argv[index].slice(2), argv[++index]);
@@ -107,8 +103,4 @@ async function main(argv = process.argv.slice(2)) {
       throw new Error(`${command} exited with status ${result.status}: ${result.stderr}`);
     return result;
   }
-}
-
-export default function moduleApi() {
-  return { main };
 }

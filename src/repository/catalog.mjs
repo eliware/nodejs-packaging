@@ -1,4 +1,4 @@
-async function loadPublishedRelease(version, repositoryUrl, fetchImpl) {
+export default async function loadPublishedRelease(version, repositoryUrl, fetchImpl) {
   if (!repositoryUrl)
     throw new Error("set NODEJS_REPOSITORY_URL to the production Node.js HTTP service");
   const parsedRepositoryUrl = new URL(repositoryUrl);
@@ -39,8 +39,4 @@ async function loadPublishedRelease(version, repositoryUrl, fetchImpl) {
   if (!/^[a-f\d]{64}$/.test(publishedRelease.package.sha256 || ""))
     throw new Error("production catalog does not provide a valid RPM checksum");
   return { repositoryBase, publishedRelease };
-}
-
-export default function buildCatalogModule() {
-  return { loadPublishedRelease };
 }

@@ -10,8 +10,7 @@ jest.unstable_mockModule("node:fs", () => ({
 jest.unstable_mockModule("node:stream/promises", () => ({
   pipeline: async (body, output) => fs.writeFile(output.file, body),
 }));
-const { default: downloadModule } = await import("../../src/prepare/download.mjs");
-const { download } = downloadModule();
+const { default: download } = await import("../../src/prepare/download.mjs");
 
 test("downloads a trusted HTTPS response through a temporary file", async () => {
   const fetch = jest.fn(async () => ({

@@ -1,10 +1,8 @@
 import { afterAll, expect, jest, test } from "@jest/globals";
-import conductorReleasePlanModule from "../../../src/conductor/release/plan.mjs";
+import prepareReleasePlan from "../../../src/conductor/release/plan.mjs";
 
 const consoleLog = jest.spyOn(console, "log").mockImplementation(() => {});
 afterAll(() => consoleLog.mockRestore());
-
-const { prepareReleasePlan } = conductorReleasePlanModule();
 
 function createOptions(catalog) {
   return {

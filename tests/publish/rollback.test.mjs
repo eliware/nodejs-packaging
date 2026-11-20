@@ -8,10 +8,9 @@ jest.unstable_mockModule("node:child_process", () => ({
   spawnSync: jest.fn(() => ({ status: 0 })),
 }));
 jest.unstable_mockModule("../../src/publish/activate-generation.mjs", () => ({
-  default: () => ({ activateGeneration }),
+  default: activateGeneration,
 }));
-const { default: moduleApi } = await import("../../src/publish/rollback.mjs");
-const { rollbackGeneration } = moduleApi();
+const { default: rollbackGeneration } = await import("../../src/publish/rollback.mjs");
 
 async function setup(root, generation) {
   const metadata = `${root}/.generations/${generation}/metadata`;

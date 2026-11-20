@@ -3,8 +3,7 @@ import memoryFilesystemFixture from "../../test-fixtures/memory-fs.mjs";
 const { createMemoryFs } = memoryFilesystemFixture();
 const fs = createMemoryFs();
 jest.unstable_mockModule("node:fs/promises", () => fs);
-const { default: moduleApi } = await import("../../src/publish/retention.mjs");
-const { pruneGenerations } = moduleApi();
+const { default: pruneGenerations } = await import("../../src/publish/retention.mjs");
 
 test("keeps the active generation and does not prune staging directories", async () => {
   const root = "/virtual/retention";

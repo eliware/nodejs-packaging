@@ -1,7 +1,7 @@
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 
-async function writeReleaseRecords({
+export default async function writeReleaseRecords({
   candidate,
   root,
   version,
@@ -93,8 +93,4 @@ async function writeReleaseRecords({
     path.join(candidate, "generation.json"),
     `${JSON.stringify({ metadata_version: "0.1.0", schema: 1, generation: generationId, generated }, null, 2)}\n`,
   );
-}
-
-export default function generateRecordsModule() {
-  return { writeReleaseRecords };
 }

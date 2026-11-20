@@ -5,8 +5,7 @@ import memoryFilesystemFixture from "../../../test-fixtures/memory-fs.mjs";
 const { createMemoryFs } = memoryFilesystemFixture();
 const fs = createMemoryFs();
 jest.unstable_mockModule("node:fs/promises", () => fs);
-const { default: runtimeStateModule } = await import("../../../src/conductor/runtime/state.mjs");
-const { conductorState } = runtimeStateModule();
+const { default: conductorState } = await import("../../../src/conductor/runtime/state.mjs");
 
 test("creates and removes a lock and saves state atomically", async () => {
   const stateRoot = "/virtual/conductor-state";

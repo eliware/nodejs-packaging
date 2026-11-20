@@ -1,4 +1,9 @@
-function conductorRepository({ repositoryUrl, baseImage, runCommand, runCommandCapture }) {
+export default function conductorRepository({
+  repositoryUrl,
+  baseImage,
+  runCommand,
+  runCommandCapture,
+}) {
   async function getJson(url) {
     const response = await fetch(url, {
       cache: "no-store",
@@ -42,8 +47,4 @@ function conductorRepository({ repositoryUrl, baseImage, runCommand, runCommandC
   }
 
   return { getJson, getBaseImageDigest, waitForPublishedRelease };
-}
-
-export default function conductorRepositoryModule() {
-  return { conductorRepository };
 }

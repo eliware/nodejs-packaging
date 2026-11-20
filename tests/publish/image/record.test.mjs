@@ -16,10 +16,9 @@ jest.unstable_mockModule("node:fs", () => ({
     ),
 }));
 jest.unstable_mockModule("node:child_process", () => ({ spawnSync }));
-const { default: imageModule } = await import("../../../src/publish/image/record.mjs");
-const { main } = imageModule();
-const { default: activationModule } = await import("../../../src/publish/activate-generation.mjs");
-const { activateGeneration } = activationModule();
+const { default: main } = await import("../../../src/publish/image/record.mjs");
+const { default: activateGeneration } =
+  await import("../../../src/publish/activate-generation.mjs");
 const fingerprint = "A".repeat(40);
 const digest = `sha256:${"a".repeat(64)}`;
 

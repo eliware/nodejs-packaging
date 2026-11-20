@@ -3,14 +3,10 @@ import { mkdtemp, readFile, rm } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import buildCatalogModule from "../repository/catalog.mjs";
-import imagePublishModule from "./publish.mjs";
-import imageRecordModule from "./record.mjs";
-const { loadPublishedRelease } = buildCatalogModule();
-const { publishImage } = imagePublishModule();
-const { writeImageRecord } = imageRecordModule();
-
-async function main(argv = process.argv.slice(2)) {
+import loadPublishedRelease from "../repository/catalog.mjs";
+import publishImage from "./publish.mjs";
+import writeImageRecord from "./record.mjs";
+export default async function main(argv = process.argv.slice(2)) {
   const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
   const args = new Map();
   for (let index = 0; index < argv.length; index += 1) {
@@ -122,8 +118,4 @@ async function main(argv = process.argv.slice(2)) {
   } finally {
     await rm(context, { recursive: true, force: true });
   }
-}
-
-export default function moduleApi() {
-  return { main };
 }

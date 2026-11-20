@@ -10,8 +10,7 @@ const spawnSync = jest.fn();
 jest.unstable_mockModule("node:fs/promises", () => fs);
 jest.unstable_mockModule("node:fs", () => ({ createReadStream: fs.createReadStream }));
 jest.unstable_mockModule("node:child_process", () => ({ execFileSync, spawnSync }));
-const { default: rpmModule } = await import("../../src/rpm/build.mjs");
-const { main } = rpmModule();
+const { default: main } = await import("../../src/rpm/build.mjs");
 
 const version = "26.13.1";
 const nodeArchive = Buffer.from("verified-node-archive");

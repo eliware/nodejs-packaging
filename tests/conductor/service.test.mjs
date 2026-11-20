@@ -6,7 +6,7 @@ jest.unstable_mockModule("../../src/discord-notifier.mjs", () => ({
   default: () => ({ notifyConductor }),
 }));
 jest.unstable_mockModule("../../src/conductor/service/runner.mjs", () => ({
-  default: () => ({ runConductor }),
+  default: runConductor,
 }));
 const { default: serviceModule } = await import("../../src/conductor/service.mjs");
 const { runConductorService, main } = serviceModule();

@@ -3,9 +3,7 @@ import { expect, jest, test } from "@jest/globals";
 
 const spawn = jest.fn();
 jest.unstable_mockModule("node:child_process", () => ({ spawn }));
-const { default: conductorRunnerModule } =
-  await import("../../../src/conductor/service/runner.mjs");
-const { runConductor } = conductorRunnerModule();
+const { default: runConductor } = await import("../../../src/conductor/service/runner.mjs");
 
 function childWith(event, ...values) {
   const child = new EventEmitter();

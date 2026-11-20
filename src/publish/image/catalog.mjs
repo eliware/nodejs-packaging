@@ -1,7 +1,14 @@
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 
-async function writeImageCatalog({ stage, image, imageRecord, generationId, generated, files }) {
+export default async function writeImageCatalog({
+  stage,
+  image,
+  imageRecord,
+  generationId,
+  generated,
+  files,
+}) {
   const catalogPath = path.join(stage, "metadata/catalog.json");
   const catalog = JSON.parse(await readFile(catalogPath, "utf8"));
   const release = catalog.stable.latest;
@@ -28,8 +35,4 @@ async function writeImageCatalog({ stage, image, imageRecord, generationId, gene
   await files.writeJson(catalogPath, catalog);
   await files.writeJson(path.join(stage, "metadata/releases/nodejs26.json"), release);
   return catalogPath;
-}
-
-export default function imageCatalogModule() {
-  return { writeImageCatalog };
 }

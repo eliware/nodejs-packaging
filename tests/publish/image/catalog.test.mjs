@@ -5,8 +5,7 @@ import memoryFilesystemFixture from "../../../test-fixtures/memory-fs.mjs";
 const { createMemoryFs } = memoryFilesystemFixture();
 const fs = createMemoryFs();
 jest.unstable_mockModule("node:fs/promises", () => fs);
-const { default: imageCatalogModule } = await import("../../../src/publish/image/catalog.mjs");
-const { writeImageCatalog } = imageCatalogModule();
+const { default: writeImageCatalog } = await import("../../../src/publish/image/catalog.mjs");
 
 test("updates the stable catalog and release record with image metadata", async () => {
   const stage = "/virtual/image-catalog";

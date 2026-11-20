@@ -7,14 +7,9 @@ const fs = createMemoryFs();
 const renderCard = jest.fn(async () => "card-sha256");
 const publishReport = jest.fn(async () => {});
 jest.unstable_mockModule("node:fs/promises", () => fs);
-jest.unstable_mockModule("../../src/report/render-card.mjs", () => ({
-  default: () => ({ renderCard }),
-}));
-jest.unstable_mockModule("../../src/report/publish.mjs", () => ({
-  default: () => ({ publishReport }),
-}));
-const { default: reportGenerateModule } = await import("../../src/report/generate.mjs");
-const { generateReleaseReport } = reportGenerateModule();
+jest.unstable_mockModule("../../src/report/render-card.mjs", () => ({ default: renderCard }));
+jest.unstable_mockModule("../../src/report/publish.mjs", () => ({ default: publishReport }));
+const { default: generateReleaseReport } = await import("../../src/report/generate.mjs");
 
 test("assembles report metadata and delegates card and report publication", async () => {
   const root = process.cwd();

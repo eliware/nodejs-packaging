@@ -11,8 +11,7 @@ jest.unstable_mockModule("node:fs/promises", () => ({
 }));
 jest.unstable_mockModule("node:fs", () => ({ createReadStream: fs.createReadStream }));
 jest.unstable_mockModule("node:child_process", () => ({ spawnSync }));
-const { default: reportModule } = await import("../src/release-report.mjs");
-const { generateReleaseReport } = reportModule();
+const { default: generateReleaseReport } = await import("../src/report/generate.mjs");
 
 async function setup() {
   const root = process.cwd();

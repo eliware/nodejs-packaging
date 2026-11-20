@@ -5,8 +5,7 @@ import memoryFilesystemFixture from "../../test-fixtures/memory-fs.mjs";
 const { createMemoryFs } = memoryFilesystemFixture();
 const fs = createMemoryFs();
 jest.unstable_mockModule("node:fs/promises", () => fs);
-const { default: generateRecordsModule } = await import("../../src/generate/records.mjs");
-const { writeReleaseRecords } = generateRecordsModule();
+const { default: writeReleaseRecords } = await import("../../src/generate/records.mjs");
 
 test("writes release, validation, provenance, catalog, and generation records", async () => {
   const root = "/virtual/records";

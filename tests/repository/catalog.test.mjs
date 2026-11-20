@@ -1,7 +1,6 @@
 import { expect, jest, test } from "@jest/globals";
-import buildCatalogModule from "../../src/repository/catalog.mjs";
+import loadPublishedRelease from "../../src/repository/catalog.mjs";
 
-const { loadPublishedRelease } = buildCatalogModule();
 const release = {
   node_version: "26.13.1",
   package: { name: "eliware-node26", sha256: "a".repeat(64) },

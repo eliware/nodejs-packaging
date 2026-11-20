@@ -5,8 +5,7 @@ import memoryFilesystemFixture from "../../test-fixtures/memory-fs.mjs";
 const { createMemoryFs } = memoryFilesystemFixture();
 const fs = createMemoryFs();
 jest.unstable_mockModule("node:fs/promises", () => fs);
-const { default: prepareRecordModule } = await import("../../src/prepare/record.mjs");
-const { writeReleaseRecord } = prepareRecordModule();
+const { default: writeReleaseRecord } = await import("../../src/prepare/record.mjs");
 
 test("writes a release input record with verified source and npm data", async () => {
   const outputDir = "/virtual/release-input";

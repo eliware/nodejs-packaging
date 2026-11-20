@@ -1,7 +1,7 @@
 import { copyFile, mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 
-async function publishReport({ reportPath, imagePath, repositoryRoot, report }) {
+export default async function publishReport({ reportPath, imagePath, repositoryRoot, report }) {
   const metadataRoot = path.join(repositoryRoot, "metadata");
   await mkdir(path.dirname(reportPath), { recursive: true });
   await mkdir(metadataRoot, { recursive: true });
@@ -21,8 +21,4 @@ async function publishReport({ reportPath, imagePath, repositoryRoot, report }) 
       2,
     )}\n`,
   );
-}
-
-export default function reportPublishModule() {
-  return { publishReport };
 }

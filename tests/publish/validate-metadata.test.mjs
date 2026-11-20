@@ -23,8 +23,8 @@ for (const [name, file] of Object.entries({
 }
 await fs.writeFile(`${schemaRoot}/image-record.schema.json`, JSON.stringify({ type: "object" }));
 jest.unstable_mockModule("node:fs/promises", () => fs);
-const { default: moduleApi } = await import("../../src/publish/validate-metadata.mjs");
-const { validatePublishedMetadata } = moduleApi();
+const { default: validatePublishedMetadata } =
+  await import("../../src/publish/validate-metadata.mjs");
 
 test("validates catalogs with or without image evidence and rejects invalid documents", async () => {
   await expect(validatePublishedMetadata(root)).resolves.toBe(true);

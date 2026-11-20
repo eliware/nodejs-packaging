@@ -1,12 +1,8 @@
-import runtimeStateModule from "./runtime/state.mjs";
-import runtimeRepositoryModule from "./runtime/repository.mjs";
-import runtimeCommandsModule from "./runtime/commands.mjs";
+import conductorState from "./runtime/state.mjs";
+import conductorRepository from "./runtime/repository.mjs";
+import conductorCommands from "./runtime/commands.mjs";
 
-const { conductorState } = runtimeStateModule();
-const { conductorRepository } = runtimeRepositoryModule();
-const { conductorCommands } = runtimeCommandsModule();
-
-function conductorRuntime({
+export default function conductorRuntime({
   root,
   stateRoot,
   repositoryUrl,
@@ -36,8 +32,4 @@ function conductorRuntime({
     ...conductorCommands({ root, commands }),
     checkpoint,
   };
-}
-
-export default function conductorRuntimeModule() {
-  return { conductorRuntime };
 }

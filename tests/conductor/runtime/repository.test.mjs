@@ -1,7 +1,5 @@
 import { expect, jest, test } from "@jest/globals";
-import runtimeRepositoryModule from "../../../src/conductor/runtime/repository.mjs";
-
-const { conductorRepository } = runtimeRepositoryModule();
+import conductorRepository from "../../../src/conductor/runtime/repository.mjs";
 
 function createRepository() {
   const runCommand = jest.fn(async () => ({ code: 0 }));

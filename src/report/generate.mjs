@@ -1,18 +1,15 @@
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import reportHtmlModule from "./html.mjs";
-import renderCardModule from "./render-card.mjs";
-import reportPublishModule from "./publish.mjs";
+import renderReleaseCardHtml from "./html.mjs";
+import renderCard from "./render-card.mjs";
+import publishReport from "./publish.mjs";
 import reportRecordModule from "./record.mjs";
 
-const { renderReleaseCardHtml } = reportHtmlModule();
-const { renderCard } = renderCardModule();
-const { publishReport } = reportPublishModule();
 const { createReportDetails, createReportRecord } = reportRecordModule();
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
 
-async function generateReleaseReport({
+export default async function generateReleaseReport({
   runId,
   repositoryRoot,
   nodeVersion,
@@ -67,8 +64,4 @@ async function generateReleaseReport({
   const reportPath = path.join(directory, "release-report.json");
   await publishReport({ reportPath, imagePath, repositoryRoot, report });
   return { cardUrl, reportPath, imagePath, imageSha256 };
-}
-
-export default function reportGenerateModule() {
-  return { generateReleaseReport };
 }

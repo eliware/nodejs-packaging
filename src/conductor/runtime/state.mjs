@@ -1,7 +1,7 @@
 import { mkdir, readFile, rename, rm, stat, writeFile } from "node:fs/promises";
 import path from "node:path";
 
-function conductorState({
+export default function conductorState({
   stateRoot,
   runId,
   createDirectory = mkdir,
@@ -89,8 +89,4 @@ function conductorState({
   }
 
   return { acquireLock, releaseLock, saveState };
-}
-
-export default function conductorStateModule() {
-  return { conductorState };
 }

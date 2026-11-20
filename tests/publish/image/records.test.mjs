@@ -6,9 +6,8 @@ const { createMemoryFs } = memoryFilesystemFixture();
 const fs = createMemoryFs();
 const sign = jest.fn(async () => {});
 jest.unstable_mockModule("node:fs/promises", () => fs);
-jest.unstable_mockModule("../../../src/publish/sign.mjs", () => ({ default: () => ({ sign }) }));
-const { default: imageRecordsModule } = await import("../../../src/publish/image/records.mjs");
-const { writeImageRecords } = imageRecordsModule();
+jest.unstable_mockModule("../../../src/publish/sign.mjs", () => ({ default: sign }));
+const { default: writeImageRecords } = await import("../../../src/publish/image/records.mjs");
 
 test("adds image validation, metadata, and signed provenance records", async () => {
   const root = "/virtual/image-records";

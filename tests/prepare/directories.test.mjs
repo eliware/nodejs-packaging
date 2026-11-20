@@ -4,8 +4,7 @@ import memoryFilesystemFixture from "../../test-fixtures/memory-fs.mjs";
 const { createMemoryFs } = memoryFilesystemFixture();
 const fs = createMemoryFs();
 jest.unstable_mockModule("node:fs/promises", () => fs);
-const { default: prepareDirectoriesModule } = await import("../../src/prepare/directories.mjs");
-const { prepareReleaseDirectories } = prepareDirectoriesModule();
+const { default: prepareReleaseDirectories } = await import("../../src/prepare/directories.mjs");
 
 test("creates the source and keyring directories and returns input paths", async () => {
   const paths = await prepareReleaseDirectories(

@@ -1,6 +1,6 @@
 import { spawnSync as spawnProcessSync } from "node:child_process";
 
-async function publishImage(
+export default async function publishImage(
   image,
   run = spawnProcessSync,
   stdout = process.stdout,
@@ -18,8 +18,4 @@ async function publishImage(
     `${result.stdout}\n${result.stderr}`.match(/digest:\s*(sha256:[a-f0-9]{64})/i)?.[1] || null;
   if (!digest) throw new Error("docker push completed without reporting an image digest");
   return digest;
-}
-
-export default function imagePublishModule() {
-  return { publishImage };
 }

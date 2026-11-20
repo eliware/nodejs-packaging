@@ -1,7 +1,5 @@
 import { expect, jest, test } from "@jest/globals";
-import conductorRuntimeModule from "../../src/conductor/runtime.mjs";
-
-const { conductorRuntime } = conductorRuntimeModule();
+import conductorRuntime from "../../src/conductor/runtime.mjs";
 
 test("composes runtime helpers and reports checkpoints", async () => {
   const notifyConductor = jest.fn(async () => {});

@@ -1,4 +1,4 @@
-function validateImageRecord(image) {
+export default function validateImageRecord(image) {
   const checksum = /^[a-f0-9]{64}$/;
   const valid =
     image !== null &&
@@ -23,8 +23,4 @@ function validateImageRecord(image) {
     image.repository_generation.length > 0;
   if (!valid) throw new Error("image record must contain a passed validation and registry digest");
   return image;
-}
-
-export default function imageValidationModule() {
-  return { validateImageRecord };
 }

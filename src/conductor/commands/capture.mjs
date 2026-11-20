@@ -1,7 +1,7 @@
 import { spawn } from "node:child_process";
 import path from "node:path";
 
-function runCommandCapture(command, args, options = {}) {
+export default function runCommandCapture(command, args, options = {}) {
   return new Promise((resolve, reject) => {
     const child = spawn(command, args, {
       cwd: options.cwd || process.cwd(),
@@ -29,8 +29,4 @@ function runCommandCapture(command, args, options = {}) {
           ),
     );
   });
-}
-
-export default function commandCaptureModule() {
-  return { runCommandCapture };
 }

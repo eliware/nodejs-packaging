@@ -2,14 +2,11 @@ import { spawnSync } from "node:child_process";
 import { cp, mkdir, mkdtemp, rename, rm, stat, writeFile } from "node:fs/promises";
 import path from "node:path";
 import generateFilesModule from "./files.mjs";
-import generateIndexModule from "./index.mjs";
-import generateRecordsModule from "./records.mjs";
+import buildIndex from "./index.mjs";
+import writeReleaseRecords from "./records.mjs";
 
 const { exists, hashFile, listFiles } = generateFilesModule();
-const { buildIndex } = generateIndexModule();
-const { writeReleaseRecords } = generateRecordsModule();
-
-async function generateCandidate({
+export default async function generateCandidate({
   root,
   version,
   generationId,
@@ -89,8 +86,4 @@ async function generateCandidate({
   } finally {
     await rm(stage, { recursive: true, force: true });
   }
-}
-
-export default function generateCandidateModule() {
-  return { generateCandidate };
 }

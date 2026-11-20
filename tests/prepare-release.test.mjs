@@ -34,9 +34,7 @@ const discoverLatestNpm = jest.fn();
 jest.unstable_mockModule("../src/discover/release.mjs", () => ({
   default: () => ({ discoverLatestRelease }),
 }));
-jest.unstable_mockModule("../src/discover/npm.mjs", () => ({
-  default: () => ({ discoverLatestNpm }),
-}));
+jest.unstable_mockModule("../src/discover/npm.mjs", () => ({ default: discoverLatestNpm }));
 const streams = {
   createWriteStream: (file) => ({ file }),
   createReadStream: (file) => {
@@ -50,8 +48,7 @@ jest.unstable_mockModule("node:stream/promises", () => ({
   pipeline: async (body, output) => fs.writeFile(output.file, body),
 }));
 jest.unstable_mockModule("node:child_process", () => ({ spawnSync }));
-const { default: prepareModule } = await import("../src/prepare-release.mjs");
-const { main } = prepareModule();
+const { default: main } = await import("../src/prepare-release.mjs");
 
 function fetchResponse(url, body, options = {}) {
   return {

@@ -1,21 +1,14 @@
 import { cp, mkdir, readFile, rename, rm } from "node:fs/promises";
 import path from "node:path";
 import publishFilesystemModule from "../filesystem.mjs";
-import imageRecordsModule from "./records.mjs";
-import signModule from "../sign.mjs";
-import generateIndexModule from "../../generate/index.mjs";
-import activateGenerationModule from "../activate-generation.mjs";
-import imageValidationModule from "./validation.mjs";
-import retentionModule from "../retention.mjs";
+import writeImageRecords from "./records.mjs";
+import sign from "../sign.mjs";
+import buildIndex from "../../generate/index.mjs";
+import activateGeneration from "../activate-generation.mjs";
+import validateImageRecord from "./validation.mjs";
+import pruneGenerations from "../retention.mjs";
 const files = publishFilesystemModule();
-const { sign } = signModule();
-const { buildIndex } = generateIndexModule();
-const { activateGeneration } = activateGenerationModule();
-const { validateImageRecord } = imageValidationModule();
-const { writeImageRecords } = imageRecordsModule();
-const { pruneGenerations } = retentionModule();
-
-async function main(argv = process.argv.slice(2), dependencies = {}) {
+export default async function main(argv = process.argv.slice(2), dependencies = {}) {
   const repositoryRoot = path.resolve(
     process.env.NODEJS_REPOSITORY_ROOT || "/eliware/nodejs-repository",
   );
@@ -103,8 +96,4 @@ async function main(argv = process.argv.slice(2), dependencies = {}) {
     if (!activationStarted) await rm(finalRoot, { recursive: true, force: true });
     throw error;
   }
-}
-
-export default function moduleApi() {
-  return { main };
 }

@@ -1,11 +1,8 @@
 import path from "node:path";
-import imageCatalogModule from "./catalog.mjs";
-import imageEvidenceModule from "./evidence.mjs";
+import writeImageCatalog from "./catalog.mjs";
+import writeImageEvidence from "./evidence.mjs";
 
-const { writeImageCatalog } = imageCatalogModule();
-const { writeImageEvidence } = imageEvidenceModule();
-
-async function writeImageRecords({
+export default async function writeImageRecords({
   stage,
   image,
   generationId,
@@ -47,8 +44,4 @@ async function writeImageRecords({
   await files.writeJson(path.join(stage, "metadata/active-generation.json"), active);
   await files.writeJson(path.join(stage, "generation.json"), active);
   return { imageRecord, catalogPath };
-}
-
-export default function imageRecordsModule() {
-  return { writeImageRecords };
 }

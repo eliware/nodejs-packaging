@@ -2,12 +2,10 @@ import { spawnSync } from "node:child_process";
 import path from "node:path";
 import { readFile } from "node:fs/promises";
 import filesystemModule from "./filesystem.mjs";
-import activateModule from "./activate-generation.mjs";
+import activateGeneration from "./activate-generation.mjs";
 
 const files = filesystemModule();
-const { activateGeneration } = activateModule();
-
-async function rollbackGeneration(repositoryRoot, generation, dependencies = {}) {
+export default async function rollbackGeneration(repositoryRoot, generation, dependencies = {}) {
   if (!/^node-v26\.[0-9]+\.[0-9]+-el10-x86_64-[0-9]+$/.test(generation || ""))
     throw new Error("pass a retained stable generation identifier");
   const root = path.join(repositoryRoot, ".generations", generation);
@@ -35,8 +33,4 @@ async function rollbackGeneration(repositoryRoot, generation, dependencies = {})
     ],
   });
   return generation;
-}
-
-export default function rollbackModule() {
-  return { rollbackGeneration };
 }

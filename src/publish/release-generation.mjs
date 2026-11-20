@@ -1,14 +1,10 @@
 import { mkdir, readFile, stat, writeFile, rm } from "node:fs/promises";
 import path from "node:path";
-import signModule from "./sign.mjs";
-import generateIndexModule from "../generate/index.mjs";
-import validateMetadataModule from "./validate-metadata.mjs";
+import sign from "./sign.mjs";
+import buildIndex from "../generate/index.mjs";
+import validatePublishedMetadata from "./validate-metadata.mjs";
 
-const { sign } = signModule();
-const { buildIndex } = generateIndexModule();
-const { validatePublishedMetadata } = validateMetadataModule();
-
-async function prepareReleaseGeneration({
+export default async function prepareReleaseGeneration({
   stagingRoot,
   rpmName,
   generationId,
@@ -92,8 +88,4 @@ async function prepareReleaseGeneration({
   });
   await validateMetadata();
   return { rpmSha256 };
-}
-
-export default function releaseGenerationModule() {
-  return { prepareReleaseGeneration };
 }

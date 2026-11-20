@@ -7,16 +7,13 @@ const fs = createMemoryFs();
 const sign = jest.fn(async () => {});
 const buildIndex = jest.fn(async () => ({ "/": { entries: [] } }));
 jest.unstable_mockModule("node:fs/promises", () => fs);
-jest.unstable_mockModule("../../src/publish/sign.mjs", () => ({ default: () => ({ sign }) }));
+jest.unstable_mockModule("../../src/publish/sign.mjs", () => ({ default: sign }));
 jest.unstable_mockModule("../../src/publish/validate-metadata.mjs", () => ({
-  default: () => ({ validatePublishedMetadata: jest.fn(async () => true) }),
+  default: jest.fn(async () => true),
 }));
-jest.unstable_mockModule("../../src/generate/index.mjs", () => ({
-  default: () => ({ buildIndex }),
-}));
-const { default: releaseGenerationModule } =
+jest.unstable_mockModule("../../src/generate/index.mjs", () => ({ default: buildIndex }));
+const { default: prepareReleaseGeneration } =
   await import("../../src/publish/release-generation.mjs");
-const { prepareReleaseGeneration } = releaseGenerationModule();
 
 test("signs RPM and repository metadata and completes release manifests", async () => {
   const stagingRoot = "/virtual/release-generation/stage";

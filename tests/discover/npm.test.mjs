@@ -1,6 +1,4 @@
-import sourceModule from "../../src/discover/npm.mjs";
-const { discoverLatestNpm } = sourceModule();
-
+import discoverLatestNpm from "../../src/discover/npm.mjs";
 function response(metadata, ok = true, status = 200) {
   return { ok, status, json: async () => metadata };
 }

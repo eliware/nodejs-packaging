@@ -1,5 +1,3 @@
 #!/usr/bin/env node
-import sourceModule from "../src/conductor.mjs";
-const { main } = sourceModule();
-
+import main from "../src/conductor.mjs";
 await main();

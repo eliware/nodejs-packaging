@@ -9,7 +9,7 @@ const names = [
   "generation",
   "release-manifest",
 ];
-async function validatePublishedMetadata(
+export default async function validatePublishedMetadata(
   root,
   {
     schemaRoot = path.resolve("config/schemas"),
@@ -45,7 +45,4 @@ async function validatePublishedMetadata(
   if (failures.length)
     throw new Error(`published metadata schema validation failed: ${failures.join("; ")}`);
   return true;
-}
-export default function validateMetadataModule() {
-  return { validatePublishedMetadata };
 }

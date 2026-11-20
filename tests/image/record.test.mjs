@@ -5,8 +5,7 @@ import memoryFilesystemFixture from "../../test-fixtures/memory-fs.mjs";
 const { createMemoryFs } = memoryFilesystemFixture();
 const fs = createMemoryFs();
 jest.unstable_mockModule("node:fs/promises", () => fs);
-const { default: imageRecordModule } = await import("../../src/image/record.mjs");
-const { writeImageRecord } = imageRecordModule();
+const { default: writeImageRecord } = await import("../../src/image/record.mjs");
 
 test("writes the validated image record to its output directory", async () => {
   const outputDir = "/virtual/image-record";

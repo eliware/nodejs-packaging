@@ -1,24 +1,17 @@
 #!/usr/bin/env node
-import conductorConfigModule from "./conductor/config.mjs";
+import createConductorConfig from "./conductor/config.mjs";
 import discoverReleaseModule from "./discover/release.mjs";
 const { discoverLatestRelease } = discoverReleaseModule();
-import discoverNpmModule from "./discover/npm.mjs";
-const { discoverLatestNpm } = discoverNpmModule();
-import conductorReleasePlanModule from "./conductor/release/plan.mjs";
+import discoverLatestNpm from "./discover/npm.mjs";
+import prepareReleasePlan from "./conductor/release/plan.mjs";
 import discordNotifierModule from "./discord-notifier.mjs";
 const { hasDiscordWebhook, notifyConductor } = discordNotifierModule();
-import releaseReportModule from "./release-report.mjs";
-import conductorReleaseModule from "./conductor/release/run.mjs";
-import conductorRuntimeModule from "./conductor/runtime.mjs";
+import generateReleaseReport from "./report/generate.mjs";
+import runRelease from "./conductor/release/run.mjs";
+import conductorRuntime from "./conductor/runtime.mjs";
 import conductorCommandsModule from "./conductor/commands.mjs";
-const { generateReleaseReport } = releaseReportModule();
-const { runRelease } = conductorReleaseModule();
-const { conductorRuntime } = conductorRuntimeModule();
 const commands = conductorCommandsModule();
-const { prepareReleasePlan } = conductorReleasePlanModule();
-const { createConductorConfig } = conductorConfigModule();
-
-async function main(argv = process.argv.slice(2), env = process.env) {
+export default async function main(argv = process.argv.slice(2), env = process.env) {
   await runConductor(createConductorConfig(argv, env));
 }
 
@@ -126,8 +119,4 @@ async function runConductor({
   } finally {
     if (lockHeld) await releaseLock(lockPath);
   }
-}
-
-export default function moduleApi() {
-  return { main };
 }

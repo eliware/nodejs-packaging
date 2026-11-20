@@ -1,10 +1,8 @@
 import { mkdir, readFile, rm } from "node:fs/promises";
 import path from "node:path";
-import signModule from "../sign.mjs";
+import sign from "../sign.mjs";
 
-const { sign } = signModule();
-
-async function writeImageEvidence({
+export default async function writeImageEvidence({
   stage,
   image,
   imageRecord,
@@ -52,8 +50,4 @@ async function writeImageEvidence({
     generated,
   });
   await sign(imageProvenancePath, keyFingerprint, gpgHome);
-}
-
-export default function imageEvidenceModule() {
-  return { writeImageEvidence };
 }

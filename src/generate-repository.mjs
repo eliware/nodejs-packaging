@@ -1,10 +1,9 @@
 import { readFile } from "node:fs/promises";
 import path from "node:path";
-import generateCandidateModule from "./generate/candidate.mjs";
-const { generateCandidate } = generateCandidateModule();
+import generateCandidate from "./generate/candidate.mjs";
 import { fileURLToPath } from "node:url";
 
-async function main(argv = process.argv.slice(2)) {
+export default async function main(argv = process.argv.slice(2)) {
   const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
   const args = new Map();
   for (let index = 0; index < argv.length; index += 1) {
@@ -42,8 +41,4 @@ async function main(argv = process.argv.slice(2)) {
     now,
   });
   process.stdout.write(`${JSON.stringify(result, null, 2)}\n`);
-}
-
-export default function moduleApi() {
-  return { main };
 }

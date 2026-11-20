@@ -1,7 +1,6 @@
 import { expect, jest, test } from "@jest/globals";
-import imagePublishModule from "../../src/image/publish.mjs";
+import publishImage from "../../src/image/publish.mjs";
 
-const { publishImage } = imagePublishModule();
 const digest = `sha256:${"a".repeat(64)}`;
 
 test("pushes an image, reports output, and returns its registry digest", async () => {

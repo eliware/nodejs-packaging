@@ -1,8 +1,5 @@
-import commandRunModule from "./commands/run.mjs";
-import commandCaptureModule from "./commands/capture.mjs";
-
-const { runCommand } = commandRunModule();
-const { runCommandCapture } = commandCaptureModule();
+import runCommand from "./commands/run.mjs";
+import runCommandCapture from "./commands/capture.mjs";
 
 export default function conductorCommandsModule() {
   return { runCommand, runCommandCapture };

@@ -1,6 +1,6 @@
 import { spawn as spawnProcess } from "node:child_process";
 
-function runConductor(mode, { root, conductor, spawn = spawnProcess }) {
+export default function runConductor(mode, { root, conductor, spawn = spawnProcess }) {
   return new Promise((resolve, reject) => {
     const child = spawn(process.execPath, [conductor, mode], {
       cwd: root,
@@ -14,8 +14,4 @@ function runConductor(mode, { root, conductor, spawn = spawnProcess }) {
         : reject(new Error(`conductor exited with code ${code ?? "signal"} ${signal || ""}`)),
     );
   });
-}
-
-export default function conductorRunnerModule() {
-  return { runConductor };
 }

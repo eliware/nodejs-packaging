@@ -1,7 +1,5 @@
 import { expect, jest, test } from "@jest/globals";
-import conductorCommandsModule from "../../../src/conductor/runtime/commands.mjs";
-
-const { conductorCommands } = conductorCommandsModule();
+import conductorCommands from "../../../src/conductor/runtime/commands.mjs";
 
 test("runs Node.js commands with default and explicit arguments", async () => {
   const runCommand = jest.fn(async () => ({ code: 0 }));

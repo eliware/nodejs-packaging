@@ -4,7 +4,12 @@ import generateFilesModule from "./files.mjs";
 
 const { hashFile } = generateFilesModule();
 
-async function buildIndex(directory, relative = "/", excludedPath = "", relativeFs = "") {
+export default async function buildIndex(
+  directory,
+  relative = "/",
+  excludedPath = "",
+  relativeFs = "",
+) {
   const items = [];
   const directories = {};
   for (const entry of await readdir(directory, { withFileTypes: true })) {
@@ -36,8 +41,4 @@ async function buildIndex(directory, relative = "/", excludedPath = "", relative
       ),
     );
   return directories;
-}
-
-export default function generateIndexModule() {
-  return { buildIndex };
 }

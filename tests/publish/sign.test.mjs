@@ -2,8 +2,7 @@ import { expect, jest, test } from "@jest/globals";
 
 const defaultSpawn = jest.fn(() => ({ status: 0, stdout: "", stderr: "" }));
 jest.unstable_mockModule("node:child_process", () => ({ spawnSync: defaultSpawn }));
-const { default: signModule } = await import("../../src/publish/sign.mjs");
-const { sign } = signModule();
+const { default: sign } = await import("../../src/publish/sign.mjs");
 
 test("signs a file with the selected GnuPG key home", async () => {
   const spawn = jest.fn(() => ({ status: 0, stdout: "", stderr: "" }));

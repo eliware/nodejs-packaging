@@ -1,6 +1,6 @@
 import planRelease from "../plan.mjs";
 
-async function prepareReleasePlan({
+export default async function prepareReleasePlan({
   repositoryUrl,
   runId,
   getJson,
@@ -51,8 +51,4 @@ async function prepareReleasePlan({
     `[conductor] run=${runId} node=${release.node_version} base=${currentBaseDigest} plan=${plan.reason}`,
   );
   return { catalog, release, npmRelease, currentBaseDigest, plan, nodeVersion };
-}
-
-export default function conductorReleasePlanModule() {
-  return { prepareReleasePlan };
 }

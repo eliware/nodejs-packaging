@@ -1,7 +1,5 @@
 import { expect, test } from "@jest/globals";
-import reportHtmlModule from "../../src/report/html.mjs";
-
-const { renderReleaseCardHtml } = reportHtmlModule();
+import renderReleaseCardHtml from "../../src/report/html.mjs";
 
 test("escapes report values before adding them to the release card", () => {
   const html = renderReleaseCardHtml({

@@ -13,27 +13,18 @@ const commands = { run: jest.fn() };
 jest.unstable_mockModule("../src/discover/release.mjs", () => ({
   default: () => ({ discoverLatestRelease }),
 }));
-jest.unstable_mockModule("../src/discover/npm.mjs", () => ({
-  default: () => ({ discoverLatestNpm }),
-}));
+jest.unstable_mockModule("../src/discover/npm.mjs", () => ({ default: discoverLatestNpm }));
 jest.unstable_mockModule("../src/conductor/release/plan.mjs", () => ({
-  default: () => ({ prepareReleasePlan }),
+  default: prepareReleasePlan,
 }));
 jest.unstable_mockModule("../src/discord-notifier.mjs", () => ({
   default: () => ({ hasDiscordWebhook, notifyConductor }),
 }));
-jest.unstable_mockModule("../src/release-report.mjs", () => ({
-  default: () => ({ generateReleaseReport }),
-}));
-jest.unstable_mockModule("../src/conductor/release/run.mjs", () => ({
-  default: () => ({ runRelease }),
-}));
-jest.unstable_mockModule("../src/conductor/runtime.mjs", () => ({
-  default: () => ({ conductorRuntime }),
-}));
+jest.unstable_mockModule("../src/report/generate.mjs", () => ({ default: generateReleaseReport }));
+jest.unstable_mockModule("../src/conductor/release/run.mjs", () => ({ default: runRelease }));
+jest.unstable_mockModule("../src/conductor/runtime.mjs", () => ({ default: conductorRuntime }));
 jest.unstable_mockModule("../src/conductor/commands.mjs", () => ({ default: () => commands }));
-const { default: conductorModule } = await import("../src/conductor.mjs");
-const { main } = conductorModule();
+const { default: main } = await import("../src/conductor.mjs");
 
 function makeRuntime() {
   return {

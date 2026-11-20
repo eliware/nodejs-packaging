@@ -5,8 +5,7 @@ import memoryFilesystemFixture from "../../../test-fixtures/memory-fs.mjs";
 const { createMemoryFs } = memoryFilesystemFixture();
 const fs = createMemoryFs();
 jest.unstable_mockModule("node:fs/promises", () => fs);
-const { default: conductorReleaseModule } = await import("../../../src/conductor/release/run.mjs");
-const { runRelease } = conductorReleaseModule();
+const { default: runRelease } = await import("../../../src/conductor/release/run.mjs");
 
 async function createOptions(plan) {
   const root = await fs.mkdtemp("/tmp/nodejs-release-run-");

@@ -9,8 +9,7 @@ const spawnSync = jest.fn();
 jest.unstable_mockModule("node:fs/promises", () => fs);
 jest.unstable_mockModule("node:fs", () => ({ createReadStream: fs.createReadStream }));
 jest.unstable_mockModule("node:child_process", () => ({ spawnSync }));
-const { default: renderCardModule } = await import("../../src/report/render-card.mjs");
-const { renderCard } = renderCardModule();
+const { default: renderCard } = await import("../../src/report/render-card.mjs");
 
 test("renders and hashes a release card with the configured browser", async () => {
   const image = Buffer.from("rendered image");

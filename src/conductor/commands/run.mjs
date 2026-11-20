@@ -1,7 +1,7 @@
 import { spawn } from "node:child_process";
 import path from "node:path";
 
-function runCommand(command, args, options = {}) {
+export default function runCommand(command, args, options = {}) {
   return new Promise((resolve, reject) => {
     const child = spawn(command, args, {
       cwd: options.cwd,
@@ -19,8 +19,4 @@ function runCommand(command, args, options = {}) {
           ),
     );
   });
-}
-
-export default function commandRunModule() {
-  return { runCommand };
 }

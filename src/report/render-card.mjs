@@ -3,7 +3,7 @@ import generateFilesModule from "../generate/files.mjs";
 
 const { hashFile } = generateFilesModule();
 
-async function renderCard(
+export default async function renderCard(
   htmlPath,
   imagePath,
   chrome = process.env.CHROME_BIN || "/usr/bin/google-chrome",
@@ -24,8 +24,4 @@ async function renderCard(
   if (render.error) throw render.error;
   if (render.status !== 0) throw new Error(`release-card rendering failed: ${render.stderr}`);
   return hashFile(imagePath);
-}
-
-export default function renderCardModule() {
-  return { renderCard };
 }

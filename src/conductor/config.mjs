@@ -2,7 +2,7 @@ import { randomUUID } from "node:crypto";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
-function createConductorConfig(argv, env, root) {
+export default function createConductorConfig(argv, env, root) {
   const mode = argv[0];
   if (!new Set(["--dry-run", "--wet-run"]).has(mode))
     throw new Error("choose exactly one conductor mode: --dry-run or --wet-run");
@@ -19,8 +19,4 @@ function createConductorConfig(argv, env, root) {
     lockPath: path.join(stateRoot, "lock"),
     runId: `${new Date().toISOString().replace(/[-:.TZ]/g, "")}-${randomUUID().slice(0, 8)}`,
   };
-}
-
-export default function conductorConfigModule() {
-  return { createConductorConfig };
 }

@@ -1,5 +1,3 @@
 #!/usr/bin/env node
-import sourceModule from "../src/image/build.mjs";
-const { main } = sourceModule();
-
+import main from "../src/image/build.mjs";
 await main();

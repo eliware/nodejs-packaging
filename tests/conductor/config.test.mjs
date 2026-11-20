@@ -1,8 +1,6 @@
 import path from "node:path";
 import { expect, test } from "@jest/globals";
-import conductorConfigModule from "../../src/conductor/config.mjs";
-
-const { createConductorConfig } = conductorConfigModule();
+import createConductorConfig from "../../src/conductor/config.mjs";
 
 test("builds an isolated dry-run context with defaults", () => {
   const config = createConductorConfig(["--dry-run"], {}, "/workspace");

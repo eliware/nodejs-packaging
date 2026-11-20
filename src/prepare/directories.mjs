@@ -1,7 +1,7 @@
 import { mkdir } from "node:fs/promises";
 import path from "node:path";
 
-async function prepareReleaseDirectories(outputRoot, version, release, npmRelease) {
+export default async function prepareReleaseDirectories(outputRoot, version, release, npmRelease) {
   const outputDir = path.join(outputRoot, version);
   const keyringDir = path.join(outputDir, "keyring");
   await mkdir(outputDir, { recursive: true, mode: 0o700 });
@@ -15,8 +15,4 @@ async function prepareReleaseDirectories(outputRoot, version, release, npmReleas
     keyringDir,
     keyringPath: path.join(keyringDir, "pubring.kbx"),
   };
-}
-
-export default function prepareDirectoriesModule() {
-  return { prepareReleaseDirectories };
 }

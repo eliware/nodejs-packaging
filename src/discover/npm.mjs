@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-async function discoverLatestNpm(requestedVersion = "latest", fetchImpl = fetch) {
+export default async function discoverLatestNpm(requestedVersion = "latest", fetchImpl = fetch) {
   const metadataUrl = `https://registry.npmjs.org/npm/${encodeURIComponent(requestedVersion)}`;
   const response = await fetchImpl(metadataUrl, {
     signal: AbortSignal.timeout(30_000),
@@ -26,8 +26,4 @@ async function discoverLatestNpm(requestedVersion = "latest", fetchImpl = fetch)
     url: tarball.href,
     integrity: metadata.dist.integrity,
   };
-}
-
-export default function moduleApi() {
-  return { discoverLatestNpm };
 }

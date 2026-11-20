@@ -6,8 +6,7 @@ const { createMemoryFs } = memoryFilesystemFixture();
 const fs = createMemoryFs();
 jest.unstable_mockModule("node:fs/promises", () => fs);
 jest.unstable_mockModule("node:fs", () => ({ createReadStream: fs.createReadStream }));
-const { default: generateIndexModule } = await import("../../src/generate/index.mjs");
-const { buildIndex } = generateIndexModule();
+const { default: buildIndex } = await import("../../src/generate/index.mjs");
 
 test("builds a sorted recursive index with encoded links and checksums", async () => {
   const root = "/virtual/generate-index";

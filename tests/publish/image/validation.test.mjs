@@ -1,7 +1,5 @@
 import { expect, test } from "@jest/globals";
-import imageValidationModule from "../../../src/publish/image/validation.mjs";
-
-const { validateImageRecord } = imageValidationModule();
+import validateImageRecord from "../../../src/publish/image/validation.mjs";
 
 function validImage() {
   return {

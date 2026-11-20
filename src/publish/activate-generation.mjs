@@ -1,7 +1,12 @@
 import { cp, mkdir } from "node:fs/promises";
 import path from "node:path";
 
-async function activateGeneration({ repositoryRoot, generationRoot, files, rootFiles = [] }) {
+export default async function activateGeneration({
+  repositoryRoot,
+  generationRoot,
+  files,
+  rootFiles = [],
+}) {
   await files.replacePointer(
     path.join(repositoryRoot, "el10/x86_64/stable"),
     path.join(generationRoot, "el10/x86_64/stable"),
@@ -28,8 +33,4 @@ async function activateGeneration({ repositoryRoot, generationRoot, files, rootF
       path.join(generationRoot, "metadata", name),
       path.join(metadataRoot, name),
     );
-}
-
-export default function activateGenerationModule() {
-  return { activateGeneration };
 }

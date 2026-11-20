@@ -7,8 +7,7 @@ const fs = createMemoryFs();
 const spawnSync = jest.fn();
 jest.unstable_mockModule("node:fs/promises", () => fs);
 jest.unstable_mockModule("node:child_process", () => ({ spawnSync }));
-const { default: imageModule } = await import("../../src/image/build.mjs");
-const { main } = imageModule();
+const { default: main } = await import("../../src/image/build.mjs");
 
 const version = "26.13.1";
 const sourceSha = "a".repeat(64);

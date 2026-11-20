@@ -27,10 +27,9 @@ jest.unstable_mockModule("node:fs/promises", () => fs);
 jest.unstable_mockModule("node:child_process", () => ({ spawnSync }));
 jest.unstable_mockModule("../../src/publish/filesystem.mjs", () => ({ default: () => files }));
 jest.unstable_mockModule("../../src/publish/release-generation.mjs", () => ({
-  default: () => ({ prepareReleaseGeneration }),
+  default: prepareReleaseGeneration,
 }));
-const { default: publishModule } = await import("../../src/publish/release.mjs");
-const { main } = publishModule();
+const { default: main } = await import("../../src/publish/release.mjs");
 const fingerprint = "A".repeat(40);
 
 async function setup() {

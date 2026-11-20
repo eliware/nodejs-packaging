@@ -1,7 +1,7 @@
 import { writeFile as writeFileDefault } from "node:fs/promises";
 import path from "node:path";
 
-async function writeReleaseRecord({
+export default async function writeReleaseRecord({
   outputDir,
   version,
   release,
@@ -46,8 +46,4 @@ async function writeReleaseRecord({
     { mode: 0o600 },
   );
   return record;
-}
-
-export default function prepareRecordModule() {
-  return { writeReleaseRecord };
 }

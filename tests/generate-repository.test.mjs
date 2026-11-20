@@ -8,8 +8,7 @@ const spawnSync = jest.fn();
 jest.unstable_mockModule("node:fs/promises", () => fs);
 jest.unstable_mockModule("node:fs", () => ({ createReadStream: fs.createReadStream }));
 jest.unstable_mockModule("node:child_process", () => ({ spawnSync }));
-const { default: repositoryModule } = await import("../src/generate-repository.mjs");
-const { main } = repositoryModule();
+const { default: main } = await import("../src/generate-repository.mjs");
 
 async function setup() {
   const root = process.cwd();

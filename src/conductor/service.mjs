@@ -1,10 +1,8 @@
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import discordNotifierModule from "../discord-notifier.mjs";
-import conductorRunnerModule from "./service/runner.mjs";
+import runConductor from "./service/runner.mjs";
 const { notifyConductor } = discordNotifierModule();
-const { runConductor } = conductorRunnerModule();
-
 async function runConductorService({ run, notify, log = console }) {
   let phase = "dry-run";
   try {

@@ -8,7 +8,7 @@ jest.unstable_mockModule("node:fs/promises", () => fs);
 const { default: publishFilesystemModule } = await import("../../src/publish/filesystem.mjs");
 const { default: activateModule } = await import("../../src/publish/activate-generation.mjs");
 const files = publishFilesystemModule();
-const { activateGeneration } = activateModule();
+const activateGeneration = activateModule;
 
 test("activates repository pointers, metadata, and public repository files", async () => {
   const root = "/virtual/activate-repository";

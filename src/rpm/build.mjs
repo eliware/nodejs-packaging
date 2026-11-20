@@ -8,7 +8,7 @@ import generateFilesModule from "../generate/files.mjs";
 
 const { hashFile, listFiles } = generateFilesModule();
 
-async function main(argv = process.argv.slice(2)) {
+export default async function main(argv = process.argv.slice(2)) {
   const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
   const args = new Map();
   for (let index = 0; index < argv.length; index += 1) {
@@ -119,8 +119,4 @@ async function main(argv = process.argv.slice(2)) {
   } finally {
     await rm(temporaryRoot, { recursive: true, force: true });
   }
-}
-
-export default function moduleApi() {
-  return { main };
 }

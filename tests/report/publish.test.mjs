@@ -8,8 +8,7 @@ jest.unstable_mockModule("node:fs/promises", () => ({
   ...fs,
   copyFile: (source, destination) => fs.cp(source, destination),
 }));
-const { default: reportPublishModule } = await import("../../src/report/publish.mjs");
-const { publishReport } = reportPublishModule();
+const { default: publishReport } = await import("../../src/report/publish.mjs");
 
 test("writes the report and updates the latest card and report records", async () => {
   const repositoryRoot = "/virtual/report-publish";
