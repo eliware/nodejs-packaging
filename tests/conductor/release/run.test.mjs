@@ -72,6 +72,8 @@ test("publishes RPM and image releases and records final completion", async () =
       "bin/publish-image-record.mjs",
       "bin/commit-publish-repository.mjs",
     ]);
+    const imageRecordCall = calls.find(([script]) => script === "bin/publish-image-record.mjs");
+    expect(imageRecordCall[2]).toEqual({ NODEJS_REPOSITORY_ROOT: options.repositoryRoot });
     expect(options.waitForPublishedRelease).toHaveBeenCalledWith("26.13.1", "12.2.3");
     expect(options.checkpoint).toHaveBeenCalledTimes(2);
     expect(options.generateReleaseReport).toHaveBeenCalledWith(

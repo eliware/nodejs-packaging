@@ -10,11 +10,11 @@ export default async function rollbackGeneration(repositoryRoot, generation, dep
     generation,
     dependencies.readFile,
   );
-  verifyGenerationSignature(
-    signature,
-    manifest,
-    dependencies.verify ? (_command, args) => dependencies.verify(args) : undefined,
-  );
+  verifyGenerationSignature(signature, manifest, {
+    gpgHome: dependencies.gpgHome,
+    keyFingerprint: dependencies.keyFingerprint,
+    run: dependencies.verify,
+  });
   await (dependencies.activate || activateGeneration)({
     repositoryRoot,
     generationRoot: root,

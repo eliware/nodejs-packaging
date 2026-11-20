@@ -37,3 +37,14 @@ test("creates directory metadata without a file hash", async () => {
   expect(entry).toMatchObject({ type: "directory", size: null, href: "/files/subdir/" });
   expect(entry).not.toHaveProperty("sha256");
 });
+
+test("excludes entries by their filesystem-relative path", async () => {
+  const entry = await createFileEntry({
+    entry: { name: "repository-index.json" },
+    file: "/virtual/entries/a file.txt",
+    relative: "/metadata/",
+    relativeFs: "metadata",
+    excludedPath: "metadata/repository-index.json",
+  });
+  expect(entry).toBeNull();
+});

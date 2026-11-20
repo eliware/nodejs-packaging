@@ -7,9 +7,11 @@ export default async function rollbackRepository(
   env = process.env,
   output = console,
 ) {
-  const { generation, root } = resolveRollbackInput(argv, env);
   try {
-    output.log(`Restored ${await rollbackGeneration(root, generation)}`);
+    const { generation, root, keyFingerprint, gpgHome } = resolveRollbackInput(argv, env);
+    output.log(
+      `Restored ${await rollbackGeneration(root, generation, { keyFingerprint, gpgHome })}`,
+    );
   } catch (error) {
     reportRollbackFailure(error, output);
   }

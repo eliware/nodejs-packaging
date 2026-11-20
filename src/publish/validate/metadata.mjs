@@ -18,6 +18,10 @@ export default async function validatePublishedMetadata(
     readFileImpl = readFile,
   } = {},
 ) {
+  const imageSchema = JSON.parse(
+    await readFileImpl(path.join(schemaRoot, "image-record.schema.json"), "utf8"),
+  );
+  if (imageSchema.$id && !ajv.getSchema(imageSchema.$id)) ajv.addSchema(imageSchema);
   const failures = [];
   for (const name of names) {
     const schema = JSON.parse(

@@ -6,7 +6,7 @@ export default async function validateImageRecord({ catalog, schemaRoot, ajv, re
   const schema = JSON.parse(
     await readFileImpl(path.join(schemaRoot, "image-record.schema.json"), "utf8"),
   );
-  const validator = ajv.compile(schema);
+  const validator = (schema.$id && ajv.getSchema(schema.$id)) || ajv.compile(schema);
   if (!validator(image)) return `metadata/catalog.json: ${ajv.errorsText(validator.errors)}`;
   return null;
 }

@@ -3,7 +3,16 @@ import generateFilesModule from "./files.mjs";
 
 const { hashFile } = generateFilesModule();
 
-export default async function createFileEntry({ entry, file, relative, statFile = stat }) {
+export default async function createFileEntry({
+  entry,
+  file,
+  relative,
+  relativeFs,
+  excludedPath,
+  statFile = stat,
+}) {
+  const entryPath = relativeFs ? `${relativeFs}/${entry.name}` : entry.name;
+  if (entryPath === excludedPath) return null;
   const info = await statFile(file);
   const isDirectory = info.isDirectory();
   const item = {

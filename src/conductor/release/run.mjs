@@ -86,7 +86,9 @@ export default async function runRelease(options) {
   );
 
   setStage("image-metadata");
-  await runNode("bin/publish-image-record.mjs", [imageRecordPath]);
+  await runNode("bin/publish-image-record.mjs", [imageRecordPath], {
+    NODEJS_REPOSITORY_ROOT: repositoryRoot,
+  });
   const active = JSON.parse(
     await readFile(path.join(repositoryRoot, "metadata/active-generation.json"), "utf8"),
   );

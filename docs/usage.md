@@ -46,7 +46,8 @@ Set these environment variables when their defaults do not match the host:
 | `NODEJS_CONDUCTOR_SERVICE`         | Unset                                         | Internal. The `bin/conductor-service.mjs` launcher sets this value to `true`. |
 
 The systemd unit sets repository, signing, state, and Chrome values in its unit file.
-The unit reads webhook values from `/etc/gluster-packaging/release.env`.
+The unit reads webhook values from `/etc/eliware/nodejs-packaging/release.env`.
+Set `NODEJS_SIGNING_KEY` and `NODEJS_GNUPGHOME` when you run repository rollback.
 
 ## Run the conductor
 
