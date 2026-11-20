@@ -1,8 +1,6 @@
 import { readFile } from "node:fs/promises";
-import releaseSourceModule from "../release-source.mjs";
+import checksumForFile from "../checksum.mjs";
 import hashFile from "../hash.mjs";
-
-const { checksumForFile } = releaseSourceModule();
 
 export default async function verifyNodeArchiveChecksum({ checksumsPath, archivePath, release }) {
   const checksums = await readFile(checksumsPath, "utf8");

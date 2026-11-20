@@ -1,8 +1,8 @@
 import { expect, jest, test } from "@jest/globals";
 
 const verifySignature = jest.fn(async () => "A".repeat(40));
-jest.unstable_mockModule("../../../src/prepare/release-source.mjs", () => ({
-  default: () => ({ verifySignature }),
+jest.unstable_mockModule("../../../src/prepare/signature.mjs", () => ({
+  default: verifySignature,
 }));
 const { default: verifyNodeSignature } =
   await import("../../../src/prepare/verification/signature.mjs");

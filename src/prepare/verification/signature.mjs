@@ -1,6 +1,4 @@
-import releaseSourceModule from "../release-source.mjs";
-
-const { verifySignature } = releaseSourceModule();
+import verifySignature from "../signature.mjs";
 
 export default async function verifyNodeSignature({
   keyConfig,

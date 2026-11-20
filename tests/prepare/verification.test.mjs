@@ -10,9 +10,8 @@ const hashFile = jest.fn(async (file) =>
   file === "/archive/node.tar.xz" ? "b".repeat(64) : "npm-hash",
 );
 jest.unstable_mockModule("node:fs/promises", () => fs);
-jest.unstable_mockModule("../../src/prepare/release-source.mjs", () => ({
-  default: () => ({ verifySignature, checksumForFile }),
-}));
+jest.unstable_mockModule("../../src/prepare/signature.mjs", () => ({ default: verifySignature }));
+jest.unstable_mockModule("../../src/prepare/checksum.mjs", () => ({ default: checksumForFile }));
 jest.unstable_mockModule("../../src/prepare/hash.mjs", () => ({ default: hashFile }));
 const { default: verifyReleaseInput } = await import("../../src/prepare/verification.mjs");
 

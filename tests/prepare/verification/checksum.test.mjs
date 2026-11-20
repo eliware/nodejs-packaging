@@ -6,8 +6,8 @@ const fs = createMemoryFs();
 const checksumForFile = jest.fn(() => "node-hash");
 const hashFile = jest.fn(async () => "node-hash");
 jest.unstable_mockModule("node:fs/promises", () => fs);
-jest.unstable_mockModule("../../../src/prepare/release-source.mjs", () => ({
-  default: () => ({ checksumForFile }),
+jest.unstable_mockModule("../../../src/prepare/checksum.mjs", () => ({
+  default: checksumForFile,
 }));
 jest.unstable_mockModule("../../../src/prepare/hash.mjs", () => ({ default: hashFile }));
 const { default: verifyNodeArchiveChecksum } =
