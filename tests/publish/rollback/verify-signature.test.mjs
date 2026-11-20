@@ -19,7 +19,7 @@ test("verifies the signed manifest in the trusted key home", () => {
 test("accepts the signer fingerprint when GnuPG omits a primary fingerprint", () => {
   const run = jest.fn(() => ({
     status: 0,
-    stdout: `[GNUPG:] VALIDSIG ${keyFingerprint} 2026-01-01 1 0 4 0 1 10 00\n`,
+    stdout: `[GNUPG:] VALIDSIG ${keyFingerprint} 2026-01-01 1 0 4 0 1 10\n`,
   }));
   expect(() =>
     verifyGenerationSignature("manifest.asc", "manifest.json", { ...options, run }),
@@ -52,6 +52,15 @@ test("rejects missing trust settings, process errors, invalid signatures, and un
     verifyGenerationSignature("manifest.asc", "manifest.json", {
       ...options,
       run: () => ({ status: 0, stdout: `[GNUPG:] VALIDSIG ${"B".repeat(40)}\n` }),
+    }),
+  ).toThrow("not made by the trusted release signing key");
+  expect(() =>
+    verifyGenerationSignature("manifest.asc", "manifest.json", {
+      ...options,
+      run: () => ({
+        status: 0,
+        stdout: `[GNUPG:] VALIDSIG ${keyFingerprint} 2026-01-01 1 0 4 0 1 10 00 00\n`,
+      }),
     }),
   ).toThrow("not made by the trusted release signing key");
   expect(() =>

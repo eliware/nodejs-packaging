@@ -44,3 +44,21 @@ test.each([
   });
   expect(notifyConductor).not.toHaveBeenCalled();
 });
+
+test("handles a failed notification without rejecting the report", async () => {
+  const log = { error: jest.fn() };
+  await expect(
+    reportConductorFailure({
+      error: new Error("release failed"),
+      stage: "publish",
+      dryRun: false,
+      runId: "run-3",
+      notifyConductor: jest.fn().mockRejectedValue(new Error("webhook unavailable")),
+      log,
+      service: undefined,
+    }),
+  ).resolves.toBeUndefined();
+  expect(log.error).toHaveBeenCalledWith(
+    "[conductor] failure notification failed: webhook unavailable",
+  );
+});
