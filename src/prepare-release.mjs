@@ -5,9 +5,9 @@ import discoverReleaseModule from "./discover/release.mjs";
 const { discoverLatestRelease } = discoverReleaseModule();
 import discoverLatestNpm from "./discover/npm.mjs";
 import releaseSourceModule from "./prepare/release-source.mjs";
-const { resolveReleaseVersion, verifySignature, checksumForFile } = releaseSourceModule();
+const { resolveReleaseVersion } = releaseSourceModule();
 import download from "./prepare/download.mjs";
-import hashFile from "./prepare/hash.mjs";
+import verifyReleaseInput from "./prepare/verification.mjs";
 import writeReleaseRecord from "./prepare/record.mjs";
 import prepareReleaseDirectories from "./prepare/directories.mjs";
 export default async function main(argv = process.argv.slice(2), dependencies = {}) {
@@ -75,18 +75,16 @@ export default async function main(argv = process.argv.slice(2), dependencies = 
     keyringPath,
     ["nodejs.org", "raw.githubusercontent.com"],
   );
-  const fingerprint = await verifySignature(keyringDir, signaturePath, checksumsPath);
-  if (!keyConfig.fingerprints.includes(fingerprint))
-    throw new Error(`Node.js checksum signature uses an unapproved key: ${fingerprint}`);
-
-  const checksums = await readFile(checksumsPath, "utf8");
-  const checksum = checksumForFile(checksums, release.source.file);
-  const archiveSha256 = await hashFile(archivePath);
-  if (archiveSha256 !== checksum)
-    throw new Error(`archive checksum mismatch for ${release.source.file}`);
-  const npmArchiveSha512 = await hashFile(npmArchivePath, "sha512", "base64");
-  if (`sha512-${npmArchiveSha512}` !== npmRelease.integrity)
-    throw new Error(`npm archive integrity mismatch for ${npmRelease.file}`);
+  const { fingerprint, archiveSha256 } = await verifyReleaseInput({
+    keyConfig,
+    keyringDir,
+    signaturePath,
+    checksumsPath,
+    archivePath,
+    npmArchivePath,
+    release,
+    npmRelease,
+  });
 
   const record = await writeReleaseRecord({
     outputDir,

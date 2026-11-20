@@ -5,32 +5,12 @@ import writeImageRecords from "./records.mjs";
 import sign from "../sign.mjs";
 import buildIndex from "../../generate/index.mjs";
 import activateGeneration from "../activate-generation.mjs";
-import validateImageRecord from "./validation.mjs";
+import loadImagePublicationInput from "./input.mjs";
 import pruneGenerations from "../retention.mjs";
 const files = publishFilesystemModule();
 export default async function main(argv = process.argv.slice(2), dependencies = {}) {
-  const repositoryRoot = path.resolve(
-    process.env.NODEJS_REPOSITORY_ROOT || "/eliware/nodejs-repository",
-  );
-  const recordPath = path.resolve(argv[0] || "");
-  const keyFingerprint = process.env.NODEJS_SIGNING_KEY;
-  const gpgHome = path.resolve(
-    process.env.NODEJS_GNUPGHOME || "/var/lib/eliware/nodejs-signing/gnupg",
-  );
-  if (!argv[0]) throw new Error("pass the published image record path");
-  if (!/^[A-F0-9]{40}$/.test(keyFingerprint || ""))
-    throw new Error("set NODEJS_SIGNING_KEY to the signing key fingerprint");
-
-  const image = validateImageRecord(JSON.parse(await readFile(recordPath, "utf8")));
-  const oldActive = JSON.parse(
-    await readFile(path.join(repositoryRoot, "metadata/active-generation.json"), "utf8"),
-  );
-  const oldRoot = path.join(repositoryRoot, ".generations", oldActive.generation);
-  const catalog = JSON.parse(
-    await readFile(path.join(repositoryRoot, "metadata/catalog.json"), "utf8"),
-  );
-  if (catalog.stable?.latest?.node_version !== image.source_release)
-    throw new Error("image release does not match the published stable RPM");
+  const { repositoryRoot, keyFingerprint, gpgHome, image, oldRoot } =
+    await loadImagePublicationInput(argv);
 
   const generated = new Date().toISOString();
   const stamp = generated.replace(/[-:.TZ]/g, "");
