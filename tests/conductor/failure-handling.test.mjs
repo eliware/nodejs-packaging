@@ -37,6 +37,55 @@ test("reports wet-run failures and releases the lock", async () => {
   }
 });
 
+test("reports cleanup failures and returns a failing process status", async () => {
+  const oldStatus = process.exitCode;
+  const reportFailure = jest.fn();
+  try {
+    process.exitCode = 0;
+    await runConductorBoundary({
+      run: async () => "complete",
+      getFailureState: () => ({ stage: "cleanup", runId: "run-3" }),
+      cleanup: async () => {
+        throw new Error("lock cleanup failed");
+      },
+      reportFailure,
+    });
+    expect(process.exitCode).toBe(1);
+    expect(reportFailure).toHaveBeenCalledWith(
+      expect.objectContaining({
+        error: expect.objectContaining({ message: "lock cleanup failed" }),
+        stage: "cleanup",
+      }),
+    );
+  } finally {
+    process.exitCode = oldStatus;
+  }
+});
+
+test("logs cleanup failures after reporting the workflow failure", async () => {
+  const oldStatus = process.exitCode;
+  const reportFailure = jest.fn();
+  const log = { error: jest.fn() };
+  try {
+    process.exitCode = 0;
+    await runConductorBoundary({
+      run: async () => {
+        throw new Error("release failed");
+      },
+      getFailureState: () => ({}),
+      cleanup: async () => {
+        throw new Error("lock cleanup failed");
+      },
+      reportFailure,
+      log,
+    });
+    expect(reportFailure).toHaveBeenCalledTimes(1);
+    expect(log.error).toHaveBeenCalledWith("[conductor] cleanup failed: lock cleanup failed");
+  } finally {
+    process.exitCode = oldStatus;
+  }
+});
+
 test.each([
   { dryRun: true, service: undefined },
   { dryRun: false, service: "true" },

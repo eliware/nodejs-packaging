@@ -8,13 +8,21 @@ export default async function runConductorBoundary({
   log = console,
   reportFailure = reportConductorFailure,
 }) {
+  let failure;
   try {
     return await run();
   } catch (error) {
+    failure = error;
     const failureState = getFailureState();
     setFailureExitStatus();
     await reportFailure({ error, ...failureState, log });
   } finally {
-    await cleanup();
+    try {
+      await cleanup();
+    } catch (error) {
+      setFailureExitStatus();
+      if (failure) log.error(`[conductor] cleanup failed: ${error.message}`);
+      else await reportFailure({ error, ...getFailureState(), log });
+    }
   }
 }
