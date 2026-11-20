@@ -1,8 +1,7 @@
+import parseArguments from "../cli/arguments.mjs";
+
 export default function loadPrepareArguments(argv, selected) {
-  const args = new Map();
-  for (let index = 0; index < argv.length; index += 1) {
-    if (argv[index].startsWith("--")) args.set(argv[index].slice(2), argv[++index]);
-  }
+  const args = parseArguments(argv);
   const version = args.get("version") || selected.node_version;
   if (!/^26\.(0|[1-9]\d*)\.(0|[1-9]\d*)$/.test(version))
     throw new Error(`unsupported Node.js 26 version: ${version}`);

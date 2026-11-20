@@ -1,5 +1,5 @@
 import publishReportRecord from "./publish.mjs";
-import createReportDetails from "./details.mjs";
+import createReportSummary from "./summary.mjs";
 import createReportCard from "./card.mjs";
 
 export default async function generateReleaseReport({
@@ -14,20 +14,20 @@ export default async function generateReleaseReport({
   reason,
   changed,
 }) {
-  const status = changed ? "✓ RELEASE COMPLETE" : "✓ NO UPDATES";
-  const details = createReportDetails({
+  const { status, statusColor, details } = createReportSummary({
     nodeVersion,
     npmVersion,
     baseDigest,
     imageDigest,
     rpmSha256,
     reason,
+    changed,
   });
   const card = await createReportCard({
     runId,
     repositoryRoot,
     status,
-    statusColor: changed ? "#55d68a" : "#8fb7dc",
+    statusColor,
     details,
     reason,
     changed,

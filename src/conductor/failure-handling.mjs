@@ -1,3 +1,5 @@
+import setFailureExitStatus from "./failure/exit-status.mjs";
+
 export default async function runConductorBoundary({
   run,
   getFailureState,
@@ -9,7 +11,7 @@ export default async function runConductorBoundary({
   } catch (error) {
     const { stage, dryRun, runId, notifyConductor } = getFailureState();
     log.error(`[conductor] ${stage} failed: ${error.message}`);
-    process.exitCode = 1;
+    setFailureExitStatus();
     if (!dryRun && process.env.NODEJS_CONDUCTOR_SERVICE !== "true")
       await notifyConductor({
         title: `Node.js conductor ${stage} failed`,

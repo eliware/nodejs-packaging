@@ -1,14 +1,12 @@
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 import generateCandidate from "./generate/candidate.mjs";
+import parseArguments from "./cli/arguments.mjs";
 import { fileURLToPath } from "node:url";
 
 export default async function main(argv = process.argv.slice(2)) {
   const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
-  const args = new Map();
-  for (let index = 0; index < argv.length; index += 1) {
-    if (argv[index].startsWith("--")) args.set(argv[index].slice(2), argv[++index]);
-  }
+  const args = parseArguments(argv);
   const version = args.get("version");
   if (!/^26\.(0|[1-9]\d*)\.(0|[1-9]\d*)$/.test(version || ""))
     throw new Error("pass a stable Node.js 26 version with --version");

@@ -1,15 +1,11 @@
 import logCapturedOutput from "./captured-output.mjs";
 import formatExitDetail from "./exit-detail.mjs";
+import createStreamOutput from "./stream-output.mjs";
 
 export default function captureOutput(options = {}) {
   const environment = options.env || process.env;
   return {
-    onStdout: (chunk) => {
-      if (!options.quiet && !options.logPath) process.stdout.write(chunk);
-    },
-    onStderr: (chunk) => {
-      if (!options.quiet && !options.logPath) process.stderr.write(chunk);
-    },
+    ...createStreamOutput(options),
     onError: (error) =>
       options.logPath
         ? logCapturedOutput({

@@ -1,6 +1,6 @@
 import path from "node:path";
 import rollbackGeneration from "./run.mjs";
-import parseRollbackArguments from "./arguments.mjs";
+import parseArguments from "../../cli/arguments.mjs";
 import reportRollbackFailure from "./failure.mjs";
 
 export default async function rollbackRepository(
@@ -8,7 +8,7 @@ export default async function rollbackRepository(
   env = process.env,
   output = console,
 ) {
-  const args = parseRollbackArguments(argv);
+  const args = parseArguments(argv);
   const generation = args.get("generation");
   const root = path.resolve(env.NODEJS_REPOSITORY_ROOT || "/eliware/nodejs-repository");
   try {

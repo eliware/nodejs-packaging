@@ -1,23 +1,22 @@
 import { expect, jest, test } from "@jest/globals";
-import captureOutput from "../../../../src/conductor/commands/logged/capture-output.mjs";
+import memoryFilesystemFixture from "../../../../test-fixtures/memory-fs.mjs";
+const { createMemoryFs } = memoryFilesystemFixture();
+const fs = createMemoryFs();
+jest.unstable_mockModule("node:fs/promises", () => fs);
+const { default: captureOutput } =
+  await import("../../../../src/conductor/commands/logged/capture-output.mjs");
 
-test("echoes output when no log is configured", async () => {
-  const stdout = jest.spyOn(process.stdout, "write").mockImplementation(() => true);
-  const stderr = jest.spyOn(process.stderr, "write").mockImplementation(() => true);
-  try {
-    const handlers = captureOutput();
-    handlers.onStdout("out");
-    handlers.onStderr("err");
-    await handlers.onExit({ code: 0, stdout: "out", stderr: "err" });
-    expect(stdout).toHaveBeenCalledWith("out");
-    expect(stderr).toHaveBeenCalledWith("err");
-  } finally {
-    stdout.mockRestore();
-    stderr.mockRestore();
-  }
-});
-
-test("suppresses quiet output and formats logged command failures", async () => {
-  const handlers = captureOutput({ quiet: true });
-  await handlers.onExit({ code: 1, stdout: "out", stderr: "err" });
+test("logs captured output and handles command failures", async () => {
+  const handlers = captureOutput({
+    logPath: "/virtual/logs/output.log",
+    logName: "capture",
+    quiet: true,
+  });
+  await handlers.onError(new Error("spawn failed"));
+  const errorLog = await fs.readFile("/virtual/logs/output.log", "utf8");
+  expect(errorLog).toContain("spawn failed");
+  await handlers.onExit({ code: 1, stdout: "output", stderr: "failure" });
+  const outputLog = await fs.readFile("/virtual/logs/output.log", "utf8");
+  expect(outputLog).toContain("failure");
+  expect(captureOutput().onError(new Error("ignored"))).toBeUndefined();
 });

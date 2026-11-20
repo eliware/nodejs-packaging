@@ -1,14 +1,12 @@
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 import generateFilesModule from "../generate/files.mjs";
+import parseArguments from "../cli/arguments.mjs";
 
 const { hashFile: defaultHashFile } = generateFilesModule();
 
 export default async function loadRpmInput(argv, dependencies = {}) {
-  const args = new Map();
-  for (let index = 0; index < argv.length; index += 1) {
-    if (argv[index].startsWith("--")) args.set(argv[index].slice(2), argv[++index]);
-  }
+  const args = parseArguments(argv);
   const releaseInputArgument = args.get("release-input");
   const versionArgument = args.get("version");
   if (!releaseInputArgument && !versionArgument)

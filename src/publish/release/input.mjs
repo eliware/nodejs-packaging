@@ -1,8 +1,8 @@
 import path from "node:path";
-import parseReleaseArguments from "./arguments.mjs";
+import parseArguments from "../../cli/arguments.mjs";
 
 export default function loadReleaseInput(argv, environment = process.env) {
-  const args = parseReleaseArguments(argv);
+  const args = parseArguments(argv);
   const version = args.get("version");
   const candidateRoot = path.resolve(args.get("candidate") || "");
   const repositoryRoot = path.resolve(
