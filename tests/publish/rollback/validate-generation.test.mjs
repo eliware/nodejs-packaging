@@ -76,15 +76,23 @@ test("rejects incomplete manifests, unsafe paths, and changed generation files",
     validateGeneration("/virtual/rollback", generation, incomplete.load, incomplete),
   ).rejects.toThrow("generation manifest is not publication ready");
 
-  const unsafe = fixtures({ files: [{ path: "../outside", sha256: hash, size: 4 }] });
-  await expect(
-    validateGeneration("/virtual/rollback", generation, unsafe.load, unsafe),
-  ).rejects.toThrow("generation manifest contains an invalid file path");
-
-  const emptyPath = fixtures({ files: [{ path: "", sha256: hash, size: 4 }] });
-  await expect(
-    validateGeneration("/virtual/rollback", generation, emptyPath.load, emptyPath),
-  ).rejects.toThrow("generation manifest contains an invalid file path");
+  for (const entry of [
+    null,
+    { path: 4, sha256: hash, size: 4 },
+    { path: "", sha256: hash, size: 4 },
+    { path: "file.rpm", sha256: 4, size: 4 },
+    { path: "file.rpm", sha256: "invalid", size: 4 },
+    { path: "file.rpm", sha256: hash, size: "4" },
+    { path: "file.rpm", sha256: hash, size: -1 },
+    { path: "/outside", sha256: hash, size: 4 },
+    { path: "../outside", sha256: hash, size: 4 },
+    { path: "..", sha256: hash, size: 4 },
+  ]) {
+    const unsafe = fixtures({ files: [entry] });
+    await expect(
+      validateGeneration("/virtual/rollback", generation, unsafe.load, unsafe),
+    ).rejects.toThrow("generation manifest contains an invalid file entry");
+  }
 
   const changed = fixtures();
   changed.hashFile.mockImplementation(async (file) => (file === filePath ? "b".repeat(64) : hash));

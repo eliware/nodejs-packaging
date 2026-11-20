@@ -33,16 +33,24 @@ export default async function validateGeneration(
   const hash = dependencies.hashFile || hashFile;
   const getStat = dependencies.stat || stat;
   for (const entry of record.files) {
-    const relative = entry.path;
-    const file = path.resolve(root, relative || "");
+    const relative = entry?.path;
     if (
+      !entry ||
       typeof relative !== "string" ||
       relative.length === 0 ||
+      typeof entry.sha256 !== "string" ||
+      !/^[a-f0-9]{64}$/.test(entry.sha256) ||
+      !Number.isInteger(entry.size) ||
+      entry.size < 0
+    )
+      throw new Error("generation manifest contains an invalid file entry");
+    const file = path.resolve(root, relative);
+    if (
       path.isAbsolute(relative) ||
       path.relative(root, file).startsWith(`..${path.sep}`) ||
       path.relative(root, file) === ".."
     )
-      throw new Error("generation manifest contains an invalid file path");
+      throw new Error("generation manifest contains an invalid file entry");
     if ((await hash(file)) !== entry.sha256 || (await getStat(file)).size !== entry.size)
       throw new Error(`generation file integrity check failed: ${relative}`);
   }
