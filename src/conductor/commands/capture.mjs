@@ -1,4 +1,4 @@
-import captureOutput from "./logged/capture-output.mjs";
+import captureOutput from "./logged/capture/output.mjs";
 import runProcess from "./process.mjs";
 
 export default function runCommandCapture(command, args, options = {}) {

@@ -1,6 +1,6 @@
 import publishBuiltImage from "./publish-build.mjs";
 import writeImageRecord from "./record.mjs";
-import createImageRecordData from "./record-data.mjs";
+import inspectPublishedImage from "./inspection.mjs";
 
 export default async function publishImage({
   image,
@@ -16,10 +16,7 @@ export default async function publishImage({
   runDocker,
 }) {
   const registryDigest = pushImage ? await publishBuiltImage(image, target.image) : null;
-  const inspect = JSON.parse(
-    runDocker(["image", "inspect", image], { encoding: "utf8" }).stdout,
-  )[0];
-  const { record, resultDir } = createImageRecordData({
+  const { record, resultDir } = inspectPublishedImage({
     target,
     pushImage,
     version,
@@ -29,7 +26,8 @@ export default async function publishImage({
     publishedRelease,
     baseImage,
     baseDigest,
-    inspect,
+    runDocker,
+    image,
     registryDigest,
   });
   await writeImageRecord(resultDir, record);

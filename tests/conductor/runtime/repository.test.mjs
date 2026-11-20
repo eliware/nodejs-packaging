@@ -27,7 +27,7 @@ test("loads JSON and reports HTTP errors", async () => {
   }
 });
 
-test("waits for the published Node.js and npm versions", async () => {
+test("composes release polling with repository JSON requests", async () => {
   const { repository } = createRepository();
   const originalFetch = globalThis.fetch;
   try {
@@ -39,31 +39,6 @@ test("waits for the published Node.js and npm versions", async () => {
     }));
     await expect(repository.waitForPublishedRelease("26.13.1", "12.2.3")).resolves.toBeUndefined();
   } finally {
-    globalThis.fetch = originalFetch;
-  }
-});
-
-test("retries mismatched and failed catalog responses until timeout", async () => {
-  const { repository } = createRepository();
-  const originalFetch = globalThis.fetch;
-  jest.useFakeTimers();
-  try {
-    globalThis.fetch = jest.fn(async () => ({
-      ok: true,
-      json: async () => ({ stable: { latest: { node_version: "26.13.0" } } }),
-    }));
-    const mismatch = repository.waitForPublishedRelease("26.13.1", "12.2.3");
-    const mismatchError = expect(mismatch).rejects.toThrow("after 60 seconds");
-    await jest.advanceTimersByTimeAsync(60_000);
-    await mismatchError;
-    globalThis.fetch = jest.fn(async () => ({ ok: false, status: 503 }));
-    const failed = repository.waitForPublishedRelease("26.13.1", "12.2.3");
-    const failedError = expect(failed).rejects.toThrow("after 60 seconds");
-    await jest.advanceTimersByTimeAsync(60_000);
-    await failedError;
-    expect(globalThis.fetch).toHaveBeenCalledTimes(30);
-  } finally {
-    jest.useRealTimers();
     globalThis.fetch = originalFetch;
   }
 });

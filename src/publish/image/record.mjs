@@ -7,7 +7,7 @@ import activateGeneration from "../activate-generation.mjs";
 import loadImagePublicationInput from "./input.mjs";
 import imageGeneration from "./generation.mjs";
 import pruneGenerations from "../retention.mjs";
-import writeImagePublicationOutput from "./output.mjs";
+import writeImagePublicationOutput from "./result.mjs";
 const files = publishFilesystemModule();
 const { runImageGeneration } = imageGeneration();
 export default async function main(argv = process.argv.slice(2), dependencies = {}) {
