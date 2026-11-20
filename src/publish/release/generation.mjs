@@ -1,7 +1,7 @@
 import { stat } from "node:fs/promises";
 import path from "node:path";
 import writeRepositoryIndex from "../../generate/write-index.mjs";
-import validatePublishedMetadata from "../validate-metadata.mjs";
+import validatePublishedMetadata from "../validate/metadata.mjs";
 import signReleaseRpm from "../sign/release-rpm.mjs";
 import updateReleaseRecords from "../update-release/records.mjs";
 import signRepositoryMetadata from "../sign/repository-metadata.mjs";

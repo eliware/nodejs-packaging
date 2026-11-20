@@ -18,15 +18,18 @@ test("validates package metadata and writes an RPM record", async () => {
     const record = await writePackageRecord({
       rpmFile,
       outputDir,
-      packageInfo: ["eliware-node26", "(none)", "26.13.1", "1", "x86_64"],
-      version: "26.13.1",
+      packageInfo: {
+        name: "eliware-node26",
+        epoch: null,
+        release: "1",
+        architecture: "x86_64",
+      },
       npmVersion: "12.2.3",
     });
     expect(record).toEqual(
       expect.objectContaining({
         name: "eliware-node26",
         epoch: null,
-        version: "26.13.1",
         architecture: "x86_64",
         npm_version: "12.2.3",
         path: "eliware-node26.rpm",
@@ -39,21 +42,4 @@ test("validates package metadata and writes an RPM record", async () => {
   } finally {
     stdout.mockRestore();
   }
-});
-
-test("rejects package metadata for another version or architecture", async () => {
-  for (const packageInfo of [
-    ["wrong", "(none)", "26.13.1", "1", "x86_64"],
-    ["eliware-node26", "(none)", "25.0.0", "1", "x86_64"],
-    ["eliware-node26", "(none)", "26.13.1", "1", "aarch64"],
-  ])
-    await expect(
-      writePackageRecord({
-        rpmFile: "/missing.rpm",
-        outputDir: "/missing",
-        packageInfo,
-        version: "26.13.1",
-        npmVersion: "12.2.3",
-      }),
-    ).rejects.toThrow("built RPM metadata does not match target");
 });

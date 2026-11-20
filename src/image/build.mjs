@@ -6,12 +6,10 @@ import loadPublishedRelease from "../repository/catalog.mjs";
 import runDocker from "./docker.mjs";
 import publishImage from "./publication.mjs";
 import verifyImageRuntime from "./runtime-check.mjs";
+import parseImageArguments from "./arguments.mjs";
 export default async function main(argv = process.argv.slice(2)) {
   const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
-  const args = new Map();
-  for (let index = 0; index < argv.length; index += 1) {
-    if (argv[index].startsWith("--")) args.set(argv[index].slice(2), argv[++index]);
-  }
+  const args = parseImageArguments(argv);
   const version = args.get("version");
   const pushImage = args.has("push");
   if (!/^26\.(0|[1-9]\d*)\.(0|[1-9]\d*)$/.test(version || ""))

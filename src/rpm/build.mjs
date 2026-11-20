@@ -6,6 +6,7 @@ import { fileURLToPath } from "node:url";
 import rpmReleaseForNpm from "../rpm-release.mjs";
 import listFiles from "../generate/list-files.mjs";
 import writePackageRecord from "./record.mjs";
+import parseRpmPackageInfo from "./package-info.mjs";
 import loadRpmInput from "./input.mjs";
 
 export default async function main(argv = process.argv.slice(2)) {
@@ -54,18 +55,18 @@ export default async function main(argv = process.argv.slice(2)) {
     if (rpmFiles.length !== 1) throw new Error(`expected one RPM, found ${rpmFiles.length}`);
     const rpmFile = path.join(outputDir, path.basename(rpmFiles[0]));
     await cp(rpmFiles[0], rpmFile);
-    const packageInfo = execFileSync(
-      "rpm",
-      ["-qp", "--queryformat", "%{NAME}\n%{EPOCH}\n%{VERSION}\n%{RELEASE}\n%{ARCH}\n", rpmFile],
-      { encoding: "utf8" },
-    )
-      .trim()
-      .split("\n");
+    const packageInfo = parseRpmPackageInfo(
+      execFileSync(
+        "rpm",
+        ["-qp", "--queryformat", "%{NAME}\n%{EPOCH}\n%{VERSION}\n%{RELEASE}\n%{ARCH}\n", rpmFile],
+        { encoding: "utf8" },
+      ),
+      version,
+    );
     await writePackageRecord({
       rpmFile,
       outputDir,
       packageInfo,
-      version,
       npmVersion: input.npm.version,
     });
   } finally {

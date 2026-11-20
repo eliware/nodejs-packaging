@@ -1,6 +1,7 @@
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 import Ajv2020 from "ajv/dist/2020.js";
+import validateImageRecord from "./image.mjs";
 
 const names = [
   "catalog",
@@ -34,14 +35,8 @@ export default async function validatePublishedMetadata(
     if (!validator(value)) failures.push(`${file}: ${ajv.errorsText(validator.errors)}`);
   }
   const catalog = JSON.parse(await readFileImpl(path.join(root, "metadata/catalog.json"), "utf8"));
-  if (catalog.stable?.latest?.image) {
-    const schema = JSON.parse(
-      await readFileImpl(path.join(schemaRoot, "image-record.schema.json"), "utf8"),
-    );
-    const validator = ajv.compile(schema);
-    if (!validator(catalog.stable.latest.image))
-      failures.push(`metadata/catalog.json: ${ajv.errorsText(validator.errors)}`);
-  }
+  const imageFailure = await validateImageRecord({ catalog, schemaRoot, ajv, readFileImpl });
+  if (imageFailure) failures.push(imageFailure);
   if (failures.length)
     throw new Error(`published metadata schema validation failed: ${failures.join("; ")}`);
   return true;

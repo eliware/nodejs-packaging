@@ -8,7 +8,7 @@ const sign = jest.fn(async () => {});
 const buildIndex = jest.fn(async () => ({ "/": { entries: [] } }));
 jest.unstable_mockModule("node:fs/promises", () => fs);
 jest.unstable_mockModule("../../../src/publish/sign.mjs", () => ({ default: sign }));
-jest.unstable_mockModule("../../../src/publish/validate-metadata.mjs", () => ({
+jest.unstable_mockModule("../../../src/publish/validate/metadata.mjs", () => ({
   default: jest.fn(async () => true),
 }));
 jest.unstable_mockModule("../../../src/generate/index.mjs", () => ({ default: buildIndex }));
