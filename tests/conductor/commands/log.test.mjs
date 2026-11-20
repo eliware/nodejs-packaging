@@ -5,21 +5,19 @@ const fs = createMemoryFs();
 jest.unstable_mockModule("node:fs/promises", () => fs);
 const { default: writeCommandLog } = await import("../../../src/conductor/commands/log.mjs");
 
-test("writes bounded command logs with shared secret redaction", async () => {
+test("writes command output to a nested log file", async () => {
   const file = "/virtual/logs/run-1/build.log";
-  await writeCommandLog({
+  const result = await writeCommandLog({
     file,
     name: "build-rpm",
-    stdout: "using secret-value and Authorization: Bearer sample-token api-token",
-    stderr: "token=sample-token",
-    env: { DISCORD_WEBHOOK: "secret-value", API_KEY: "api-token" },
+    stdout: "build output",
+    stderr: "build warning",
   });
   const contents = await fs.readFile(file, "utf8");
   expect(contents).toContain("Command: build-rpm");
-  expect(contents).not.toContain("secret-value");
-  expect(contents).not.toContain("sample-token");
-  expect(contents).not.toContain("api-token");
-  expect(contents).toContain("[REDACTED]");
+  expect(contents).toContain("build output");
+  expect(contents).toContain("build warning");
+  expect(result).toEqual({ stdout: "build output", stderr: "build warning" });
 });
 
 test("writes empty streams when a command produced no output", async () => {

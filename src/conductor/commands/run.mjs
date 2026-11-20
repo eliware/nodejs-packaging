@@ -1,5 +1,6 @@
 import writeCommandLog from "./log.mjs";
 import runProcess from "./process.mjs";
+import redactCommandOutput from "./redact.mjs";
 
 export default function runCommand(command, args, options = {}) {
   const logging = Boolean(options.logPath);
@@ -14,21 +15,21 @@ export default function runCommand(command, args, options = {}) {
         ? writeCommandLog({
             file: options.logPath,
             name: options.logName,
-            stderr: error.message,
-            env: options.env || process.env,
+            stderr: redactCommandOutput(error.message, options.env || process.env),
           })
         : undefined,
     onExit: async ({ stdout, stderr }) => {
       if (!logging) return "";
-      const safe = await writeCommandLog({
+      const safeStdout = redactCommandOutput(stdout, options.env || process.env);
+      const safeStderr = redactCommandOutput(stderr, options.env || process.env);
+      await writeCommandLog({
         file: options.logPath,
         name: options.logName,
-        stdout,
-        stderr,
-        env: options.env || process.env,
+        stdout: safeStdout,
+        stderr: safeStderr,
       });
-      process.stdout.write(safe.stdout);
-      process.stderr.write(safe.stderr);
+      process.stdout.write(safeStdout);
+      process.stderr.write(safeStderr);
       return "";
     },
   }).then(({ code }) => ({ code }));

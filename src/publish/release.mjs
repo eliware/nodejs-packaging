@@ -126,9 +126,8 @@ export default async function main(argv = process.argv.slice(2)) {
     await writeCommandLog({
       file: path.join(stagingRoot, "metadata/logs", runId, "repository-tools.log"),
       name: "repository tools",
-      stdout: repositoryToolOutput.join("\n"),
+      stdout: redactCommandOutput(repositoryToolOutput.join("\n"), env),
       stderr: "",
-      env,
     });
   }
 }

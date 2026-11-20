@@ -1,5 +1,6 @@
 import { spawn } from "node:child_process";
 import path from "node:path";
+import collectProcessOutput from "./output.mjs";
 
 export default function runProcess(command, args, options) {
   return new Promise((resolve, reject) => {
@@ -8,18 +9,7 @@ export default function runProcess(command, args, options) {
       env: options.env,
       stdio: options.stdio,
     });
-    let stdout = "";
-    let stderr = "";
-    if (child.stdout)
-      child.stdout.setEncoding("utf8").on("data", (chunk) => {
-        stdout += chunk;
-        options.onStdout(chunk);
-      });
-    if (child.stderr)
-      child.stderr.setEncoding("utf8").on("data", (chunk) => {
-        stderr += chunk;
-        options.onStderr(chunk);
-      });
+    const output = collectProcessOutput(child, options.onStdout, options.onStderr);
     child.once("error", async (error) => {
       try {
         await options.onError(error);
@@ -30,8 +20,8 @@ export default function runProcess(command, args, options) {
     });
     child.once("exit", async (code, signal) => {
       try {
-        const failureDetail = await options.onExit({ code, signal, stdout, stderr });
-        if (code === 0) resolve({ code, stdout, stderr });
+        const failureDetail = await options.onExit({ code, signal, ...output });
+        if (code === 0) resolve({ code, ...output });
         else
           reject(
             new Error(
