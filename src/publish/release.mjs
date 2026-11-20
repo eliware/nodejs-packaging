@@ -1,4 +1,4 @@
-import { cp, mkdir, readFile, readdir, rename, rm } from "node:fs/promises";
+import { cp, mkdir, rename, rm } from "node:fs/promises";
 import path from "node:path";
 import publishFilesystemModule from "./filesystem.mjs";
 import loadReleaseInput from "./release/input.mjs";
@@ -8,19 +8,12 @@ import pruneGenerations from "./retention.mjs";
 import runRepositoryTool from "./repository-tools.mjs";
 import copyReleaseLogs from "./release/logs.mjs";
 import assertSafeRepositoryPaths from "./release/paths.mjs";
+import loadReleaseRpmInput from "./release/rpm-input.mjs";
 const files = publishFilesystemModule();
 export default async function main(argv = process.argv.slice(2)) {
   const { candidateRoot, repositoryRoot, keyFingerprint, gpgHome } = loadReleaseInput(argv);
 
-  const candidateManifest = JSON.parse(
-    await readFile(path.join(candidateRoot, "metadata/release-manifest.json"), "utf8"),
-  );
-  const generationId = candidateManifest.generation_id;
-  if (!/^node-v26\.[0-9]+\.[0-9]+-el10-x86_64-[0-9]+$/.test(generationId || ""))
-    throw new Error("candidate has an invalid generation identifier");
-  const sourceRpmDirectory = path.join(candidateRoot, "el10/x86_64/stable");
-  const rpms = (await readdir(sourceRpmDirectory)).filter((name) => name.endsWith(".rpm"));
-  if (rpms.length !== 1) throw new Error(`expected one RPM in candidate, found ${rpms.length}`);
+  const { generationId, rpmName } = await loadReleaseRpmInput(candidateRoot);
   const stagingRoot = path.join(repositoryRoot, ".generations", `.staging-${generationId}`);
   const finalRoot = path.join(repositoryRoot, ".generations", generationId);
   if ((await files.exists(finalRoot)) || (await files.exists(stagingRoot)))
@@ -34,7 +27,7 @@ export default async function main(argv = process.argv.slice(2)) {
   try {
     const { rpmSha256 } = await prepareReleaseGeneration({
       stagingRoot,
-      rpmName: rpms[0],
+      rpmName,
       generationId,
       keyFingerprint,
       gpgHome,

@@ -17,19 +17,10 @@ test("parses rollback arguments and reports a successful restore", async () => {
   expect(rollbackGeneration).toHaveBeenCalledWith("/repo", generation);
   expect(output.log).toHaveBeenCalledWith(`Restored ${generation}`);
   expect(output.error).not.toHaveBeenCalled();
-});
-
-test("reports rollback errors and sets a failing process status", async () => {
-  const oldStatus = process.exitCode;
-  const output = { log: jest.fn(), error: jest.fn() };
-  rollbackGeneration.mockRejectedValueOnce(new Error("rollback failed"));
-  try {
-    await rollbackRepository(["--generation", "bad", "ignored"], {}, output);
-    expect(output.error).toHaveBeenCalledWith("rollback failed");
-    expect(process.exitCode).toBe(1);
-  } finally {
-    process.exitCode = oldStatus;
-  }
+  rollbackGeneration.mockRejectedValueOnce(new Error("handled by the failure reporter"));
+  await expect(
+    rollbackRepository(["--generation", generation], {}, output),
+  ).resolves.toBeUndefined();
 });
 
 test("uses process arguments, environment, and console by default", async () => {

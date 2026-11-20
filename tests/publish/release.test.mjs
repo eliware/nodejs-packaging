@@ -156,19 +156,7 @@ test("keeps an activated generation when writing the command result fails", asyn
   }
 });
 
-test("rejects malformed candidates, duplicate releases, and Git tool errors", async () => {
-  const { candidate, root } = await setup();
-  await fs.writeFile(path.join(candidate, "metadata/release-manifest.json"), "{}");
-  await expect(runWithEnv(candidate, root)).rejects.toThrow(
-    "candidate has an invalid generation identifier",
-  );
-
-  const valid = await setup();
-  await fs.writeFile(path.join(valid.candidate, "el10/x86_64/stable/second.rpm"), "rpm");
-  await expect(runWithEnv(valid.candidate, valid.root)).rejects.toThrow(
-    "expected one RPM in candidate, found 2",
-  );
-
+test("rejects duplicate releases and Git tool errors", async () => {
   const duplicate = await setup();
   await fs.mkdir(path.join(duplicate.root, ".generations", duplicate.generation), {
     recursive: true,

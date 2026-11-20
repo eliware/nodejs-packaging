@@ -5,6 +5,7 @@ import { fileURLToPath } from "node:url";
 import loadPublishedRelease from "../repository/catalog.mjs";
 import runDocker from "./docker.mjs";
 import getBaseImageDigest from "./base-image.mjs";
+import buildImage from "./build-image.mjs";
 import publishImage from "./publication.mjs";
 import verifyImageRuntime from "./runtime-check.mjs";
 import parseArguments from "../cli/arguments.mjs";
@@ -40,27 +41,17 @@ export default async function main(argv = process.argv.slice(2)) {
     );
   const context = await mkdtemp(path.join(os.tmpdir(), "centos10-node26-image-"));
   try {
-    runDocker(
-      [
-        "build",
-        "--file",
-        path.join(root, "containers/centos10-node26.Dockerfile"),
-        "--build-arg",
-        `NODE_VERSION=${version}`,
-        "--build-arg",
-        `SOURCE_SHA256=${sourceInput.source.sha256}`,
-        "--build-arg",
-        `BASE_IMAGE_DIGEST=${baseDigest.slice(baseDigest.lastIndexOf("@") + 1)}`,
-        "--build-arg",
-        `NODEJS_REPOSITORY_URL=${repositoryBase}`,
-        "--build-arg",
-        `REPOSITORY_GENERATION=${publishedRelease.generation_id}`,
-        "--tag",
-        image,
-        context,
-      ],
-      { stdio: "inherit" },
-    );
+    buildImage({
+      runDocker,
+      root,
+      version,
+      sourceInput,
+      repositoryBase,
+      generationId: publishedRelease.generation_id,
+      image,
+      baseDigest,
+      context,
+    });
 
     verifyImageRuntime({
       runDocker,
