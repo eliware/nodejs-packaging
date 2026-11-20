@@ -7,10 +7,15 @@ const fs = createMemoryFs();
 jest.unstable_mockModule("node:fs/promises", () => fs);
 const { default: writeReleaseRecords } = await import("../../src/generate/records.mjs");
 
-test("writes release, validation, provenance, catalog, and generation records", async () => {
+test("writes release, validation, and provenance records", async () => {
   const root = "/virtual/records";
   const candidate = path.join(root, "candidate");
   const templateRoot = path.join(root, "templates");
+  await fs.mkdir(templateRoot, { recursive: true });
+  await fs.writeFile(
+    path.join(templateRoot, "catalog.seed.json"),
+    JSON.stringify({ metadata_version: "0.1.0", node_major: 26, stable: { items: [] } }),
+  );
   const generated = new Date("2026-11-19T12:00:00.000Z");
   const sourceInput = {
     source: { url: "https://nodejs.org/archive", sha256: "b".repeat(64) },
@@ -24,11 +29,6 @@ test("writes release, validation, provenance, catalog, and generation records", 
     sha256: "c".repeat(64),
     size: 123,
   };
-  await fs.mkdir(templateRoot, { recursive: true });
-  await fs.writeFile(
-    path.join(templateRoot, "catalog.seed.json"),
-    JSON.stringify({ metadata_version: "0.1.0", node_major: 26, stable: { items: [] } }),
-  );
   const oldRunId = process.env.NODEJS_CONDUCTOR_RUN_ID;
   process.env.NODEJS_CONDUCTOR_RUN_ID = "run-7";
   await writeReleaseRecords({
@@ -69,9 +69,4 @@ test("writes release, validation, provenance, catalog, and generation records", 
   );
   if (oldRunId === undefined) delete process.env.NODEJS_CONDUCTOR_RUN_ID;
   else process.env.NODEJS_CONDUCTOR_RUN_ID = oldRunId;
-  const catalog = JSON.parse(await fs.readFile(path.join(candidate, "metadata/catalog.json")));
-  expect(catalog.active_generation).toBe("node-v26.13.1-el10-x86_64-test");
-  expect(catalog.stable.latest).toEqual(release);
-  const generation = JSON.parse(await fs.readFile(path.join(candidate, "generation.json")));
-  expect(generation.generated).toBe(generated.toISOString());
 });

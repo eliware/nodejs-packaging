@@ -1,9 +1,4 @@
-import path from "node:path";
-import { fileURLToPath } from "node:url";
-import discordNotifierModule from "../discord-notifier.mjs";
-import runConductor from "./service/runner.mjs";
-const { notifyConductor } = discordNotifierModule();
-async function runConductorService({ run, notify, log = console }) {
+export default async function runConductorService({ run, notify, log = console }) {
   let phase = "dry-run";
   try {
     log.info("[conductor-service] starting dry-run preflight");
@@ -33,17 +28,4 @@ async function runConductorService({ run, notify, log = console }) {
     }
     return false;
   }
-}
-
-async function main(dependencies = {}) {
-  const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
-  const conductor = path.join(root, "bin/conductor.mjs");
-  const run = dependencies.run || ((mode) => runConductor(mode, { root, conductor }));
-  const notify = dependencies.notify || notifyConductor;
-  const succeeded = await runConductorService({ run, notify });
-  if (!succeeded) process.exitCode = 1;
-}
-
-export default function moduleApi() {
-  return { runConductorService, main };
 }

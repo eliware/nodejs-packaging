@@ -1,4 +1,5 @@
-import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { mkdir, writeFile } from "node:fs/promises";
+import writeCatalogMetadata from "./catalog.mjs";
 import path from "node:path";
 
 export default async function writeReleaseRecords({
@@ -84,19 +85,11 @@ export default async function writeReleaseRecords({
     `${JSON.stringify(releaseRecord, null, 2)}\n`,
   );
 
-  const catalog = JSON.parse(
-    await readFile(path.join(root, "templates/catalog.seed.json"), "utf8"),
-  );
-  catalog.generated = generated;
-  catalog.active_generation = generationId;
-  catalog.stable = { available: true, latest: releaseRecord, items: [releaseRecord] };
-  await mkdir(path.join(candidate, "metadata"), { recursive: true });
-  await writeFile(
-    path.join(candidate, "metadata/catalog.json"),
-    `${JSON.stringify(catalog, null, 2)}\n`,
-  );
-  await writeFile(
-    path.join(candidate, "generation.json"),
-    `${JSON.stringify({ metadata_version: "0.1.0", schema: 1, generation: generationId, generated }, null, 2)}\n`,
-  );
+  await writeCatalogMetadata({
+    candidate,
+    root,
+    generationId,
+    generated,
+    releaseRecord,
+  });
 }

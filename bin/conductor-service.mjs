@@ -1,5 +1,4 @@
 #!/usr/bin/env node
-import sourceModule from "../src/conductor/service.mjs";
-const { main } = sourceModule();
+import runService from "../src/conductor/service/entrypoint.mjs";
 
-await main();
+await runService();
