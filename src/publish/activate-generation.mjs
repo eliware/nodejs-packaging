@@ -64,8 +64,6 @@ export default async function activateGeneration({
         path.join(generationRoot, "metadata", name),
         path.join(metadataRoot, name),
       );
-    for (const snapshot of previous.values())
-      if (snapshot.type === "path") await rm(snapshot.backup, { recursive: true, force: true });
   } catch (error) {
     const rollbackErrors = [];
     for (const destination of [...previous.keys()].reverse()) {
@@ -89,4 +87,9 @@ export default async function activateGeneration({
       throw new AggregateError([error, ...rollbackErrors], "generation activation rollback failed");
     throw error;
   }
+  await Promise.allSettled(
+    [...previous.values()]
+      .filter((snapshot) => snapshot.type === "path")
+      .map((snapshot) => rm(snapshot.backup, { recursive: true, force: true })),
+  );
 }
