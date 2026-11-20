@@ -1,6 +1,5 @@
-import { readFile } from "node:fs/promises";
-import path from "node:path";
 import sign from "../sign.mjs";
+import prepareImageManifest from "./manifest-data.mjs";
 
 export default async function writeImageManifest({
   stage,
@@ -10,22 +9,12 @@ export default async function writeImageManifest({
   gpgHome,
   files,
 }) {
-  const manifestPath = path.join(stage, "metadata/release-manifest.json");
-  const manifest = JSON.parse(await readFile(manifestPath, "utf8"));
-  manifest.generation_id = generationId;
-  manifest.generated = generated;
-  manifest.catalog_sha256 = await files.hashFile(path.join(stage, "metadata/catalog.json"));
-  manifest.repository_metadata_sha256 = await files.hashFile(
-    path.join(stage, "el10/x86_64/stable/repodata/repomd.xml"),
-  );
-  manifest.files = await files.listFiles(
+  const { manifestPath, manifest } = await prepareImageManifest({
     stage,
-    new Set([
-      "metadata/release-manifest.json",
-      "metadata/release-manifest.json.asc",
-      "metadata/repository-index.json",
-    ]),
-  );
+    generationId,
+    generated,
+    files,
+  });
   await files.writeJson(manifestPath, manifest);
   await sign(manifestPath, keyFingerprint, gpgHome);
 }

@@ -11,6 +11,7 @@ jest.unstable_mockModule("node:stream/promises", () => ({
   pipeline: async (body, output) => fs.writeFile(output.file, body),
 }));
 const { default: download } = await import("../../src/prepare/download.mjs");
+const { default: saveDownloadedFile } = await import("../../src/prepare/download/file.mjs");
 
 test("downloads a trusted HTTPS response through a temporary file", async () => {
   const fetch = jest.fn(async () => ({
@@ -111,4 +112,12 @@ test("uses separate temporary files for concurrent downloads to one destination"
   expect(new Set(temporaryPaths).size).toBe(2);
   await expect(fs.readFile("/virtual/shared.tar.xz", "utf8")).resolves.toMatch(/^archive-/);
   expect((await fs.readdir("/virtual")).filter((name) => name.endsWith(".part"))).toEqual([]);
+});
+
+test("uses default file operations when no dependencies are supplied", async () => {
+  await fs.mkdir("/virtual", { recursive: true });
+  await saveDownloadedFile(Buffer.from("default archive"), "/virtual/default-archive.tar.xz");
+  await expect(fs.readFile("/virtual/default-archive.tar.xz", "utf8")).resolves.toBe(
+    "default archive",
+  );
 });
