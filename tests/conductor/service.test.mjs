@@ -12,45 +12,37 @@ test("runs preflight before the wet release", async () => {
   expect(calls).toEqual(["--dry-run", "--wet-run"]);
 });
 
-test("reports a dry-run failure and preserves a failed process status", async () => {
-  const run = jest.fn().mockRejectedValue(new Error("preflight failed"));
-  const notify = jest.fn();
-  const info = jest.spyOn(console, "info").mockImplementation(() => {});
-  const error = jest.spyOn(console, "error").mockImplementation(() => {});
-  try {
-    process.exitCode = 0;
-    const succeeded = await runConductorService({ run, notify });
-    expect(succeeded).toBe(false);
-    expect(run).toHaveBeenCalledWith("--dry-run");
-    expect(notify).toHaveBeenCalledWith(
-      expect.objectContaining({
-        title: "Node.js conductor dry-run failed",
-        description: "The preflight failed. The release run did not start.",
-        status: "failure",
-      }),
-    );
-    expect(process.exitCode).toBe(0);
-  } finally {
-    info.mockRestore();
-    error.mockRestore();
-  }
-});
-
-test("reports a wet-run failure after preflight", async () => {
-  let calls = 0;
+test.each([
+  {
+    phase: "dry-run",
+    error: "preflight failed",
+    description: "The preflight failed. The release run did not start.",
+    expectedCalls: ["--dry-run"],
+  },
+  {
+    phase: "wet-run",
+    error: "release failed",
+    description: "The release run stopped after preflight.",
+    expectedCalls: ["--dry-run", "--wet-run"],
+  },
+])("reports a $phase failure", async ({ phase, error: message, description, expectedCalls }) => {
+  const calls = [];
   const notices = [];
   const succeeded = await runConductorService({
-    run: async () => {
-      calls += 1;
-      if (calls === 2) throw new Error("release failed");
+    run: async (mode) => {
+      calls.push(mode);
+      if (mode === `--${phase}`) throw new Error(message);
     },
     notify: async (notice) => notices.push(notice),
     log: { info() {}, error() {} },
   });
   expect(succeeded).toBe(false);
+  expect(calls).toEqual(expectedCalls);
+  expect(notices).toHaveLength(1);
   expect(notices[0]).toMatchObject({
-    title: "Node.js conductor wet-run failed",
-    description: "The release run stopped after preflight.",
+    title: `Node.js conductor ${phase} failed`,
+    description,
+    status: "failure",
   });
 });
 

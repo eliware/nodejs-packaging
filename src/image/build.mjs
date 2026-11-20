@@ -5,6 +5,7 @@ import { fileURLToPath } from "node:url";
 import loadPublishedRelease from "../repository/catalog.mjs";
 import runDocker from "./docker.mjs";
 import publishImage from "./publication.mjs";
+import verifyImageRuntime from "./runtime-check.mjs";
 export default async function main(argv = process.argv.slice(2)) {
   const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
   const args = new Map();
@@ -65,24 +66,12 @@ export default async function main(argv = process.argv.slice(2)) {
       { stdio: "inherit" },
     );
 
-    const smoke = runDocker(
-      ["run", "--rm", "--entrypoint", "node", image, "--version"],
-      { encoding: "utf8" },
-      false,
-    );
-    if (smoke.status !== 0 || smoke.stdout.trim() !== `v${version}`)
-      throw new Error(`image runtime check failed: ${smoke.stderr || smoke.stdout}`);
-    for (const command of ["npm", "npx"]) {
-      const check = runDocker(
-        ["run", "--rm", "--entrypoint", command, image, "--version"],
-        {
-          encoding: "utf8",
-        },
-        false,
-      );
-      if (check.status !== 0 || check.stdout.trim() !== publishedRelease.npm.version)
-        throw new Error(`${command} runtime check failed: ${check.stderr || check.stdout}`);
-    }
+    verifyImageRuntime({
+      runDocker,
+      image,
+      version,
+      npmVersion: publishedRelease.npm.version,
+    });
 
     await publishImage({
       image,

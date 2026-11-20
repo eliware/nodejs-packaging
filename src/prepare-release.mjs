@@ -10,7 +10,7 @@ import verifyReleaseInput from "./prepare/verification.mjs";
 import resolveSourceDirectory from "./prepare/source-path.mjs";
 import writeReleaseRecord from "./prepare/record.mjs";
 import prepareReleaseDirectories from "./prepare/directories.mjs";
-import loadPrepareInput from "./prepare/input.mjs";
+import loadPrepareArguments from "./prepare/arguments.mjs";
 export default async function main(argv = process.argv.slice(2), dependencies = {}) {
   const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
   const keyConfig = JSON.parse(
@@ -20,7 +20,7 @@ export default async function main(argv = process.argv.slice(2), dependencies = 
   const discoverRelease =
     dependencies.discoverLatestRelease || ((version) => discoverLatestRelease(fetch, version));
   const selected = await discoverRelease();
-  const { version, allowOlder, npmVersion } = loadPrepareInput(argv, selected);
+  const { version, allowOlder, npmVersion } = loadPrepareArguments(argv, selected);
 
   const release = await resolveReleaseVersion(version, selected, allowOlder, discoverRelease);
   const npmRelease = await (dependencies.discoverLatestNpm || discoverLatestNpm)(npmVersion);

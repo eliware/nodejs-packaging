@@ -1,50 +1,17 @@
 import { execFileSync, spawnSync } from "node:child_process";
-import { cp, mkdir, mkdtemp, readFile, rm, stat, writeFile } from "node:fs/promises";
+import { cp, mkdir, mkdtemp, rm, stat, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import rpmReleaseForNpm from "../rpm-release.mjs";
 import generateFilesModule from "../generate/files.mjs";
+import loadRpmInput from "./input.mjs";
 
 const { hashFile, listFiles } = generateFilesModule();
 
 export default async function main(argv = process.argv.slice(2)) {
   const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
-  const args = new Map();
-  for (let index = 0; index < argv.length; index += 1) {
-    if (argv[index].startsWith("--")) args.set(argv[index].slice(2), argv[++index]);
-  }
-
-  const releaseInputArgument = args.get("release-input");
-  const versionArgument = args.get("version");
-  if (!releaseInputArgument && !versionArgument)
-    throw new Error("pass --version VERSION or --release-input PATH");
-  const releaseInput = path.resolve(
-    releaseInputArgument ||
-      path.join(root, ".state/sources", versionArgument, "release-input.json"),
-  );
-  const input = JSON.parse(await readFile(releaseInput, "utf8"));
-  const version = input.node_version;
-  if (!/^26\.(0|[1-9]\d*)\.(0|[1-9]\d*)$/.test(version || ""))
-    throw new Error("release input must name a stable Node.js 26 version");
-  if (input.target?.architecture !== "x86_64" || input.target?.version !== "10")
-    throw new Error("release input does not target CentOS Stream 10 x86_64");
-
-  const osRelease = await readFile("/etc/os-release", "utf8");
-  if (!/^ID="?centos"?$/m.test(osRelease) || !/^VERSION_ID="?10/m.test(osRelease))
-    throw new Error("run RPM packaging on a CentOS Stream 10 host");
-  if (process.arch !== "x64") throw new Error("run RPM packaging on an x86_64 host");
-
-  const archive = path.join(path.dirname(releaseInput), input.source.file);
-  const archiveHash = await hashFile(archive);
-  if (archiveHash !== input.source.sha256)
-    throw new Error(`prepared archive checksum does not match release input: ${archive}`);
-  if (!input.npm || !/^(1[2-9]|[2-9][0-9]+)\.\d+\.\d+$/.test(input.npm.version || ""))
-    throw new Error("release input must include a verified npm package archive");
-  const npmArchive = path.join(path.dirname(releaseInput), input.npm.file);
-  const npmIntegrity = `sha512-${await hashFile(npmArchive, "sha512", "base64")}`;
-  if (npmIntegrity !== input.npm.integrity)
-    throw new Error(`prepared npm archive integrity does not match release input: ${npmArchive}`);
+  const { args, input, version, archive, npmArchive } = await loadRpmInput(argv, { root });
 
   const temporaryRoot = await mkdtemp(path.join(os.tmpdir(), "nodejs26-rpmbuild-"));
   const topdir = path.join(temporaryRoot, "rpmbuild");

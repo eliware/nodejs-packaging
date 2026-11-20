@@ -1,4 +1,4 @@
-export default function loadPrepareInput(argv, selected) {
+export default function loadPrepareArguments(argv, selected) {
   const args = new Map();
   for (let index = 0; index < argv.length; index += 1) {
     if (argv[index].startsWith("--")) args.set(argv[index].slice(2), argv[++index]);
