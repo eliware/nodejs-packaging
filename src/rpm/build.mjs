@@ -5,9 +5,10 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import rpmReleaseForNpm from "../rpm-release.mjs";
 import generateFilesModule from "../generate/files.mjs";
+import listFiles from "../generate/list-files.mjs";
 import loadRpmInput from "./input.mjs";
 
-const { hashFile, listFiles } = generateFilesModule();
+const { hashFile } = generateFilesModule();
 
 export default async function main(argv = process.argv.slice(2)) {
   const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");

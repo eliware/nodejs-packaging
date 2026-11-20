@@ -1,6 +1,6 @@
 import discoverLatestRelease from "./release.mjs";
+import formatDiscoveredRelease from "./format.mjs";
 
 export default async function discoverReleaseCommand(fetchImpl = fetch) {
-  const release = await discoverLatestRelease(fetchImpl);
-  return `${JSON.stringify(release, null, 2)}\n`;
+  return formatDiscoveredRelease(await discoverLatestRelease(fetchImpl));
 }

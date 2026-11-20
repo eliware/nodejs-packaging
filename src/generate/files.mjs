@@ -1,7 +1,6 @@
 import { createHash } from "node:crypto";
-import { readdir, stat } from "node:fs/promises";
+import { stat } from "node:fs/promises";
 import { createReadStream } from "node:fs";
-import path from "node:path";
 
 async function exists(file, statFile = stat) {
   try {
@@ -24,20 +23,6 @@ async function hashFile(
   return hash.digest(encoding);
 }
 
-async function listFiles(directory, relative = "") {
-  const files = [];
-  for (const entry of await readdir(directory, { withFileTypes: true })) {
-    const file = path.join(directory, entry.name);
-    const name = relative ? `${relative}/${entry.name}` : entry.name;
-    if (entry.isDirectory()) files.push(...(await listFiles(file, name)));
-    else if (entry.isFile()) {
-      const info = await stat(file);
-      files.push({ path: name, sha256: await hashFile(file), size: info.size });
-    }
-  }
-  return files.sort((left, right) => left.path.localeCompare(right.path));
-}
-
 export default function generateFilesModule() {
-  return { exists, hashFile, listFiles };
+  return { exists, hashFile };
 }

@@ -65,6 +65,30 @@ test("publishes a validated image into a new signed repository generation", asyn
     );
     expect(catalog.images[0]).toEqual(expect.objectContaining({ node_version: "26.13.1", digest }));
     expect(active.generation).toMatch(/^node-v26\.13\.1-el10-x86_64-\d+$/);
+    const generationRoot = path.join(root, ".generations", active.generation);
+    expect(catalog.stable.latest.image).toEqual(
+      expect.objectContaining({ digest, validation: "passed", logs_path: "metadata/logs/run-7/" }),
+    );
+    expect(
+      JSON.parse(
+        await fs.readFile(path.join(generationRoot, "metadata/validation/image.json"), "utf8"),
+      ),
+    ).toEqual(
+      expect.objectContaining({ smoke_test: "passed", registry_push: "passed", status: "passed" }),
+    );
+    expect(
+      JSON.parse(
+        await fs.readFile(
+          path.join(generationRoot, "metadata/provenance/images/nodejs26-26.13.1.json"),
+          "utf8",
+        ),
+      ),
+    ).toEqual(
+      expect.objectContaining({
+        image: expect.objectContaining({ digest, validation: "passed" }),
+        source_sha256: "d".repeat(64),
+      }),
+    );
     await expect(
       fs.readFile(
         path.join(root, ".generations", active.generation, "metadata/logs/run-7/build-image.log"),

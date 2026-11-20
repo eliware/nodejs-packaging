@@ -1,11 +1,12 @@
 import { cp, mkdir, mkdtemp, rename, rm, stat, writeFile } from "node:fs/promises";
 import path from "node:path";
 import generateFilesModule from "./files.mjs";
+import listFiles from "./list-files.mjs";
 import writeRepositoryIndex from "./write-index.mjs";
 import writeReleaseRecords from "./records.mjs";
 import createRepositoryMetadata from "./repository-metadata.mjs";
 
-const { exists, hashFile, listFiles } = generateFilesModule();
+const { exists, hashFile } = generateFilesModule();
 export default async function generateCandidate({
   root,
   version,
