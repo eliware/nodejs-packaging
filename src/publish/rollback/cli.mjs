@@ -1,6 +1,7 @@
 import path from "node:path";
 import rollbackGeneration from "./run.mjs";
 import parseRollbackArguments from "./arguments.mjs";
+import reportRollbackFailure from "./failure.mjs";
 
 export default async function rollbackRepository(
   argv = process.argv.slice(2),
@@ -13,7 +14,6 @@ export default async function rollbackRepository(
   try {
     output.log(`Restored ${await rollbackGeneration(root, generation)}`);
   } catch (error) {
-    output.error(error.message);
-    process.exitCode = 1;
+    reportRollbackFailure(error, output);
   }
 }

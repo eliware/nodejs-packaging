@@ -1,11 +1,6 @@
-import path from "node:path";
 import publishReportRecord from "./publish.mjs";
-import updateLatestReport from "./latest.mjs";
-import reportRecordModule from "./record.mjs";
 import createReportDetails from "./details.mjs";
 import createReportCard from "./card.mjs";
-
-const { createReportRecord } = reportRecordModule();
 
 export default async function generateReleaseReport({
   runId,
@@ -37,9 +32,10 @@ export default async function generateReleaseReport({
     reason,
     changed,
   });
-  const baseUrl = process.env.NODEJS_REPOSITORY_URL || "https://nodejs.eliware.org";
-  const { cardUrl, report } = createReportRecord({
+  const publication = await publishReportRecord({
     runId,
+    repositoryRoot,
+    imagePath: card.imagePath,
     nodeVersion,
     npmVersion,
     baseDigest,
@@ -48,11 +44,7 @@ export default async function generateReleaseReport({
     rpmSha256,
     reason,
     changed,
-    baseUrl,
     imageSha256: card.imageSha256,
   });
-  const reportPath = path.join(repositoryRoot, "metadata/runs", runId, "release-report.json");
-  await publishReportRecord({ reportPath, report });
-  await updateLatestReport({ imagePath: card.imagePath, repositoryRoot, report });
-  return { cardUrl, reportPath, ...card };
+  return { ...publication, ...card };
 }
