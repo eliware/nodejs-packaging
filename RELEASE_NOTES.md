@@ -4,14 +4,10 @@
 
 ### Added
 
-- The pipeline discovers the newest stable Node.js 26 release and npm version.
-- The daily conductor checks the Node.js release, npm version, and CentOS Stream 10 base image.
-- The RPM packages the official precompiled Node.js x64 archive for CentOS Stream 10 EPEL on x86_64.
-- The RPM includes npm 12 or later and provides the `node`, `npm`, and `npx` commands.
-- The package keeps npm updates and global package data outside RPM-owned files.
-- The pipeline signs RPMs, repository metadata, release manifests, and provenance records.
-- The repository publishes immutable generations with release catalogs, indexes, and validation records.
-- The runtime image uses the matching RPM and runs checks for Node.js, npm, and npx.
-- The image publisher records its registry digest, base image digest, validation result, and provenance.
-- The conductor sends Discord checkpoint messages and creates release reports with cards.
-- The systemd timer runs the conductor daily. Operators can also run discovery, source checks, build, and publication commands manually.
+- The local conductor checks the newest stable Node.js 26 release and the CentOS Stream 10 base image each day.
+- The pipeline verifies the signed official Linux x64 archive before it builds an RPM.
+- The RPM targets CentOS Stream 10 EPEL on x86_64 and provides the `node26`, `npm26`, and `npx26` commands.
+- The pipeline signs and publishes RPM repository metadata in immutable generations with catalogs, indexes, provenance, and validation records.
+- The matching CentOS Stream 10 runtime image installs the published RPM, passes a runtime check, and publishes a version-tagged image to GHCR.
+- The conductor sends Discord checkpoint notifications and publishes release reports with cards.
+- A systemd timer runs the conductor daily. Operators can also run discovery, archive download, build, and publication commands manually.
