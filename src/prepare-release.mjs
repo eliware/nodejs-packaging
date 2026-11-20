@@ -7,6 +7,7 @@ import releaseSourceModule from "./prepare/release-source.mjs";
 const { resolveReleaseVersion } = releaseSourceModule();
 import download from "./prepare/download.mjs";
 import verifyReleaseInput from "./prepare/verification.mjs";
+import resolveSourceDirectory from "./prepare/source-path.mjs";
 import writeReleaseRecord from "./prepare/record.mjs";
 import prepareReleaseDirectories from "./prepare/directories.mjs";
 export default async function main(argv = process.argv.slice(2), dependencies = {}) {
@@ -14,17 +15,7 @@ export default async function main(argv = process.argv.slice(2), dependencies = 
   const keyConfig = JSON.parse(
     await readFile(path.join(root, "build-config/nodejs-release-keys.json"), "utf8"),
   );
-  const outputRoot = path.resolve(
-    process.env.NODEJS_SOURCE_DIR || path.join(root, ".state/sources"),
-  );
-  const outputRelative = path.relative(root, outputRoot);
-  const outputIsInsideRepository =
-    outputRelative === "" ||
-    (outputRelative !== ".." && !outputRelative.startsWith(`..${path.sep}`));
-  const outputIsIgnoredState =
-    outputRelative === ".state" || outputRelative.startsWith(`.state${path.sep}`);
-  if (outputIsInsideRepository && !outputIsIgnoredState)
-    throw new Error("NODEJS_SOURCE_DIR must be outside the repository or under ignored .state");
+  const outputRoot = resolveSourceDirectory(root, process.env.NODEJS_SOURCE_DIR);
   const args = new Map();
   for (let index = 0; index < argv.length; index += 1) {
     if (argv[index].startsWith("--")) args.set(argv[index].slice(2), argv[++index]);

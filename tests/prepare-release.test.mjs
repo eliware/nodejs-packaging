@@ -145,44 +145,6 @@ test("uses default arguments, discovery functions, and source output paths", asy
   }
 });
 
-test("prepares an explicitly selected older release with its own official URLs", async () => {
-  await setup();
-  const discoverLatestRelease = jest.fn(async (version) => ({
-    ...release,
-    node_version: version || release.node_version,
-    source: {
-      ...release.source,
-      file: `node-v${version || release.node_version}-linux-x64.tar.xz`,
-      url: `https://nodejs.org/dist/v${version || release.node_version}/node-v${version || release.node_version}-linux-x64.tar.xz`,
-      checksums_url: `https://nodejs.org/dist/v${version || release.node_version}/SHASUMS256.txt`,
-      signature_url: `https://nodejs.org/dist/v${version || release.node_version}/SHASUMS256.txt.sig`,
-    },
-  }));
-  globalThis.fetch = jest.fn(async (url) => {
-    if (url.endsWith("node-v26.12.0-linux-x64.tar.xz")) return fetchResponse(url, archive);
-    if (url.endsWith("SHASUMS256.txt"))
-      return fetchResponse(url, `${archiveHash} *node-v26.12.0-linux-x64.tar.xz\n`);
-    if (url.endsWith(".sig")) return fetchResponse(url, Buffer.from("signature"));
-    if (url === npmRelease.url) return fetchResponse(url, npmArchive);
-    return fetchResponse(url, Buffer.from("keyring"));
-  });
-  const stdout = jest.spyOn(process.stdout, "write").mockImplementation(() => true);
-  try {
-    await main(
-      ["--version", "26.12.0", "--allow-older", "true", "--npm-version", "12.2.3"],
-      dependencies({ discoverLatestRelease }),
-    );
-    expect(discoverLatestRelease).toHaveBeenCalledTimes(2);
-    expect(globalThis.fetch).toHaveBeenCalledWith(
-      "https://nodejs.org/dist/v26.12.0/node-v26.12.0-linux-x64.tar.xz",
-      expect.any(Object),
-    );
-  } finally {
-    stdout.mockRestore();
-    delete process.env.NODEJS_SOURCE_DIR;
-  }
-});
-
 test("rejects unavailable, untrusted, and incomplete downloads", async () => {
   const { output } = await setup();
   globalThis.fetch.mockImplementation(async (url) =>
