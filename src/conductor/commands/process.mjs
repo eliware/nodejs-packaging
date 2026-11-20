@@ -4,7 +4,7 @@ import collectProcessOutput from "./output.mjs";
 
 export default function runProcess(command, args, options) {
   return new Promise((resolve, reject) => {
-    const child = spawn(command, args, {
+    const child = (options.spawnProcess || spawn)(command, args, {
       cwd: options.cwd,
       env: options.env,
       stdio: options.stdio,
@@ -14,7 +14,7 @@ export default function runProcess(command, args, options) {
     let errorHandling;
     child.once("error", (error) => {
       processError = error;
-      errorHandling = Promise.resolve().then(() => options.onError(error));
+      errorHandling = Promise.resolve().then(() => options.onError?.(error));
     });
     child.once("close", async (code, signal) => {
       if (processError) {
@@ -27,12 +27,12 @@ export default function runProcess(command, args, options) {
         return;
       }
       try {
-        const failureDetail = await options.onExit({ code, signal, ...output });
+        const failureDetail = (await options.onExit?.({ code, signal, ...output })) || "";
         if (code === 0) resolve({ code, ...output });
         else
           reject(
             new Error(
-              `${path.basename(command)} exited with code ${code ?? "signal"} ${signal || ""}${failureDetail}`,
+              `${options.failureName || path.basename(command)} exited with code ${code ?? "signal"} ${signal || ""}${failureDetail}`,
             ),
           );
       } catch (error) {

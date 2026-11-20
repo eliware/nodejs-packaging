@@ -7,7 +7,11 @@ const { default: runConductor } = await import("../../../src/conductor/service/r
 
 function childWith(event, ...values) {
   const child = new EventEmitter();
-  process.nextTick(() => child.emit(event, ...values));
+  process.nextTick(() => {
+    child.emit(event, ...values);
+    if (event === "error") child.emit("close", null, null);
+    else child.emit("close", ...values);
+  });
   return child;
 }
 
