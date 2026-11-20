@@ -6,3 +6,8 @@ test("uses the last value for a repeated option", () => {
   expect(args.get("generation")).toBe("newer");
   expect(args.size).toBe(1);
 });
+
+test("consumes an option value that starts with two dashes", () => {
+  const args = parseRollbackArguments(["--generation", "--unexpected"]);
+  expect(args.get("generation")).toBe("--unexpected");
+});

@@ -19,12 +19,6 @@ test("parses rollback arguments and reports a successful restore", async () => {
   expect(output.error).not.toHaveBeenCalled();
 });
 
-test("consumes an option value that starts with two dashes", async () => {
-  const output = { log: jest.fn(), error: jest.fn() };
-  await rollbackRepository(["--generation", "--unexpected"], {}, output);
-  expect(rollbackGeneration).toHaveBeenCalledWith("/eliware/nodejs-repository", "--unexpected");
-});
-
 test("reports rollback errors and sets a failing process status", async () => {
   const oldStatus = process.exitCode;
   const output = { log: jest.fn(), error: jest.fn() };

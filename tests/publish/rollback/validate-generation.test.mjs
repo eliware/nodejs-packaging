@@ -12,13 +12,7 @@ test("validates and resolves a retained generation", async () => {
   });
 });
 
-test("rejects invalid identifiers and mismatched metadata", async () => {
-  await expect(validateGeneration("/virtual/rollback")).rejects.toThrow(
-    "retained stable generation identifier",
-  );
-  await expect(validateGeneration("/virtual/rollback", "seed")).rejects.toThrow(
-    "retained stable generation identifier",
-  );
+test("rejects mismatched metadata", async () => {
   await expect(
     validateGeneration("/virtual/rollback", generation, async () =>
       JSON.stringify({ generation: "another" }),

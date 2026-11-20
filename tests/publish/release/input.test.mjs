@@ -3,7 +3,7 @@ import loadReleaseInput from "../../../src/publish/release/input.mjs";
 
 const fingerprint = "A".repeat(40);
 
-test("parses and resolves publication inputs", () => {
+test("resolves publication inputs", () => {
   expect(
     loadReleaseInput(
       [
