@@ -1,11 +1,11 @@
-import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import discoverLatestRelease from "./discover/release.mjs";
 import discoverLatestNpm from "./discover/npm.mjs";
 import releaseSourceModule from "./prepare/release-source.mjs";
 const { resolveReleaseVersion } = releaseSourceModule();
-import download from "./prepare/download.mjs";
+import downloadReleaseInputs from "./prepare/download-inputs.mjs";
+import loadReleaseKeyConfig from "./prepare/key-config.mjs";
 import verifyReleaseInput from "./prepare/verification.mjs";
 import resolveSourceDirectory from "./prepare/source-path.mjs";
 import writeReleaseRecord from "./prepare/record.mjs";
@@ -13,9 +13,7 @@ import prepareReleaseDirectories from "./prepare/directories.mjs";
 import loadPrepareArguments from "./prepare/arguments.mjs";
 export default async function main(argv = process.argv.slice(2), dependencies = {}) {
   const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
-  const keyConfig = JSON.parse(
-    await readFile(path.join(root, "build-config/nodejs-release-keys.json"), "utf8"),
-  );
+  const keyConfig = await loadReleaseKeyConfig(root);
   const outputRoot = resolveSourceDirectory(root, process.env.NODEJS_SOURCE_DIR);
   const discoverRelease =
     dependencies.discoverLatestRelease || ((version) => discoverLatestRelease(fetch, version));
@@ -33,22 +31,16 @@ export default async function main(argv = process.argv.slice(2), dependencies = 
     keyringDir,
     keyringPath,
   } = await prepareReleaseDirectories(outputRoot, version, release, npmRelease);
-  await download(release.source.url, archivePath, ["nodejs.org", "raw.githubusercontent.com"]);
-  await download(release.source.checksums_url, checksumsPath, [
-    "nodejs.org",
-    "raw.githubusercontent.com",
-  ]);
-  await download(release.source.signature_url, signaturePath, [
-    "nodejs.org",
-    "raw.githubusercontent.com",
-  ]);
-  await download(npmRelease.url, npmArchivePath, ["registry.npmjs.org"]);
-
-  await download(
-    "https://raw.githubusercontent.com/nodejs/release-keys/main/gpg-only-active-keys/pubring.kbx",
+  await downloadReleaseInputs({
+    release,
+    npmRelease,
+    archivePath,
+    checksumsPath,
+    signaturePath,
+    npmArchivePath,
     keyringPath,
-    ["nodejs.org", "raw.githubusercontent.com"],
-  );
+  });
+
   const { fingerprint, archiveSha256 } = await verifyReleaseInput({
     keyConfig,
     keyringDir,

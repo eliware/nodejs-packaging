@@ -1,14 +1,12 @@
 import { execFileSync, spawnSync } from "node:child_process";
-import { cp, mkdir, mkdtemp, rm, stat, writeFile } from "node:fs/promises";
+import { cp, mkdir, mkdtemp, rm } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import rpmReleaseForNpm from "../rpm-release.mjs";
-import generateFilesModule from "../generate/files.mjs";
 import listFiles from "../generate/list-files.mjs";
+import writePackageRecord from "./record.mjs";
 import loadRpmInput from "./input.mjs";
-
-const { hashFile } = generateFilesModule();
 
 export default async function main(argv = process.argv.slice(2)) {
   const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
@@ -63,27 +61,13 @@ export default async function main(argv = process.argv.slice(2)) {
     )
       .trim()
       .split("\n");
-    if (
-      packageInfo[0] !== "eliware-node26" ||
-      packageInfo[2] !== version ||
-      packageInfo[4] !== "x86_64"
-    )
-      throw new Error(`built RPM metadata does not match target: ${packageInfo.join(" ")}`);
-
-    const info = await stat(rpmFile);
-    const record = {
-      name: packageInfo[0],
-      epoch: packageInfo[1] === "(none)" ? null : Number(packageInfo[1]),
-      version: packageInfo[2],
-      release: packageInfo[3],
-      architecture: packageInfo[4],
-      npm_version: input.npm.version,
-      path: path.basename(rpmFile),
-      sha256: await hashFile(rpmFile),
-      size: info.size,
-    };
-    await writeFile(path.join(outputDir, "package.json"), `${JSON.stringify(record, null, 2)}\n`);
-    process.stdout.write(`${JSON.stringify(record, null, 2)}\n`);
+    await writePackageRecord({
+      rpmFile,
+      outputDir,
+      packageInfo,
+      version,
+      npmVersion: input.npm.version,
+    });
   } finally {
     await rm(temporaryRoot, { recursive: true, force: true });
   }
