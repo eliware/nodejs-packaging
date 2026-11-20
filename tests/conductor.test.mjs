@@ -11,7 +11,7 @@ const runRelease = jest.fn();
 const conductorRuntime = jest.fn();
 const commands = { run: jest.fn() };
 jest.unstable_mockModule("../src/discover/release.mjs", () => ({
-  default: () => ({ discoverLatestRelease }),
+  default: discoverLatestRelease,
 }));
 jest.unstable_mockModule("../src/discover/npm.mjs", () => ({ default: discoverLatestNpm }));
 jest.unstable_mockModule("../src/conductor/release/plan.mjs", () => ({

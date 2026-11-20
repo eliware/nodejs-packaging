@@ -1,6 +1,4 @@
 #!/usr/bin/env node
-import sourceModule from "../src/discover/release.mjs";
-const { main } = sourceModule();
+import discoverReleaseCommand from "../src/discover/cli.mjs";
 
-const release = await main();
-process.stdout.write(`${JSON.stringify(release, null, 2)}\n`);
+process.stdout.write(await discoverReleaseCommand());

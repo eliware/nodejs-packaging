@@ -38,7 +38,6 @@ test("verifies and restores the requested retained stable generation", async () 
 
 test("rejects invalid and unsigned generations", async () => {
   await expect(rollbackGeneration("/virtual")).rejects.toThrow("retained stable generation");
-  await expect(rollbackGeneration("/virtual")).rejects.toThrow("retained stable generation");
   await expect(rollbackGeneration("/virtual", "seed")).rejects.toThrow(
     "retained stable generation",
   );

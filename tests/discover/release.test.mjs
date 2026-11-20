@@ -1,5 +1,4 @@
-import sourceModule from "../../src/discover/release.mjs";
-const { discoverLatestRelease, main } = sourceModule();
+import discoverLatestRelease from "../../src/discover/release.mjs";
 
 test("selects the newest stable Node.js 26 x64 release", async () => {
   const fetchImpl = async () => ({
@@ -32,10 +31,6 @@ test("finds a requested stable release and rejects an unavailable version", asyn
   const originalFetch = globalThis.fetch;
   globalThis.fetch = fetchImpl;
   try {
-    await expect(discoverLatestRelease("26.12.0")).resolves.toMatchObject({
-      node_version: "26.12.0",
-      source: { file: "node-v26.12.0-linux-x64.tar.xz" },
-    });
     await expect(discoverLatestRelease(fetchImpl, "26.12.0")).resolves.toMatchObject({
       node_version: "26.12.0",
     });
@@ -74,23 +69,13 @@ test("rejects registry errors and indexes without a stable Node.js 26 x64 archiv
   }
 });
 
-test("exposes the command entry point with an injected fetch implementation", async () => {
-  const result = await main(async () => ({
-    ok: true,
-    json: async () => [{ version: "v26.13.1", files: ["linux-x64"], date: "2026-01-01" }],
-  }));
-  expect(result.node_version).toBe("26.13.1");
-});
-
-test("uses the global fetch implementation for its default command entry point", async () => {
+test("uses global fetch when no implementation is supplied", async () => {
   const originalFetch = globalThis.fetch;
   globalThis.fetch = async () => ({
     ok: true,
     json: async () => [{ version: "v26.13.1", files: ["linux-x64"], date: "2026-01-01" }],
   });
   try {
-    const result = await main();
-    expect(result.node_version).toBe("26.13.1");
     await expect(discoverLatestRelease()).resolves.toMatchObject({ node_version: "26.13.1" });
   } finally {
     globalThis.fetch = originalFetch;

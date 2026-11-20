@@ -1,8 +1,7 @@
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import discoverReleaseModule from "./discover/release.mjs";
-const { discoverLatestRelease } = discoverReleaseModule();
+import discoverLatestRelease from "./discover/release.mjs";
 import discoverLatestNpm from "./discover/npm.mjs";
 import releaseSourceModule from "./prepare/release-source.mjs";
 const { resolveReleaseVersion } = releaseSourceModule();
@@ -31,7 +30,8 @@ export default async function main(argv = process.argv.slice(2), dependencies = 
     if (argv[index].startsWith("--")) args.set(argv[index].slice(2), argv[++index]);
   }
 
-  const discoverRelease = dependencies.discoverLatestRelease || discoverLatestRelease;
+  const discoverRelease =
+    dependencies.discoverLatestRelease || ((version) => discoverLatestRelease(fetch, version));
   const selected = await discoverRelease();
   const version = args.get("version") || selected.node_version;
   if (!/^26\.(0|[1-9]\d*)\.(0|[1-9]\d*)$/.test(version))

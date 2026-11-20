@@ -1,7 +1,6 @@
 #!/usr/bin/env node
 import createConductorConfig from "./conductor/config.mjs";
-import discoverReleaseModule from "./discover/release.mjs";
-const { discoverLatestRelease } = discoverReleaseModule();
+import discoverLatestRelease from "./discover/release.mjs";
 import discoverLatestNpm from "./discover/npm.mjs";
 import prepareReleasePlan from "./conductor/release/plan.mjs";
 import discordNotifierModule from "./discord-notifier.mjs";

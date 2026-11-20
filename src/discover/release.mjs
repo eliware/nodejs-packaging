@@ -13,9 +13,7 @@ function compareVersions(left, right) {
   return 0;
 }
 
-async function discoverLatestRelease(fetchImplOrVersion = fetch, requestedVersion = null) {
-  const fetchImpl = typeof fetchImplOrVersion === "function" ? fetchImplOrVersion : fetch;
-  if (typeof fetchImplOrVersion === "string") requestedVersion = fetchImplOrVersion;
+export default async function discoverLatestRelease(fetchImpl = fetch, requestedVersion = null) {
   const response = await fetchImpl(RELEASE_INDEX_URL, {
     headers: { accept: "application/json" },
     signal: AbortSignal.timeout(30_000),
@@ -58,12 +56,4 @@ async function discoverLatestRelease(fetchImplOrVersion = fetch, requestedVersio
       signature_url: `${directory}SHASUMS256.txt.sig`,
     },
   };
-}
-
-async function main(fetchImpl = fetch) {
-  return discoverLatestRelease(fetchImpl);
-}
-
-export default function moduleApi() {
-  return { discoverLatestRelease, main };
 }

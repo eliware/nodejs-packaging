@@ -32,7 +32,7 @@ const npmRelease = {
 const discoverLatestRelease = jest.fn();
 const discoverLatestNpm = jest.fn();
 jest.unstable_mockModule("../src/discover/release.mjs", () => ({
-  default: () => ({ discoverLatestRelease }),
+  default: discoverLatestRelease,
 }));
 jest.unstable_mockModule("../src/discover/npm.mjs", () => ({ default: discoverLatestNpm }));
 const streams = {
