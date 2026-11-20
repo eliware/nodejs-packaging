@@ -4,11 +4,14 @@
 
 ### Added
 
-- Add a local conductor that checks Node.js 26 and the CentOS Stream 10 base image.
-- Check npm@latest with each conductor run and create an updated RPM and image when npm changes.
-- Include npm 12 or later in the Node.js RPM and keep global npm data outside RPM files.
-- Name the RPM `eliware-node26` and provide standard `node`, `npm`, and `npx` commands.
-- Package the official precompiled Node.js x64 archive as a signed RPM.
-- Build and publish the CentOS Stream 10 Node.js runtime image.
-- Add signed repository generations, image provenance, and release cards.
-- Add Discord checkpoint notifications and a daily 8:00 AM EST systemd timer.
+- The pipeline discovers the newest stable Node.js 26 release and npm version.
+- The daily conductor checks the Node.js release, npm version, and CentOS Stream 10 base image.
+- The RPM packages the official precompiled Node.js x64 archive for CentOS Stream 10 EPEL on x86_64.
+- The RPM includes npm 12 or later and provides the `node`, `npm`, and `npx` commands.
+- The package keeps npm updates and global package data outside RPM-owned files.
+- The pipeline signs RPMs, repository metadata, release manifests, and provenance records.
+- The repository publishes immutable generations with release catalogs, indexes, and validation records.
+- The runtime image uses the matching RPM and runs checks for Node.js, npm, and npx.
+- The image publisher records its registry digest, base image digest, validation result, and provenance.
+- The conductor sends Discord checkpoint messages and creates release reports with cards.
+- The systemd timer runs the conductor daily. Operators can also run discovery, source checks, build, and publication commands manually.
