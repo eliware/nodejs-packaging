@@ -95,12 +95,12 @@ function dependencies(overrides = {}) {
   };
 }
 
-test("rejects unsupported and non-latest versions unless older releases are allowed", async () => {
+test("rejects unsupported Node.js versions", async () => {
   await setup();
   await expect(main(["--version", "27.0.0"], dependencies())).rejects.toThrow(
     "unsupported Node.js 26 version: 27.0.0",
   );
-  await expect(main(["--version", "26.12.0"], dependencies())).rejects.toThrow(
+  await expect(main(["--version", "26.0.0"], dependencies())).rejects.toThrow(
     "is not the latest stable Node.js 26 release 26.13.1",
   );
 });

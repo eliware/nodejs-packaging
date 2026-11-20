@@ -28,6 +28,21 @@ test("runs commands with inherited streams and explicit settings", async () => {
   });
 });
 
+test("discards any unexpected output from inherited child streams", async () => {
+  const child = new EventEmitter();
+  child.stdout = new PassThrough();
+  child.stderr = new PassThrough();
+  spawn.mockImplementationOnce(() => {
+    process.nextTick(() => {
+      child.stdout.end("ignored stdout");
+      child.stderr.end("ignored stderr");
+      child.emit("exit", 0, null);
+    });
+    return child;
+  });
+  await expect(runCommand("node", [])).resolves.toEqual({ code: 0 });
+});
+
 test("captures and redacts logs when a log path is provided", async () => {
   const output = jest.spyOn(process.stdout, "write").mockImplementation(() => true);
   const errorOutput = jest.spyOn(process.stderr, "write").mockImplementation(() => true);

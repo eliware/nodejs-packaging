@@ -1,12 +1,10 @@
-import { spawnSync } from "node:child_process";
-import writeCommandLog from "../conductor/commands/log.mjs";
-import redactCommandOutput from "../conductor/commands/redact.mjs";
 import { cp, lstat, mkdir, readFile, readdir, rename, rm } from "node:fs/promises";
 import path from "node:path";
 import publishFilesystemModule from "./filesystem.mjs";
 import prepareReleaseGeneration from "./release-generation.mjs";
 import activateGeneration from "./activate-generation.mjs";
 import pruneGenerations from "./retention.mjs";
+import runRepositoryTool from "./repository-tools.mjs";
 const files = publishFilesystemModule();
 export default async function main(argv = process.argv.slice(2)) {
   const args = new Map();
@@ -61,7 +59,14 @@ export default async function main(argv = process.argv.slice(2)) {
       generationId,
       keyFingerprint,
       gpgHome,
-      run,
+      run: (command, args, extraEnv = {}) =>
+        runRepositoryTool({
+          command,
+          args,
+          extraEnv,
+          stagingRoot,
+          output: repositoryToolOutput,
+        }),
       files,
     });
 
@@ -101,33 +106,5 @@ export default async function main(argv = process.argv.slice(2)) {
     await rm(stagingRoot, { recursive: true, force: true });
     if (!activated) await rm(finalRoot, { recursive: true, force: true });
     throw error;
-  }
-
-  async function run(command, commandArgs, extraEnv = {}) {
-    const env = { ...process.env, ...extraEnv };
-    const result = spawnSync(command, commandArgs, { encoding: "utf8", env });
-    if (result.error) {
-      repositoryToolOutput.push(`${command}: ${result.error.message}`);
-      await saveRepositoryToolLog(env);
-      throw result.error;
-    }
-    repositoryToolOutput.push(`$ ${command}\n${result.stdout || ""}${result.stderr || ""}`);
-    await saveRepositoryToolLog(env);
-    if (result.status !== 0)
-      throw new Error(
-        `${command} exited with status ${result.status}: ${redactCommandOutput(result.stderr || "", env)}`,
-      );
-    return result;
-  }
-  async function saveRepositoryToolLog(env) {
-    const logDirectory = process.env.NODEJS_CONDUCTOR_LOG_DIR;
-    const runId = process.env.NODEJS_CONDUCTOR_RUN_ID;
-    if (!logDirectory || !runId) return;
-    await writeCommandLog({
-      file: path.join(stagingRoot, "metadata/logs", runId, "repository-tools.log"),
-      name: "repository tools",
-      stdout: redactCommandOutput(repositoryToolOutput.join("\n"), env),
-      stderr: "",
-    });
   }
 }

@@ -1,10 +1,10 @@
-import { spawnSync } from "node:child_process";
 import { mkdtemp, readFile, rm } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import loadPublishedRelease from "../repository/catalog.mjs";
-import publishImage from "./publish.mjs";
+import runDocker from "./docker.mjs";
+import publishBuiltImage from "./publish-build.mjs";
 import writeImageRecord from "./record.mjs";
 export default async function main(argv = process.argv.slice(2)) {
   const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
@@ -29,11 +29,9 @@ export default async function main(argv = process.argv.slice(2)) {
   const target = JSON.parse(await readFile(path.join(root, "build-config/target.json"), "utf8"));
   const image = `${target.image}:${version}`;
   const baseImage = "quay.io/centos/centos:stream10";
-  const pull = spawnSync("docker", ["pull", baseImage], { stdio: "inherit" });
-  if (pull.error) throw pull.error;
-  if (pull.status !== 0) throw new Error(`docker pull exited with status ${pull.status}`);
+  runDocker(["pull", baseImage], { stdio: "inherit" });
   const baseInspect = JSON.parse(
-    spawnSync("docker", ["image", "inspect", baseImage], { encoding: "utf8" }).stdout,
+    runDocker(["image", "inspect", baseImage], { encoding: "utf8" }).stdout,
   )[0];
   const baseDigest = (baseInspect.RepoDigests || []).find((digest) =>
     digest.startsWith("quay.io/centos/centos@sha256:"),
@@ -46,8 +44,7 @@ export default async function main(argv = process.argv.slice(2)) {
     );
   const context = await mkdtemp(path.join(os.tmpdir(), "centos10-node26-image-"));
   try {
-    const build = spawnSync(
-      "docker",
+    runDocker(
       [
         "build",
         "--file",
@@ -68,42 +65,31 @@ export default async function main(argv = process.argv.slice(2)) {
       ],
       { stdio: "inherit" },
     );
-    if (build.error) throw build.error;
-    if (build.status !== 0) throw new Error(`docker build exited with status ${build.status}`);
 
-    const smoke = spawnSync("docker", ["run", "--rm", "--entrypoint", "node", image, "--version"], {
-      encoding: "utf8",
-    });
-    if (smoke.error) throw smoke.error;
+    const smoke = runDocker(
+      ["run", "--rm", "--entrypoint", "node", image, "--version"],
+      { encoding: "utf8" },
+      false,
+    );
     if (smoke.status !== 0 || smoke.stdout.trim() !== `v${version}`)
       throw new Error(`image runtime check failed: ${smoke.stderr || smoke.stdout}`);
     for (const command of ["npm", "npx"]) {
-      const check = spawnSync(
-        "docker",
+      const check = runDocker(
         ["run", "--rm", "--entrypoint", command, image, "--version"],
         {
           encoding: "utf8",
         },
+        false,
       );
-      if (check.error) throw check.error;
       if (check.status !== 0 || check.stdout.trim() !== publishedRelease.npm.version)
         throw new Error(`${command} runtime check failed: ${check.stderr || check.stdout}`);
     }
 
     let registryDigest = null;
-    if (pushImage) {
-      registryDigest = await publishImage(image);
-      const latestImage = `${target.image}:latest`;
-      const tag = spawnSync("docker", ["tag", image, latestImage], { stdio: "inherit" });
-      if (tag.error) throw tag.error;
-      if (tag.status !== 0) throw new Error(`docker tag exited with status ${tag.status}`);
-      const latestDigest = await publishImage(latestImage);
-      if (latestDigest !== registryDigest)
-        throw new Error(`latest image digest ${latestDigest} does not match ${registryDigest}`);
-    }
+    if (pushImage) registryDigest = await publishBuiltImage(image, target.image);
 
     const inspect = JSON.parse(
-      spawnSync("docker", ["image", "inspect", image], { encoding: "utf8" }).stdout,
+      runDocker(["image", "inspect", image], { encoding: "utf8" }).stdout,
     )[0];
     const record = {
       repository: target.image,
