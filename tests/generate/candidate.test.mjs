@@ -47,7 +47,15 @@ test("stages a complete repository candidate and publishes it atomically", async
     ...input,
     version: "26.13.1",
     generationId: "generation-1",
-    sourceInput: { source: { sha256: "a".repeat(64) }, npm: { version: "12.2.3" } },
+    sourceInput: {
+      source: {
+        sha256: "a".repeat(64),
+        signature_url: "https://nodejs.org/SHASUMS.sig",
+        signing_key_fingerprint: "A".repeat(40),
+        verified_at: "2026-11-19T12:00:00.000Z",
+      },
+      npm: { version: "12.2.3" },
+    },
     now: new Date("2026-11-19T12:00:00.000Z"),
   });
   expect(result).toEqual(
@@ -86,7 +94,15 @@ test("cleans the staging directory when repository metadata generation fails", a
       ...input,
       version: "26.13.1",
       generationId: "generation-1",
-      sourceInput: { source: { sha256: "a".repeat(64) }, npm: { version: "12.2.3" } },
+      sourceInput: {
+        source: {
+          sha256: "a".repeat(64),
+          signature_url: "https://nodejs.org/SHASUMS.sig",
+          signing_key_fingerprint: "A".repeat(40),
+          verified_at: "2026-11-19T12:00:00.000Z",
+        },
+        npm: { version: "12.2.3" },
+      },
       now: new Date("2026-11-19T12:00:00.000Z"),
     }),
   ).rejects.toThrow("createrepo_c exited with status 1: createrepo failed");
@@ -101,7 +117,15 @@ test("rejects an existing candidate output directory", async () => {
       ...input,
       version: "26.13.1",
       generationId: "generation-1",
-      sourceInput: { source: { sha256: "a".repeat(64) }, npm: { version: "12.2.3" } },
+      sourceInput: {
+        source: {
+          sha256: "a".repeat(64),
+          signature_url: "https://nodejs.org/SHASUMS.sig",
+          signing_key_fingerprint: "A".repeat(40),
+          verified_at: "2026-11-19T12:00:00.000Z",
+        },
+        npm: { version: "12.2.3" },
+      },
       now: new Date("2026-11-19T12:00:00.000Z"),
     }),
   ).rejects.toThrow("candidate output already exists");

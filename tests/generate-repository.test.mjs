@@ -31,7 +31,15 @@ async function prepareInputs(packageDir) {
   await fs.mkdir(path.join(root, ".state/sources", version), { recursive: true });
   await fs.writeFile(
     path.join(root, ".state/sources", version, "release-input.json"),
-    JSON.stringify({ source: { sha256: "source-hash" }, npm: { version: "12.2.3" } }),
+    JSON.stringify({
+      source: {
+        sha256: "a".repeat(64),
+        signature_url: "https://nodejs.org/SHASUMS.sig",
+        signing_key_fingerprint: "A".repeat(40),
+        verified_at: "2026-11-19T12:00:00.000Z",
+      },
+      npm: { version: "12.2.3" },
+    }),
   );
   return { root, version };
 }
@@ -50,7 +58,9 @@ test("parses explicit arguments and prints the generated candidate result", asyn
         outputRoot: output,
         rpmPath: path.join(packageDir, "node.rpm"),
         rpmRecord: expect.objectContaining({ name: "eliware-node26", version }),
-        sourceInput: expect.objectContaining({ source: { sha256: "source-hash" } }),
+        sourceInput: expect.objectContaining({
+          source: expect.objectContaining({ sha256: "a".repeat(64) }),
+        }),
       }),
     );
     expect(JSON.parse(write.mock.calls[0][0])).toEqual(

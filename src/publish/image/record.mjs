@@ -1,4 +1,4 @@
-import { rename } from "node:fs/promises";
+import { rename, rm } from "node:fs/promises";
 import publishFilesystemModule from "../filesystem.mjs";
 import writeImageRecords from "./records.mjs";
 import writeImageManifest from "./manifest.mjs";
@@ -40,11 +40,17 @@ export default async function main(argv = process.argv.slice(2), dependencies = 
 
       await rename(stage, finalRoot);
       markActivationStarted();
-      await (dependencies.activateGeneration || activateGeneration)({
-        repositoryRoot,
-        generationRoot: finalRoot,
-        files,
-      });
+      try {
+        await (dependencies.activateGeneration || activateGeneration)({
+          repositoryRoot,
+          generationRoot: finalRoot,
+          files,
+        });
+      } catch (error) {
+        if (!(error instanceof AggregateError))
+          await rm(finalRoot, { recursive: true, force: true });
+        throw error;
+      }
       await pruneGenerations(repositoryRoot, generationId);
       writeImagePublicationOutput({ generationId, image: imageRecord });
     },

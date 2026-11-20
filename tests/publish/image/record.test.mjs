@@ -154,7 +154,7 @@ test("keeps an activated generation when writing the command result fails", asyn
   }
 });
 
-test("preserves a complete generation when activation fails after switching a pointer", async () => {
+test("removes an inactive generation after activation fails and allows a retry", async () => {
   jest.useFakeTimers();
   jest.setSystemTime(new Date("2026-11-19T12:00:00.000Z"));
   const { root, recordPath } = await setup();
@@ -178,8 +178,11 @@ test("preserves a complete generation when activation fails after switching a po
       "second pointer failed",
     );
     const stable = path.join(root, "el10/x86_64/stable");
-    await expect(fs.lstat(stable)).rejects.toMatchObject({ code: "ENOENT" });
-    const generations = await fs.readdir(path.join(root, ".generations"));
+    await expect(fs.readlink(stable)).rejects.toMatchObject({ code: "EINVAL" });
+    let generations = await fs.readdir(path.join(root, ".generations"));
+    expect(generations.some((name) => name.startsWith("node-v26.13.1-el10-x86_64-"))).toBe(false);
+    await main([recordPath]);
+    generations = await fs.readdir(path.join(root, ".generations"));
     const generation = generations.find((name) => name.startsWith("node-v26.13.1-el10-x86_64-"));
     expect(generation).toBeDefined();
     await expect(
@@ -188,6 +191,29 @@ test("preserves a complete generation when activation fails after switching a po
         "utf8",
       ),
     ).resolves.toBe("repodata");
+  } finally {
+    output.mockRestore();
+    delete process.env.NODEJS_REPOSITORY_ROOT;
+    delete process.env.NODEJS_SIGNING_KEY;
+    jest.useRealTimers();
+  }
+});
+
+test("keeps a generation when activation rollback also fails", async () => {
+  jest.useFakeTimers();
+  jest.setSystemTime(new Date("2026-11-19T12:00:00.000Z"));
+  const { root, recordPath } = await setup();
+  const output = jest.spyOn(process.stdout, "write").mockImplementation(() => true);
+  try {
+    await expect(
+      main([recordPath], {
+        activateGeneration: async () => {
+          throw new AggregateError([new Error("restore failed")], "activation rollback failed");
+        },
+      }),
+    ).rejects.toThrow("activation rollback failed");
+    const generations = await fs.readdir(path.join(root, ".generations"));
+    expect(generations).toContain("node-v26.13.1-el10-x86_64-20261119120000000");
   } finally {
     output.mockRestore();
     delete process.env.NODEJS_REPOSITORY_ROOT;

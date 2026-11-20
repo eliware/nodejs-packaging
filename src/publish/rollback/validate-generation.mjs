@@ -1,5 +1,5 @@
 import path from "node:path";
-import { readFile, stat } from "node:fs/promises";
+import { lstat, readFile } from "node:fs/promises";
 import validateGenerationId from "./generation-id.mjs";
 import hashFile from "../files/hash.mjs";
 
@@ -31,7 +31,7 @@ export default async function validateGeneration(
   )
     throw new Error("generation manifest is not publication ready");
   const hash = dependencies.hashFile || hashFile;
-  const getStat = dependencies.stat || stat;
+  const getLstat = dependencies.lstat || lstat;
   for (const entry of record.files) {
     const relative = entry?.path;
     if (
@@ -51,7 +51,9 @@ export default async function validateGeneration(
       path.relative(root, file) === ".."
     )
       throw new Error("generation manifest contains an invalid file entry");
-    if ((await hash(file)) !== entry.sha256 || (await getStat(file)).size !== entry.size)
+    const info = await getLstat(file);
+    if (!info.isFile()) throw new Error(`generation file is not a regular file: ${relative}`);
+    if ((await hash(file)) !== entry.sha256 || info.size !== entry.size)
       throw new Error(`generation file integrity check failed: ${relative}`);
   }
   const catalogHash = await hash(path.join(root, "metadata/catalog.json"));

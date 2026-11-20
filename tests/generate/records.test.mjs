@@ -108,3 +108,17 @@ test("writes release, validation, and provenance records", async () => {
   if (oldRunId === undefined) delete process.env.NODEJS_CONDUCTOR_RUN_ID;
   else process.env.NODEJS_CONDUCTOR_RUN_ID = oldRunId;
 });
+
+test("does not claim archive checks passed without prepared verification evidence", async () => {
+  await expect(
+    writeReleaseRecords({
+      candidate: "/virtual/unverified-candidate",
+      root: "/virtual/unverified-root",
+      version: "26.13.1",
+      generationId: "node-v26.13.1-el10-x86_64-20261119120000",
+      rpmRecordUpdated: {},
+      sourceInput: { source: { sha256: "a".repeat(64) } },
+      now: new Date("2026-11-19T12:00:00.000Z"),
+    }),
+  ).rejects.toThrow("verified Node.js archive evidence is required");
+});

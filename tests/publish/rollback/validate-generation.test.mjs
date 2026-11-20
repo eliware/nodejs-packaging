@@ -40,8 +40,8 @@ function fixtures(overrides = {}) {
     file.endsWith("active-generation.json") ? JSON.stringify(active) : JSON.stringify(manifest),
   );
   const hashFile = jest.fn(async () => hash);
-  const stat = jest.fn(async () => ({ size: 4 }));
-  return { load, hashFile, stat };
+  const lstat = jest.fn(async () => ({ size: 4, isFile: () => true }));
+  return { load, hashFile, lstat };
 }
 
 test("validates and resolves a complete retained generation", async () => {
@@ -104,6 +104,12 @@ test("rejects incomplete manifests, unsafe paths, and changed generation files",
   await expect(
     validateGeneration("/virtual/rollback", generation, badMetadata.load, badMetadata),
   ).rejects.toThrow("generation metadata integrity check failed");
+
+  const symlink = fixtures();
+  symlink.lstat.mockResolvedValue({ size: 4, isFile: () => false });
+  await expect(
+    validateGeneration("/virtual/rollback", generation, symlink.load, symlink),
+  ).rejects.toThrow("generation file is not a regular file");
 });
 
 test("uses filesystem defaults to verify a retained generation", async () => {

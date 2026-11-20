@@ -42,7 +42,10 @@ async function setup(root, generation) {
   );
 }
 
-const integrity = { hashFile: jest.fn(async () => hash), stat: jest.fn(async () => ({ size: 4 })) };
+const integrity = {
+  hashFile: jest.fn(async () => hash),
+  lstat: jest.fn(async () => ({ size: 4, isFile: () => true })),
+};
 
 test("verifies and restores the requested retained stable generation", async () => {
   const root = "/virtual/rollback";

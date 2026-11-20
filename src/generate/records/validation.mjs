@@ -4,9 +4,19 @@ import path from "node:path";
 export default async function writeValidationRecord({
   candidate,
   version,
+  sourceInput,
   rpmRecordUpdated,
   generated,
 }) {
+  const source = sourceInput?.source || {};
+  const verificationRecorded = Boolean(source.verified_at);
+  const archiveSignaturePassed =
+    verificationRecorded &&
+    typeof source.signature_url === "string" &&
+    /^[A-F0-9]{40}$/.test(source.signing_key_fingerprint || "");
+  const archiveChecksumPassed = verificationRecorded && /^[a-f0-9]{64}$/.test(source.sha256 || "");
+  if (!archiveSignaturePassed || !archiveChecksumPassed)
+    throw new Error("verified Node.js archive evidence is required for the validation record");
   const validation = {
     schema: 1,
     node_version: version,
