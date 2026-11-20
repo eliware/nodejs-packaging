@@ -24,5 +24,16 @@ export default function imageGeneration() {
     if (!activationStarted) await rm(finalRoot, { recursive: true, force: true });
   }
 
-  return { stageImageGeneration, cleanupImageGeneration };
+  async function runImageGeneration({ repositoryRoot, oldRoot, image, generated, publish }) {
+    const staged = await stageImageGeneration({ repositoryRoot, oldRoot, image, generated });
+    let activationStarted = false;
+    try {
+      await publish({ ...staged, markActivationStarted: () => (activationStarted = true) });
+    } catch (error) {
+      await cleanupImageGeneration({ ...staged, activationStarted });
+      throw error;
+    }
+  }
+
+  return { stageImageGeneration, cleanupImageGeneration, runImageGeneration };
 }

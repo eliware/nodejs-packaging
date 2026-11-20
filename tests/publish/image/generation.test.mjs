@@ -6,7 +6,7 @@ const { createMemoryFs } = memoryFilesystemFixture();
 const fs = createMemoryFs();
 jest.unstable_mockModule("node:fs/promises", () => fs);
 const { default: imageGeneration } = await import("../../../src/publish/image/generation.mjs");
-const { stageImageGeneration, cleanupImageGeneration } = imageGeneration();
+const { stageImageGeneration, cleanupImageGeneration, runImageGeneration } = imageGeneration();
 
 test("stages an image generation and copies source files", async () => {
   const repositoryRoot = "/virtual/image-repository";
@@ -43,4 +43,24 @@ test("keeps an activated generation during cleanup", async () => {
   await cleanupImageGeneration({ stage, finalRoot, activationStarted: true });
   await expect(fs.stat(stage)).rejects.toMatchObject({ code: "ENOENT" });
   await expect(fs.stat(finalRoot)).resolves.toBeDefined();
+});
+
+test("cleans staged files when publication fails before activation", async () => {
+  const repositoryRoot = "/virtual/image-runner";
+  const oldRoot = path.join(repositoryRoot, "old");
+  await fs.mkdir(oldRoot, { recursive: true });
+  await fs.writeFile(path.join(oldRoot, "catalog.json"), "{}");
+  await expect(
+    runImageGeneration({
+      repositoryRoot,
+      oldRoot,
+      image: { source_release: "26.13.1" },
+      generated: "2026-11-20T12:00:00.000Z",
+      publish: async () => {
+        throw new Error("publication failed");
+      },
+    }),
+  ).rejects.toThrow("publication failed");
+  const generations = await fs.readdir(path.join(repositoryRoot, ".generations"));
+  expect(generations).toEqual([]);
 });

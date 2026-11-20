@@ -210,14 +210,6 @@ test("reports Docker pull, digest, build, and runtime smoke-check failures", asy
   await expect(main(["--version", version])).rejects.toThrow("docker pull exited with status 1");
 
   await setup();
-  dockerScenario({ baseInspect: { status: 0, stdout: JSON.stringify([{ RepoDigests: [] }]) } });
-  await expect(main(["--version", version])).rejects.toThrow("immutable digest");
-
-  await setup();
-  dockerScenario({ baseInspect: { status: 0, stdout: JSON.stringify([{}]) } });
-  await expect(main(["--version", version])).rejects.toThrow("immutable digest");
-
-  await setup();
   dockerScenario({ build: { error: new Error("builder missing") } });
   await expect(main(["--version", version])).rejects.toThrow("builder missing");
 

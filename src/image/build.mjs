@@ -4,6 +4,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import loadPublishedRelease from "../repository/catalog.mjs";
 import runDocker from "./docker.mjs";
+import getBaseImageDigest from "./base-image.mjs";
 import publishImage from "./publication.mjs";
 import verifyImageRuntime from "./runtime-check.mjs";
 import parseArguments from "../cli/arguments.mjs";
@@ -27,14 +28,11 @@ export default async function main(argv = process.argv.slice(2)) {
   const target = JSON.parse(await readFile(path.join(root, "build-config/target.json"), "utf8"));
   const image = `${target.image}:${version}`;
   const baseImage = "quay.io/centos/centos:stream10";
-  runDocker(["pull", baseImage], { stdio: "inherit" });
-  const baseInspect = JSON.parse(
-    runDocker(["image", "inspect", baseImage], { encoding: "utf8" }).stdout,
-  )[0];
-  const baseDigest = (baseInspect.RepoDigests || []).find((digest) =>
-    digest.startsWith("quay.io/centos/centos@sha256:"),
-  );
-  if (!baseDigest) throw new Error(`Docker did not report an immutable digest for ${baseImage}`);
+  const baseDigest = await getBaseImageDigest({
+    baseImage,
+    runCommand: async (_command, args) => runDocker(args, { stdio: "inherit" }),
+    runCommandCapture: async (_command, args) => runDocker(args, { encoding: "utf8" }),
+  });
   const expectedBaseDigest = args.get("base-digest");
   if (expectedBaseDigest && baseDigest !== expectedBaseDigest)
     throw new Error(

@@ -1,16 +1,7 @@
-export default function conductorDockerImage({ baseImage, runCommand, runCommandCapture }) {
-  async function getBaseImageDigest() {
-    await runCommand("docker", ["pull", baseImage]);
-    const result = await runCommandCapture("docker", ["image", "inspect", baseImage], {
-      quiet: true,
-    });
-    const inspect = JSON.parse(result.stdout)[0];
-    const digest = inspect.RepoDigests?.find((item) =>
-      item.startsWith("quay.io/centos/centos@sha256:"),
-    );
-    if (!digest) throw new Error(`Docker did not report an immutable digest for ${baseImage}`);
-    return digest;
-  }
+import getBaseImageDigest from "../../image/base-image.mjs";
 
-  return { getBaseImageDigest };
+export default function conductorDockerImage({ baseImage, runCommand, runCommandCapture }) {
+  return {
+    getBaseImageDigest: () => getBaseImageDigest({ baseImage, runCommand, runCommandCapture }),
+  };
 }
