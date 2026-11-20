@@ -10,15 +10,22 @@ export default function runProcess(command, args, options) {
       stdio: options.stdio,
     });
     const output = collectProcessOutput(child, options.onStdout, options.onStderr);
-    child.once("error", async (error) => {
-      try {
-        await options.onError(error);
-        reject(error);
-      } catch (loggingError) {
-        reject(loggingError);
-      }
+    let processError;
+    let errorHandling;
+    child.once("error", (error) => {
+      processError = error;
+      errorHandling = Promise.resolve().then(() => options.onError(error));
     });
-    child.once("exit", async (code, signal) => {
+    child.once("close", async (code, signal) => {
+      if (processError) {
+        try {
+          await errorHandling;
+          reject(processError);
+        } catch (loggingError) {
+          reject(loggingError);
+        }
+        return;
+      }
       try {
         const failureDetail = await options.onExit({ code, signal, ...output });
         if (code === 0) resolve({ code, ...output });

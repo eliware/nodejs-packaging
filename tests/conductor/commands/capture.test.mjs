@@ -15,11 +15,14 @@ function childWith({ code = 0, signal = null, stdout = "", stderr = "", error } 
   child.stdout = new PassThrough();
   child.stderr = new PassThrough();
   process.nextTick(() => {
-    if (error) child.emit("error", error);
-    else {
+    if (error) {
+      child.emit("error", error);
+      child.emit("close", null, null);
+    } else {
       child.stdout.end(stdout);
       child.stderr.end(stderr);
       child.emit("exit", code, signal);
+      child.emit("close", code, signal);
     }
   });
   return child;

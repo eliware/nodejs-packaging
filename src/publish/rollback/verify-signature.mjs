@@ -21,7 +21,7 @@ export default function verifyGenerationSignature(
     .split("\n")
     .find((line) => line.startsWith("[GNUPG:] VALIDSIG "));
   const fields = validSignature?.trim().split(/\s+/) || [];
-  const signer = fields.length > 11 ? fields.at(-1) : fields[2];
+  const signer = fields[2];
   if (signer !== keyFingerprint)
     throw new Error("generation signature was not made by the trusted release signing key");
 }

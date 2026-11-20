@@ -12,7 +12,13 @@ const { default: runCommand } = await import("../../../src/conductor/commands/ru
 
 function childWith(event, ...values) {
   const child = new EventEmitter();
-  process.nextTick(() => child.emit(event, ...values));
+  process.nextTick(() => {
+    child.emit(event, ...values);
+    child.emit(
+      event === "error" ? "close" : "close",
+      ...(event === "error" ? [null, null] : values),
+    );
+  });
   return child;
 }
 
@@ -37,6 +43,7 @@ test("discards any unexpected output from inherited child streams", async () => 
       child.stdout.end("ignored stdout");
       child.stderr.end("ignored stderr");
       child.emit("exit", 0, null);
+      child.emit("close", 0, null);
     });
     return child;
   });
@@ -54,6 +61,7 @@ test("captures and redacts logs when a log path is provided", async () => {
       child.stdout.end("DISCORD_WEBHOOK=super-secret-value");
       child.stderr.end("token=private-token");
       child.emit("exit", 0, null);
+      child.emit("close", 0, null);
     });
     return child;
   });
@@ -82,6 +90,7 @@ test("uses the process environment for logged commands when no environment is su
       child.stdout.end("done");
       child.stderr.end("");
       child.emit("exit", 0, null);
+      child.emit("close", 0, null);
     });
     return child;
   });
@@ -100,7 +109,10 @@ test("preserves spawn errors in local log files", async () => {
   child.stdout = new PassThrough();
   child.stderr = new PassThrough();
   spawn.mockImplementationOnce(() => {
-    process.nextTick(() => child.emit("error", new Error("spawn failed")));
+    process.nextTick(() => {
+      child.emit("error", new Error("spawn failed"));
+      child.emit("close", null, null);
+    });
     return child;
   });
   await expect(

@@ -70,3 +70,18 @@ test("rejects an empty stable catalog when no RPM version exists", async () => {
   options.discoverNpm.mockResolvedValue({ version: "12.2.3" });
   await expect(prepareReleasePlan(options)).rejects.toThrow("no Node.js RPM is published");
 });
+
+test("builds the RPM when npm is newer even without a published image record", async () => {
+  const options = createOptions({
+    metadata_version: "0.1.0",
+    node_major: 26,
+    stable: { latest: { node_version: "26.13.1", npm: { version: "12.2.3" } } },
+    images: [],
+  });
+  options.discoverNpm.mockResolvedValue({ version: "12.2.4" });
+  options.getBaseImageDigest.mockResolvedValue("base-sha256-new");
+  const result = await prepareReleasePlan(options);
+  expect(result.plan).toEqual(
+    expect.objectContaining({ npmUpdate: true, buildRpm: true, buildImage: true }),
+  );
+});

@@ -6,18 +6,33 @@ const spawn = jest.fn();
 jest.unstable_mockModule("node:child_process", () => ({ spawn }));
 const { default: runProcess } = await import("../../../src/conductor/commands/process.mjs");
 
-function childWith({ streams = true, event = "exit", values = [0, null] } = {}) {
+function childWith({
+  streams = true,
+  event = "exit",
+  values = [0, null],
+  lateStreams = false,
+} = {}) {
   const child = new EventEmitter();
   if (streams) {
     child.stdout = new PassThrough();
     child.stderr = new PassThrough();
   }
   process.nextTick(() => {
-    if (streams) {
-      child.stdout.end("out");
-      child.stderr.end("err");
+    if (event === "error") {
+      child.emit("error", ...values);
+      child.emit("close", null, null);
+      return;
     }
-    child.emit(event, ...values);
+    if (lateStreams) child.emit("exit", ...values);
+    const close = () => {
+      if (streams) {
+        child.stdout.end("out");
+        child.stderr.end("err");
+      }
+      if (!lateStreams) child.emit("exit", ...values);
+      child.emit("close", ...values);
+    };
+    close();
   });
   return child;
 }
@@ -95,4 +110,18 @@ test("rejects process errors and output-handler errors", async () => {
   await expect(
     runProcess("tool", [], { env: process.env, stdio: "inherit", ...handlers }),
   ).rejects.toBe(loggingFailure);
+});
+
+test("waits for stream closure before returning captured output", async () => {
+  Object.values(handlers).forEach((handler) => handler.mockClear());
+  spawn.mockImplementationOnce(() => childWith({ lateStreams: true }));
+  await expect(
+    runProcess("tool", [], { env: process.env, stdio: ["ignore", "pipe", "pipe"], ...handlers }),
+  ).resolves.toEqual({ code: 0, stdout: "out", stderr: "err" });
+  expect(handlers.onExit).toHaveBeenCalledWith({
+    code: 0,
+    signal: null,
+    stdout: "out",
+    stderr: "err",
+  });
 });

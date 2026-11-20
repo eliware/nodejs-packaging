@@ -3,7 +3,7 @@ import verifyGenerationSignature from "../../../src/publish/rollback/verify-sign
 
 const keyFingerprint = "A".repeat(40);
 const gpgHome = "/virtual/trusted-keys";
-const validStatus = `[GNUPG:] VALIDSIG ${keyFingerprint} 2026-01-01 1 0 4 0 1 10 ${keyFingerprint}\n`;
+const validStatus = `[GNUPG:] VALIDSIG ${keyFingerprint} 2026-01-01 1 0 4 0 1 10 00 ${keyFingerprint}\n`;
 const options = { gpgHome, keyFingerprint };
 
 test("verifies the signed manifest in the trusted key home", () => {
@@ -60,6 +60,15 @@ test("rejects missing trust settings, process errors, invalid signatures, and un
       run: () => ({
         status: 0,
         stdout: `[GNUPG:] VALIDSIG ${keyFingerprint} 2026-01-01 1 0 4 0 1 10 00 00\n`,
+      }),
+    }),
+  ).not.toThrow();
+  expect(() =>
+    verifyGenerationSignature("manifest.asc", "manifest.json", {
+      ...options,
+      run: () => ({
+        status: 0,
+        stdout: `[GNUPG:] VALIDSIG ${"B".repeat(40)} 2026-01-01 1 0 4 0 1 10 00 ${keyFingerprint}\n`,
       }),
     }),
   ).toThrow("not made by the trusted release signing key");

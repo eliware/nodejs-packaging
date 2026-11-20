@@ -96,7 +96,11 @@ npm run release:prepare
 ```
 
 Pass `--version 26.x.y` to select a Node.js release. Pass `--npm-version x.y.z` to select an npm version.
-Pass `--allow-older true` only when you must prepare an older stable Node.js 26 release.
+Pass `--allow-older true` only when you must prepare an older stable Node.js 26 release. Use both options in this command. Replace the sample version with the older stable release to prepare.
+
+```sh
+npm run release:prepare -- --version 26.13.1 --allow-older true
+```
 
 Build an RPM from the verified release input:
 

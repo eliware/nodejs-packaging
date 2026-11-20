@@ -9,6 +9,7 @@ import buildImage from "./build-image.mjs";
 import publishImage from "./publication.mjs";
 import verifyImageRuntime from "./runtime-check.mjs";
 import parseArguments from "../cli/arguments.mjs";
+import resolveRepositoryUrl from "./repository-url.mjs";
 export default async function main(argv = process.argv.slice(2)) {
   const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
   const args = parseArguments(argv, ["push"]);
@@ -19,7 +20,7 @@ export default async function main(argv = process.argv.slice(2)) {
 
   const { repositoryBase, publishedRelease } = await loadPublishedRelease(
     version,
-    process.env.NODEJS_REPOSITORY_URL,
+    resolveRepositoryUrl(),
     fetch,
   );
 

@@ -106,3 +106,20 @@ test("rejects a malformed published npm version", () => {
     "npm versions must use the 12.0.0 or later format",
   );
 });
+
+test("rebuilds RPM and image for a newer npm release without an image record", () => {
+  const result = plan({
+    latestNpmVersion: "12.2.4",
+    publishedImageDigest: null,
+    publishedBaseImageDigest: null,
+  });
+  expect(result).toEqual(
+    expect.objectContaining({
+      npmUpdate: true,
+      baseImageUpdate: true,
+      buildRpm: true,
+      buildImage: true,
+      reason: "npm-update",
+    }),
+  );
+});
