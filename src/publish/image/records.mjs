@@ -1,6 +1,7 @@
 import path from "node:path";
 import writeImageCatalog from "./catalog.mjs";
 import writeImageEvidence from "./evidence.mjs";
+import createImageRecord from "./record-data.mjs";
 
 export default async function writeImageRecords({
   stage,
@@ -11,20 +12,7 @@ export default async function writeImageRecords({
   gpgHome,
   files,
 }) {
-  const provenancePath = `metadata/provenance/images/nodejs26-${image.source_release}.json`;
-  const imageRecord = {
-    repository: image.repository,
-    tag: image.tag,
-    digest: image.digest,
-    base_image: image.base_image,
-    base_image_digest: image.base_image_digest,
-    rpm_sha256: image.rpm_sha256,
-    validation: "passed",
-    provenance_path: provenancePath,
-    ...(process.env.NODEJS_CONDUCTOR_RUN_ID
-      ? { logs_path: `metadata/logs/${process.env.NODEJS_CONDUCTOR_RUN_ID}/` }
-      : {}),
-  };
+  const imageRecord = createImageRecord(image);
   const catalogPath = await writeImageCatalog({
     stage,
     image,
