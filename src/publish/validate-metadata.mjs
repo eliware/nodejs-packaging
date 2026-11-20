@@ -7,7 +7,6 @@ const names = [
   "repository-index",
   "active-generation",
   "generation",
-  "image-record",
   "release-manifest",
 ];
 async function validatePublishedMetadata(
@@ -24,34 +23,28 @@ async function validatePublishedMetadata(
       await readFileImpl(path.join(schemaRoot, `${name}.schema.json`), "utf8"),
     );
     const validator = ajv.compile(schema);
-    const file =
-      name === "catalog"
-        ? "metadata/catalog.json"
-        : name === "repository-index"
-          ? "metadata/repository-index.json"
-          : name === "active-generation"
-            ? "metadata/active-generation.json"
-            : name === "generation"
-              ? "generation.json"
-              : name === "release-manifest"
-                ? "metadata/release-manifest.json"
-                : "metadata/provenance/images/nodejs26-image.json";
-    if (name === "image-record" && !(await exists(path.join(root, file), readFileImpl))) continue;
+    const file = {
+      catalog: "metadata/catalog.json",
+      "repository-index": "metadata/repository-index.json",
+      "active-generation": "metadata/active-generation.json",
+      generation: "generation.json",
+      "release-manifest": "metadata/release-manifest.json",
+    }[name];
     const value = JSON.parse(await readFileImpl(path.join(root, file), "utf8"));
     if (!validator(value)) failures.push(`${file}: ${ajv.errorsText(validator.errors)}`);
+  }
+  const catalog = JSON.parse(await readFileImpl(path.join(root, "metadata/catalog.json"), "utf8"));
+  if (catalog.stable?.latest?.image) {
+    const schema = JSON.parse(
+      await readFileImpl(path.join(schemaRoot, "image-record.schema.json"), "utf8"),
+    );
+    const validator = ajv.compile(schema);
+    if (!validator(catalog.stable.latest.image))
+      failures.push(`metadata/catalog.json: ${ajv.errorsText(validator.errors)}`);
   }
   if (failures.length)
     throw new Error(`published metadata schema validation failed: ${failures.join("; ")}`);
   return true;
-}
-async function exists(file, readFileImpl) {
-  try {
-    await readFileImpl(file);
-    return true;
-  } catch (error) {
-    if (error.code === "ENOENT") return false;
-    throw error;
-  }
 }
 export default function validateMetadataModule() {
   return { validatePublishedMetadata };
