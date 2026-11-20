@@ -37,7 +37,7 @@ Run `npm ci` from the repository root. Provision the signing key and private env
 
 ## Usage
 
-Read the [local release guide](docs/usage.md) for setup, package installation, conductor runs, and configuration.
+Read the [local release guide](docs/usage.md) for RPM installation, image use, conductor runs, and configuration.
 Browse the [documentation index](docs/README.md) for maintained guides.
 Read the [release contract](docs/RELEASE-CONTRACT.md) for authoritative release rules.
 Read the [specifications index](specs/README.md) before changing repository contracts.
@@ -45,7 +45,7 @@ Read the [release notes](RELEASE_NOTES.md) for user-visible changes.
 
 ## Development
 
-Read [AGENTS.md](AGENTS.md) before changing files. Keep build inputs and release records with their owning repository.
+Follow [AGENTS.md](AGENTS.md) when contributing changes.
 
 ## Testing
 

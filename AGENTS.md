@@ -30,8 +30,6 @@ Update focused tests, release notes, and user documentation when behavior change
 
 ## Application
 
-Keep implementation modules in `src/`, launchers in `bin/`, tests in `tests/`, and fixtures in `test-fixtures/`.
-
 Run focused tests first during development. Pass test paths to `npm test` for focused testing.
 Run one test file with `npm test -- tests/path/to/example.test.mjs`.
 Run multiple test files with `npm test -- tests/path/to/first.test.mjs tests/path/to/second.test.mjs`.

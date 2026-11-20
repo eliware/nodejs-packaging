@@ -26,21 +26,24 @@ Keep the private key, webhook URL, and registry credentials outside Git.
 
 Set these environment variables when their defaults do not match the host:
 
-| Variable                           | Default                                       | Requirement and use                                                        |
-| ---------------------------------- | --------------------------------------------- | -------------------------------------------------------------------------- |
-| `NODEJS_REPOSITORY_URL`            | `https://nodejs.eliware.org`                  | Optional. Use the HTTPS root of the repository application.                |
-| `NODEJS_REPOSITORY_ROOT`           | `/eliware/nodejs-repository`                  | Optional. Set the local repository data path.                              |
-| `NODEJS_SIGNING_KEY`               | None                                          | Required for publication. Set the 40-character signing key fingerprint.    |
-| `NODEJS_GNUPGHOME`                 | `/var/lib/eliware/nodejs-signing/gnupg`       | Optional. Set the GnuPG home that contains the private signing key.        |
-| `NODEJS_SOURCE_DIR`                | `.state/sources` in this checkout             | Optional. Set the verified source archive cache path.                      |
-| `NODEJS_CONDUCTOR_STATE_ROOT`      | `/var/lib/eliware/nodejs-packaging/conductor` | Optional. Set the conductor lock and state path.                           |
-| `CHROME_BIN`                       | `/usr/bin/google-chrome`                      | Optional. Set the Chrome executable used to create release cards.          |
-| `CONDUCTOR_DISCORD_WEBHOOK`        | None                                          | Required for wet conductor runs when `DISCORD_WEBHOOK` is unset.           |
-| `DISCORD_WEBHOOK`                  | None                                          | Required for wet conductor runs when `CONDUCTOR_DISCORD_WEBHOOK` is unset. |
-| `NODEJS_REPOSITORY_GIT_REMOTE`     | `origin`                                      | Optional. Set the Git remote for the repository data push.                 |
-| `NODEJS_REPOSITORY_GIT_BRANCH`     | `main`                                        | Optional. Set the target branch for the repository data push.              |
-| `NODEJS_REPOSITORY_GIT_USER_NAME`  | `Eliware`                                     | Optional. Set the commit author name for repository data.                  |
-| `NODEJS_REPOSITORY_GIT_USER_EMAIL` | `nodejs-release@eliware.org`                  | Optional. Set the commit author email for repository data.                 |
+| Variable                           | Default                                       | Requirement and use                                                           |
+| ---------------------------------- | --------------------------------------------- | ----------------------------------------------------------------------------- |
+| `NODEJS_REPOSITORY_URL`            | `https://nodejs.eliware.org`                  | Optional. Use the HTTPS root of the repository application.                   |
+| `NODEJS_REPOSITORY_ROOT`           | `/eliware/nodejs-repository`                  | Optional. Set the local repository data path.                                 |
+| `NODEJS_SIGNING_KEY`               | None                                          | Required for publication. Set the 40-character signing key fingerprint.       |
+| `NODEJS_GNUPGHOME`                 | `/var/lib/eliware/nodejs-signing/gnupg`       | Optional. Set the GnuPG home that contains the private signing key.           |
+| `NODEJS_SOURCE_DIR`                | `.state/sources` in this checkout             | Optional. Set the verified source archive cache path.                         |
+| `NODEJS_CONDUCTOR_STATE_ROOT`      | `/var/lib/eliware/nodejs-packaging/conductor` | Optional. Set the conductor lock and state path.                              |
+| `CHROME_BIN`                       | `/usr/bin/google-chrome`                      | Optional. Set the Chrome executable used to create release cards.             |
+| `CONDUCTOR_DISCORD_WEBHOOK`        | None                                          | Required for wet conductor runs when `DISCORD_WEBHOOK` is unset.              |
+| `DISCORD_WEBHOOK`                  | None                                          | Required for wet conductor runs when `CONDUCTOR_DISCORD_WEBHOOK` is unset.    |
+| `NODEJS_REPOSITORY_GIT_REMOTE`     | `origin`                                      | Optional. Set the Git remote for the repository data push.                    |
+| `NODEJS_REPOSITORY_GIT_BRANCH`     | `main`                                        | Optional. Set the target branch for the repository data push.                 |
+| `NODEJS_REPOSITORY_GIT_USER_NAME`  | `Eliware`                                     | Optional. Set the commit author name for repository data.                     |
+| `NODEJS_REPOSITORY_GIT_USER_EMAIL` | `nodejs-release@eliware.org`                  | Optional. Set the commit author email for repository data.                    |
+| `NODEJS_CONDUCTOR_LOG_DIR`         | Set by the conductor                          | Internal. Names the directory for command logs.                               |
+| `NODEJS_CONDUCTOR_RUN_ID`          | Set by the conductor                          | Internal. Identifies the active run and its published logs.                   |
+| `NODEJS_CONDUCTOR_SERVICE`         | Unset                                         | Internal. The `bin/conductor-service.mjs` launcher sets this value to `true`. |
 
 The systemd unit sets repository, signing, state, and Chrome values in its unit file.
 The unit reads webhook values from `/etc/gluster-packaging/release.env`.
@@ -124,22 +127,54 @@ It activates a complete immutable generation after validation.
 
 Commit and push changed repository data with the standalone launcher `node bin/commit-publish-repository.mjs`.
 
-## Install and use the RPM
+## Install the RPM
 
-Configure the signed repository, then install the package:
+Configure the signed repository on a CentOS Stream 10 x86_64 host:
 
 ```sh
-sudo yum -y install eliware-node26
-sudo yum -y update
+sudo rpm --import https://nodejs.eliware.org/keys/RPM-GPG-KEY-ELIWARE-NODEJS
+sudo tee /etc/yum.repos.d/eliware-nodejs.repo >/dev/null <<'EOF'
+[eliware-nodejs]
+name=Eliware Node.js 26
+baseurl=https://nodejs.eliware.org/el10/x86_64/stable/
+enabled=1
+gpgcheck=1
+repo_gpgcheck=1
+gpgkey=https://nodejs.eliware.org/keys/RPM-GPG-KEY-ELIWARE-NODEJS
+EOF
+sudo dnf install eliware-node26
 ```
 
 The RPM provides `node`, `npm`, and `npx`. It replaces CentOS AppStream `nodejs26` during installation.
 The package installs Node.js under `/opt/nodejs/26/<version>/` and links `/opt/nodejs/26/current` to the active version.
 
-The RPM keeps npm updates and global package data under `/var/lib/eliware/nodejs26/global`.
+Check the installed versions:
+
+```sh
+node --version
+npm --version
+npx --version
+```
+
+Update the package with `sudo dnf upgrade eliware-node26`. The RPM owns the bundled npm version.
+Keep global npm updates and package data under `/var/lib/eliware/nodejs26/global`.
+
 It adds that directory's `bin` folder and npm prefix through `/etc/profile.d/eliware-nodejs26.sh`.
 Run `npm -g install npm@latest` to update npm without changing RPM-owned files.
 Run `npm link` from a local package repository to add its commands to the global prefix.
+
+## Use the runtime image
+
+Pull `latest`, a tag that follows the newest published stable Node.js 26 image:
+
+```sh
+docker pull ghcr.io/eliware/centos10-node26:latest
+docker run --rm ghcr.io/eliware/centos10-node26:latest node --version
+```
+
+Use a version tag to select a fixed release, such as `ghcr.io/eliware/centos10-node26:26.13.1`.
+The `latest` tag follows the newest published stable Node.js 26 image.
+Use this image in a Dockerfile with `FROM ghcr.io/eliware/centos10-node26:latest`.
 
 ## Build the runtime image
 
