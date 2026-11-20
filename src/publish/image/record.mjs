@@ -7,6 +7,7 @@ import activateGeneration from "../activate-generation.mjs";
 import loadImagePublicationInput from "./input.mjs";
 import imageGeneration from "./generation.mjs";
 import pruneGenerations from "../retention.mjs";
+import writeImagePublicationOutput from "./output.mjs";
 const files = publishFilesystemModule();
 const { stageImageGeneration, cleanupImageGeneration } = imageGeneration();
 export default async function main(argv = process.argv.slice(2), dependencies = {}) {
@@ -48,9 +49,7 @@ export default async function main(argv = process.argv.slice(2), dependencies = 
       files,
     });
     await pruneGenerations(repositoryRoot, generationId);
-    process.stdout.write(
-      `${JSON.stringify({ generation: generationId, image: imageRecord }, null, 2)}\n`,
-    );
+    writeImagePublicationOutput({ generationId, image: imageRecord });
   } catch (error) {
     await cleanupImageGeneration({ stage, finalRoot, activationStarted });
     throw error;

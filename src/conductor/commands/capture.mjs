@@ -1,4 +1,4 @@
-import writeRedactedCommandOutput from "./logged/output.mjs";
+import logCapturedOutput from "./logged/captured-output.mjs";
 import runProcess from "./process.mjs";
 
 export default function runCommandCapture(command, args, options = {}) {
@@ -15,30 +15,26 @@ export default function runCommandCapture(command, args, options = {}) {
     onError: (error) =>
       options.logPath
         ? (async () => {
-            await writeRedactedCommandOutput({
+            await logCapturedOutput({
               file: options.logPath,
               name: options.logName,
               stderr: error.message,
               env: options.env || process.env,
+              quiet: true,
             });
           })()
         : undefined,
     onExit: async ({ code, stdout, stderr }) => {
       const safe = options.logPath
-        ? await (async () => {
-            return writeRedactedCommandOutput({
-              file: options.logPath,
-              name: options.logName,
-              stdout,
-              stderr,
-              env: options.env || process.env,
-            });
-          })()
+        ? await logCapturedOutput({
+            file: options.logPath,
+            name: options.logName,
+            stdout,
+            stderr,
+            env: options.env || process.env,
+            quiet: options.quiet,
+          })
         : { stdout, stderr };
-      if (!options.quiet && options.logPath) {
-        process.stdout.write(safe.stdout);
-        process.stderr.write(safe.stderr);
-      }
       return code === 0 ? "" : `: ${safe.stderr}`;
     },
   });
