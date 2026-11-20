@@ -1,7 +1,7 @@
 import { readdir, rm, stat } from "node:fs/promises";
 import path from "node:path";
 
-async function pruneGenerations(repositoryRoot, activeGeneration, keep = 7) {
+async function pruneGenerations(repositoryRoot, activeGeneration, keep = 6) {
   const root = path.join(repositoryRoot, ".generations");
   const entries = await readdir(root, { withFileTypes: true });
   const generations = [];
